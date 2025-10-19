@@ -16,4 +16,18 @@ public class Bullet : MonoBehaviour
         // Bewege das Bullet nach oben (lokale Richtung)
         transform.Translate(Vector2.up * speed * Time.deltaTime);
     }
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            // Schaden verursachen, falls EnemyHealth vorhanden
+            EnemyHealth enemy = other.GetComponent<EnemyHealth>();
+            if (enemy != null)
+                enemy.TakeDamage(1);
+
+            // Kugel zerstören
+            Destroy(gameObject);
+        }
+    }
+
 }
