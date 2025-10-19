@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement; // Für späteren Game-Over-Reload
 public class PlayerHealth : MonoBehaviour
 {
     public int maxHealth = 3;
-    private int currentHealth;
+    public int currentHealth;
 
     void Start()
     {
