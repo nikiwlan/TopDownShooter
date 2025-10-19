@@ -2,20 +2,30 @@ using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
 {
-    public int health = 1; // einfache HP für jetzt
+    public int health = 1;
 
-    public void TakeDamage(int amount)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        health -= amount;
-        if (health <= 0)
+        Debug.Log("Enemy triggered with: " + collision.name);
+        if (collision.CompareTag("Player"))
         {
-            Die();
+            PlayerHealth playerHealth = collision.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(1);
+            }
+
+            // Gegner zerstören
+            Destroy(gameObject);
         }
     }
 
-    void Die()
+    public void TakeDamage(int damage)
     {
-        Destroy(gameObject);
+        health -= damage;
+        if (health <= 0)
+        {
+            Destroy(gameObject);
+        }
     }
 }
-
