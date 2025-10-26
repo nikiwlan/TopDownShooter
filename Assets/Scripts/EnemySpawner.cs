@@ -21,14 +21,14 @@ public class EnemySpawner : MonoBehaviour
         // Prüfe zuerst, ob playerHealth überhaupt existiert
         if (playerHealth == null)
         {
-            Debug.LogWarning("⚠️ PlayerHealth ist im Spawner nicht gesetzt!");
+            Debug.LogWarning("PlayerHealth ist im Spawner nicht gesetzt!");
             return;
         }
 
         // Wenn Spieler 0 oder weniger HP hat → Spawner stoppen und alle Gegner zerstören
         if (playerHealth.currentHealth <= 0)
         {
-            Debug.Log("💀 Spieler ist tot – Spawner stoppt und löscht alle Gegner.");
+            Debug.Log("Spieler ist tot – Spawner stoppt und löscht alle Gegner.");
 
             // Alle Gegner finden und zerstören
             GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
