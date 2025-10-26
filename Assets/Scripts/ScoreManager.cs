@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 [DefaultExecutionOrder(-100)]  // <-- sorgt dafür, dass Instance früh gesetzt wird
 public class ScoreManager : MonoBehaviour
@@ -36,4 +37,17 @@ public class ScoreManager : MonoBehaviour
         if (scoreText != null) scoreText.text = "Score: " + score;
         else Debug.LogWarning("[ScoreManager] scoreText ist nicht zugewiesen!");
     }
+
+    public IEnumerator TempScoreBoost(float duration, int bonus)
+    {
+        Debug.Log("[ScoreManager] Temporärer ScoreBoost gestartet.");
+
+        score += bonus;
+        UpdateUI();
+
+        yield return new WaitForSeconds(duration);
+
+        Debug.Log("[ScoreManager] ScoreBoost vorbei. Score bleibt: " + score);
+    }
+
 }

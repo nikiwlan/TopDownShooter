@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -29,4 +31,17 @@ public class PlayerShooting : MonoBehaviour
             Instantiate(bulletPrefab, firePoint.position, transform.rotation);
         }
     }
+
+    public IEnumerator TempFireRateBoost(float duration)
+    {
+        float originalRate = fireRate;
+        fireRate /= 2f; // doppelt so schnell
+        Debug.Log("[PlayerShooting] FireRate Boost aktiv!");
+
+        yield return new WaitForSeconds(duration);
+
+        fireRate = originalRate;
+        Debug.Log("[PlayerShooting] FireRate Boost vorbei.");
+    }
+
 }
