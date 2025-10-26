@@ -2,45 +2,43 @@
 
 public class EnemySpawner : MonoBehaviour
 {
-    public PlayerHealth playerHealth; 
-    public GameObject enemyPrefab;       // Gegner-Prefab-Referenz
-    public float spawnInterval = 2f;     // Sekunden zwischen Spawns
-    public float spawnRadius = 8f;       // Abstand vom Spieler
+    public PlayerHealth playerHealth;
+    public GameObject enemyPrefab;
+    public float spawnInterval = 2f;
+    public float spawnRadius = 10f;      // etwas größer, damit Gegner außerhalb spawnen
+    public float minDistanceFromCamera = 0.1f; // wie weit außerhalb des Sichtfelds
 
     private Transform player;
     private float timer;
+    private Camera mainCam;
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
+        mainCam = Camera.main;
         timer = spawnInterval;
     }
 
     void Update()
     {
-        // Prüfe zuerst, ob playerHealth überhaupt existiert
         if (playerHealth == null)
         {
             Debug.LogWarning("PlayerHealth ist im Spawner nicht gesetzt!");
             return;
         }
 
-        // Wenn Spieler 0 oder weniger HP hat → Spawner stoppen und alle Gegner zerstören
         if (playerHealth.currentHealth <= 0)
         {
             Debug.Log("Spieler ist tot – Spawner stoppt und löscht alle Gegner.");
 
-            // Alle Gegner finden und zerstören
             GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
             foreach (GameObject enemy in enemies)
             {
                 Destroy(enemy);
             }
 
-            // Methode beenden
             return;
         }
-
 
         timer -= Time.deltaTime;
 
@@ -53,12 +51,31 @@ public class EnemySpawner : MonoBehaviour
 
     void SpawnEnemy()
     {
-        if (player == null) return;
+        if (player == null || mainCam == null) return;
 
-        // Zufällige Richtung rund um den Spieler
-        Vector2 spawnDir = Random.insideUnitCircle.normalized;
-        Vector3 spawnPos = player.position + (Vector3)(spawnDir * spawnRadius);
+        int maxAttempts = 20;
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            // Zufällige Richtung rund um den Spieler
+            Vector2 spawnDir = Random.insideUnitCircle.normalized;
+            Vector3 spawnPos = player.position + (Vector3)(spawnDir * spawnRadius);
 
-        Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+            // Position in Viewport-Koordinaten umwandeln (0–1 = sichtbar)
+            Vector3 viewportPos = mainCam.WorldToViewportPoint(spawnPos);
+
+            // Prüfen, ob Punkt außerhalb des Bildschirms liegt
+            bool outsideScreen =
+                viewportPos.x < -minDistanceFromCamera || viewportPos.x > 1 + minDistanceFromCamera ||
+                viewportPos.y < -minDistanceFromCamera || viewportPos.y > 1 + minDistanceFromCamera;
+
+            if (outsideScreen)
+            {
+                Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+                Debug.Log($"[EnemySpawner] Spawned enemy outside view at {spawnPos}");
+                return;
+            }
+        }
+
+        Debug.LogWarning("[EnemySpawner] Kein passender Spawnpunkt außerhalb des Sichtfelds gefunden!");
     }
 }

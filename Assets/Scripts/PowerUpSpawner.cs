@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class PowerUpSpawner : MonoBehaviour
 {
-    public GameObject[] powerUps; // Array mit Prefabs (Health, FireRate, ScoreBoost)
-    public float spawnInterval = 5f; // Sekunden zwischen Spawns
-    public Vector2 spawnAreaMin = new Vector2(-8f, -4f);
-    public Vector2 spawnAreaMax = new Vector2(8f, 4f);
+    public GameObject[] powerUps;
+    public float spawnInterval = 5f;
+    public float spawnRadius = 6f;
+    public Transform player;
 
     private float timer;
 
@@ -21,18 +21,42 @@ public class PowerUpSpawner : MonoBehaviour
 
     void SpawnPowerUp()
     {
-        if (powerUps.Length == 0) return;
+        if (powerUps.Length == 0 || player == null) return;
 
-        // Zufällige Position
-        Vector2 spawnPos = new Vector2(
-            Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            Random.Range(spawnAreaMin.y, spawnAreaMax.y)
-        );
+        Vector2 spawnPos;
+        int maxAttempts = 10;
+        bool foundSpot = false;
 
-        // Zufälliges PowerUp wählen
-        int index = Random.Range(0, powerUps.Length);
-        Instantiate(powerUps[index], spawnPos, Quaternion.identity);
+        // Versuche 10x einen Platz zu finden, der frei ist
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Vector2 randomOffset = Random.insideUnitCircle * spawnRadius;
+            spawnPos = (Vector2)player.position + randomOffset;
 
-        Debug.Log($"[PowerUpSpawner] Spawned {powerUps[index].name} at {spawnPos}");
+            if (!IsOccupied(spawnPos))
+            {
+                Instantiate(powerUps[Random.Range(0, powerUps.Length)], spawnPos, Quaternion.identity);
+                Debug.Log("[PowerUpSpawner] Spawned PowerUp at " + spawnPos);
+                foundSpot = true;
+                break;
+            }
+        }
+
+        if (!foundSpot)
+        {
+            Debug.LogWarning("[PowerUpSpawner] No free spawn spot found!");
+        }
+    }
+
+    bool IsOccupied(Vector2 position)
+    {
+        // Prüft, ob in der Nähe (Radius 1.5) schon ein anderes PowerUp ist
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, 1.5f);
+        foreach (var col in colliders)
+        {
+            if (col.CompareTag("PowerUp"))
+                return true;
+        }
+        return false;
     }
 }

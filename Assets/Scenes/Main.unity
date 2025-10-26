@@ -327,7 +327,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 7
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -401,12 +401,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   powerUps:
+  - {fileID: 3797867207576910207, guid: 5bd0a69a0305cd448b60ae45af6528bf, type: 3}
   - {fileID: 7263038750700441908, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
-  - {fileID: 7263038750700441908, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
-  - {fileID: 7263038750700441908, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
+  - {fileID: 8492150246445909108, guid: 5059590f4132c2243ae214b6f0165acb, type: 3}
   spawnInterval: 5
-  spawnAreaMin: {x: -8, y: -4}
-  spawnAreaMax: {x: 8, y: 4}
+  spawnRadius: 6
+  player: {fileID: 1978811930}
 --- !u!4 &608432043
 Transform:
   m_ObjectHideFlags: 0
@@ -514,7 +514,8 @@ MonoBehaviour:
   playerHealth: {fileID: 1978811932}
   enemyPrefab: {fileID: 3528550451843084299, guid: 322e9e3b36fcc6f42944d21211303dc1, type: 3}
   spawnInterval: 2
-  spawnRadius: 8
+  spawnRadius: 15
+  minDistanceFromCamera: 0.1
 --- !u!1 &1156986018
 GameObject:
   m_ObjectHideFlags: 0
