@@ -1,30 +1,33 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class PowerUp : MonoBehaviour
 {
-    public enum PowerUpType
-    {
-        Health,
-        FireRate,
-        ScoreBoost
-    }
+    public enum PowerUpType { Health, FireRate, ScoreBoost }
 
     [Header("Settings")]
     public PowerUpType type;
-    public float duration = 5f; // Nur für temporäre PowerUps
-    public int healthAmount = 1; // Für Health Pack
-    public int scoreBonus = 50; // Für Score Boost
+    public float duration = 5f;     // fÃ¼r temporÃ¤re PowerUps
+    public int healthAmount = 1;    // Health Pack
+    public int scoreBonus = 50;     // optional fÃ¼r Sofortpunkte
 
-    public AudioClip pickupSound;        // Soundeffekt beim Einsammeln
-    public GameObject pickupEffect;      // Partikeleffekt beim Einsammeln
+    public AudioClip pickupSound;
+    public GameObject pickupEffect;
+
+    [Header("UI")]
+    [SerializeField] private PowerUpUI ui;   // im Inspector zuweisen (oder auto-find)
+
+    void Awake()
+    {
+        if (ui == null) ui = FindObjectOfType<PowerUpUI>();
+    }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
 
-        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
-        PlayerShooting playerShooting = other.GetComponent<PlayerShooting>();
-        ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+        var playerHealth = other.GetComponent<PlayerHealth>();
+        var playerShooting = other.GetComponent<PlayerShooting>();
+        var scoreManager = FindObjectOfType<ScoreManager>();
 
         Debug.Log($"[PowerUp] {type} eingesammelt!");
 
@@ -33,13 +36,9 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Health:
                 if (playerHealth != null)
                 {
-                    int oldHealth = playerHealth.currentHealth;
-                    playerHealth.currentHealth = Mathf.Min(
-                        playerHealth.maxHealth,
-                        playerHealth.currentHealth + healthAmount
-                    );
-
-                    Debug.Log($"[PowerUp] +{playerHealth.currentHealth - oldHealth} HP! Aktuelle HP: {playerHealth.currentHealth}");
+                    int before = playerHealth.currentHealth;
+                    playerHealth.currentHealth = Mathf.Min(playerHealth.maxHealth, before + healthAmount);
+                    Debug.Log($"[PowerUp] +{playerHealth.currentHealth - before} HP â†’ {playerHealth.currentHealth}");
                 }
                 break;
 
@@ -48,6 +47,7 @@ public class PowerUp : MonoBehaviour
                 {
                     Debug.Log("[PowerUp] FireRate Boost aktiviert!");
                     playerShooting.ApplyFireRateBoost(duration);
+                    if (ui) ui.ShowPowerUp("\u26A1 Fire Rate", duration);
                 }
                 break;
 
@@ -56,17 +56,14 @@ public class PowerUp : MonoBehaviour
                 {
                     Debug.Log("[PowerUp] ScoreBoost aktiviert!");
                     scoreManager.ApplyScoreBoost(duration);
+                    if (ui) ui.ShowPowerUp("Score Boost", duration);
                 }
                 break;
         }
 
-        // Effekt/Sound beim Einsammeln
-        if (pickupEffect != null)
-            Instantiate(pickupEffect, transform.position, Quaternion.identity);
+        if (pickupEffect) Instantiate(pickupEffect, transform.position, Quaternion.identity);
+        if (pickupSound) AudioSource.PlayClipAtPoint(pickupSound, transform.position);
 
-        if (pickupSound != null)
-            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
-
-        Destroy(gameObject); // PowerUp verschwindet nach Einsammeln
+        Destroy(gameObject);
     }
 }
