@@ -47,7 +47,7 @@ public class PowerUp : MonoBehaviour
                 {
                     Debug.Log("[PowerUp] FireRate Boost aktiviert!");
                     playerShooting.ApplyFireRateBoost(duration);
-                    if (ui) ui.ShowPowerUp("\u26A1 Fire Rate", duration);
+                    if (ui) ui.ShowPowerUp("\u25A1 Fire Rate", duration);
                 }
                 break;
 
@@ -56,7 +56,7 @@ public class PowerUp : MonoBehaviour
                 {
                     Debug.Log("[PowerUp] ScoreBoost aktiviert!");
                     scoreManager.ApplyScoreBoost(duration);
-                    if (ui) ui.ShowPowerUp("Score Boost", duration);
+                    if (ui) ui.ShowPowerUp("🌍 Score Boost", duration);
                 }
                 break;
         }
