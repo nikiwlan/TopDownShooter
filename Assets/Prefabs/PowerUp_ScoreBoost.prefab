@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6914165748302174893}
   m_Layer: 0
   m_Name: PowerUp_ScoreBoost
-  m_TagString: Untagged
+  m_TagString: PowerUp
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11cc8c7d2a9b8a84b8aecff494273861, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  type: 0
+  type: 2
   duration: 5
   healthAmount: 0
   scoreBonus: 50

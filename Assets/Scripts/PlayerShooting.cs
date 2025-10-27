@@ -1,18 +1,35 @@
 using UnityEngine;
 using System.Collections;
 
-
 public class PlayerShooting : MonoBehaviour
 {
+    [Header("Shooting Settings")]
     public GameObject bulletPrefab;   // Referenz aufs Bullet
     public Transform firePoint;       // Position, an der Kugeln gespawnt werden
-    public float fireRate = 0.25f;    // Schussrate (Sekunden zwischen Schüssen)
+    public float fireRate = 0.25f;    // Sekunden zwischen Schüssen
+
     private float nextFireTime = 0f;
+
+    // --- FireRate Boost Variablen ---
+    private Coroutine fireRateRoutine;
+    private float baseFireRate;          // Originalwert speichern
+    private float boostedFireRate;       // Schnellere Schussrate
+    private float boostTimeLeft = 0f;
+
+    void Start()
+    {
+        baseFireRate = fireRate;
+        boostedFireRate = fireRate / 2f; // doppelt so schnell (halbe Zeit)
+    }
 
     void Update()
     {
         AimAtMouse();
         Shoot();
+
+        // Optionaler Debug-Timer
+        if (boostTimeLeft > 0f)
+            boostTimeLeft -= Time.deltaTime;
     }
 
     void AimAtMouse()
@@ -32,16 +49,29 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    public IEnumerator TempFireRateBoost(float duration)
+    // --- FireRate Boost Logik ---
+    public void ApplyFireRateBoost(float duration)
     {
-        float originalRate = fireRate;
-        fireRate /= 2f; // doppelt so schnell
-        Debug.Log("[PlayerShooting] FireRate Boost aktiv!");
+        // addiere Zeit, aber begrenze auf max. 5 Sekunden
+        boostTimeLeft = Mathf.Min(boostTimeLeft + duration, 5f);
 
-        yield return new WaitForSeconds(duration);
-
-        fireRate = originalRate;
-        Debug.Log("[PlayerShooting] FireRate Boost vorbei.");
+        // wenn noch keine Routine läuft, starte sie
+        if (fireRateRoutine == null)
+            fireRateRoutine = StartCoroutine(FireRateBoostRoutine());
     }
 
+    private IEnumerator FireRateBoostRoutine()
+    {
+        fireRate = boostedFireRate;
+        Debug.Log("[PlayerShooting] FireRate Boost aktiv!");
+
+        while (boostTimeLeft > 0f)
+        {
+            yield return null;
+        }
+
+        fireRate = baseFireRate;
+        fireRateRoutine = null;
+        Debug.Log("[PlayerShooting] FireRate Boost vorbei.");
+    }
 }

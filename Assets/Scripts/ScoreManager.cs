@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 
-[DefaultExecutionOrder(-100)]  // <-- sorgt dafür, dass Instance früh gesetzt wird
+[DefaultExecutionOrder(-100)]
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
@@ -10,6 +10,11 @@ public class ScoreManager : MonoBehaviour
     public TextMeshProUGUI scoreText;
 
     private int score = 0;
+
+    // --- ScoreBoost Variablen ---
+    private bool scoreBoostActive = false;
+    private int scoreMultiplier = 1;
+    private Coroutine boostRoutine;
 
     void Awake()
     {
@@ -20,8 +25,9 @@ public class ScoreManager : MonoBehaviour
 
     public void AddScore(int points)
     {
-        score += points;
-        Debug.Log($"[ScoreManager] AddScore({points}) -> Neuer Score: {score}");
+        int finalPoints = points * scoreMultiplier;
+        score += finalPoints;
+        Debug.Log($"[ScoreManager] AddScore({points}) x{scoreMultiplier} -> Neuer Score: {score}");
         UpdateUI();
     }
 
@@ -34,20 +40,32 @@ public class ScoreManager : MonoBehaviour
 
     void UpdateUI()
     {
-        if (scoreText != null) scoreText.text = "Score: " + score;
-        else Debug.LogWarning("[ScoreManager] scoreText ist nicht zugewiesen!");
+        if (scoreText != null)
+            scoreText.text = "Score: " + score;
+        else
+            Debug.LogWarning("[ScoreManager] scoreText ist nicht zugewiesen!");
     }
 
-    public IEnumerator TempScoreBoost(float duration, int bonus)
+    // ScoreBoost-Funktion
+    public void ApplyScoreBoost(float duration)
     {
-        Debug.Log("[ScoreManager] Temporärer ScoreBoost gestartet.");
+        if (boostRoutine != null)
+            StopCoroutine(boostRoutine);
 
-        score += bonus;
-        UpdateUI();
+        boostRoutine = StartCoroutine(TempScoreBoost(duration));
+    }
+
+    private IEnumerator TempScoreBoost(float duration)
+    {
+        scoreBoostActive = true;
+        scoreMultiplier = 2; // doppelte Punkte
+        Debug.Log($"[ScoreManager] ScoreBoost aktiviert für {duration} Sekunden.");
 
         yield return new WaitForSeconds(duration);
 
-        Debug.Log("[ScoreManager] ScoreBoost vorbei. Score bleibt: " + score);
+        scoreMultiplier = 1;
+        scoreBoostActive = false;
+        boostRoutine = null;
+        Debug.Log("[ScoreManager] ScoreBoost abgelaufen.");
     }
-
 }

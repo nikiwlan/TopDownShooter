@@ -51,11 +51,14 @@ public class PowerUpSpawner : MonoBehaviour
     bool IsOccupied(Vector2 position)
     {
         // Prüft, ob in der Nähe (Radius 1.5) schon ein anderes PowerUp ist
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, 1.5f);
+        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, 1.2f);
         foreach (var col in colliders)
         {
             if (col.CompareTag("PowerUp"))
+            {
+                Debug.Log("[PowerUpSpawner] Platz bei " + position + " ist belegt durch: " + col.name);
                 return true;
+            }
         }
         return false;
     }

@@ -18,7 +18,6 @@ public class PowerUp : MonoBehaviour
     public AudioClip pickupSound;        // Soundeffekt beim Einsammeln
     public GameObject pickupEffect;      // Partikeleffekt beim Einsammeln
 
-
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
@@ -48,7 +47,7 @@ public class PowerUp : MonoBehaviour
                 if (playerShooting != null)
                 {
                     Debug.Log("[PowerUp] FireRate Boost aktiviert!");
-                    playerShooting.StartCoroutine(playerShooting.TempFireRateBoost(duration));
+                    playerShooting.ApplyFireRateBoost(duration);
                 }
                 break;
 
@@ -56,12 +55,12 @@ public class PowerUp : MonoBehaviour
                 if (scoreManager != null)
                 {
                     Debug.Log("[PowerUp] ScoreBoost aktiviert!");
-                    scoreManager.StartCoroutine(scoreManager.TempScoreBoost(duration, scoreBonus));
+                    scoreManager.ApplyScoreBoost(duration);
                 }
                 break;
         }
 
-        // Optional: visueller oder akustischer Effekt beim Aufsammeln
+        // Effekt/Sound beim Einsammeln
         if (pickupEffect != null)
             Instantiate(pickupEffect, transform.position, Quaternion.identity);
 
