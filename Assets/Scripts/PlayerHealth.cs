@@ -1,32 +1,66 @@
-using UnityEngine;
-using UnityEngine.SceneManagement; // Für späteren Game-Over-Reload
+ï»¿using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
+    [Header("Health Settings")]
     public int maxHealth = 3;
-    public int currentHealth;
+    [HideInInspector] public int currentHealth;
+
+    [Header("UI References")]
+    public HeartUIManager heartUIManager;
+
+    void Awake()
+    {
+        currentHealth = maxHealth;
+        Debug.Log($"[PlayerHealth/Awake] maxHealth={maxHealth}, currentHealth={currentHealth}, UI set? {heartUIManager != null}");
+
+        if (heartUIManager != null)
+            heartUIManager.UpdateHearts(currentHealth);
+    }
 
     void Start()
     {
-        currentHealth = maxHealth;
+        Debug.Log("[PlayerHealth/Start] calling UpdateHearts again for safety.");
+        if (heartUIManager != null)
+            heartUIManager.UpdateHearts(currentHealth);
+        else
+            Debug.LogWarning("[PlayerHealth/Start] heartUIManager is NULL. Bitte im Inspector PlayerHealth -> Heart UI Manager zuweisen (UI-Objekt).");
     }
 
     public void TakeDamage(int amount)
     {
-        currentHealth -= amount;
-        Debug.Log("Player HP: " + currentHealth);
+        int before = currentHealth;
+        currentHealth = Mathf.Max(currentHealth - amount, 0);
+        Debug.Log($"[PlayerHealth/TakeDamage] {before} -> {currentHealth}");
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        if (heartUIManager != null) heartUIManager.UpdateHearts(currentHealth);
+        if (currentHealth <= 0) Die();
     }
+
+    public void Heal(int amount)
+    {
+        int before = currentHealth;
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+
+        if (heartUIManager != null)
+        {
+            // Zuerst nur die Animation abspielen (Herz fliegt)
+            heartUIManager.PlayHeartPickupEffect();
+
+            // Nach 1 Sekunde die UI aktualisieren (Herz oben sichtbar machen)
+            LeanTween.delayedCall(1.5f, () =>
+            {
+                heartUIManager.UpdateHearts(currentHealth);
+            });
+        }
+
+        Debug.Log($"[Heal] +{currentHealth - before} HP â†’ {currentHealth}");
+    }
+
 
     void Die()
     {
-        Debug.Log("Player died!");
-        // Später: SceneLoader.GameOver()
-        gameObject.SetActive(false); // vorerst einfach deaktivieren
+        Debug.Log("[PlayerHealth/Die] Player disabled.");
+        gameObject.SetActive(false);
     }
 }
-

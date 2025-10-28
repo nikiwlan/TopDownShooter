@@ -6,15 +6,15 @@ public class PowerUp : MonoBehaviour
 
     [Header("Settings")]
     public PowerUpType type;
-    public float duration = 5f;     // für temporäre PowerUps
+    public float duration = 5f;     // Für temporäre PowerUps
     public int healthAmount = 1;    // Health Pack
-    public int scoreBonus = 50;     // optional für Sofortpunkte
+    public int scoreBonus = 50;     // Optional für Sofortpunkte
 
     public AudioClip pickupSound;
     public GameObject pickupEffect;
 
     [Header("UI")]
-    [SerializeField] private PowerUpUI ui;   // im Inspector zuweisen (oder auto-find)
+    [SerializeField] private PowerUpUI ui;   // Im Inspector zuweisen (oder auto-find)
 
     void Awake()
     {
@@ -29,19 +29,24 @@ public class PowerUp : MonoBehaviour
         var playerShooting = other.GetComponent<PlayerShooting>();
         var scoreManager = FindObjectOfType<ScoreManager>();
 
-        Debug.Log($"[PowerUp] {type} eingesammelt!");
+        Debug.Log($"[PowerUp] {type} eingesammelt von {other.name}");
 
         switch (type)
         {
+            // ❤️ HEALTH POWER-UP
             case PowerUpType.Health:
                 if (playerHealth != null)
                 {
-                    int before = playerHealth.currentHealth;
-                    playerHealth.currentHealth = Mathf.Min(playerHealth.maxHealth, before + healthAmount);
-                    Debug.Log($"[PowerUp] +{playerHealth.currentHealth - before} HP → {playerHealth.currentHealth}");
+                    Debug.Log("[PowerUp] Health-Pickup erkannt!");
+                    playerHealth.Heal(healthAmount);
+                }
+                else
+                {
+                    Debug.LogWarning("[PowerUp] Kein PlayerHealth gefunden!");
                 }
                 break;
 
+            // 🔫 FIRE RATE BOOST
             case PowerUpType.FireRate:
                 if (playerShooting != null)
                 {
@@ -49,8 +54,13 @@ public class PowerUp : MonoBehaviour
                     playerShooting.ApplyFireRateBoost(duration);
                     if (ui) ui.ShowPowerUp(PowerUpType.FireRate, "FIRE RATE BOOST", duration);
                 }
+                else
+                {
+                    Debug.LogWarning("[PowerUp] Kein PlayerShooting gefunden!");
+                }
                 break;
 
+            // 💰 SCORE BOOST
             case PowerUpType.ScoreBoost:
                 if (scoreManager != null)
                 {
@@ -58,12 +68,21 @@ public class PowerUp : MonoBehaviour
                     scoreManager.ApplyScoreBoost(duration);
                     if (ui) ui.ShowPowerUp(PowerUpType.ScoreBoost, "SCORE BOOST", duration);
                 }
+                else
+                {
+                    Debug.LogWarning("[PowerUp] Kein ScoreManager gefunden!");
+                }
                 break;
         }
 
-        if (pickupEffect) Instantiate(pickupEffect, transform.position, Quaternion.identity);
-        if (pickupSound) AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+        // ✨ Effekte & Sound
+        if (pickupEffect)
+            Instantiate(pickupEffect, transform.position, Quaternion.identity);
 
+        if (pickupSound)
+            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+
+        Debug.Log($"[PowerUp] {type} erfolgreich angewendet – Objekt wird zerstört.");
         Destroy(gameObject);
     }
 }
