@@ -5,16 +5,25 @@ using System.Collections;
 
 public class PowerUpUI : MonoBehaviour
 {
+    // === [NEU] ICON-FELDER ===================================================
+    [Header("Icon")]
+    [SerializeField] private Image icon;                // UI/PowerUpUI/Icon
+
+    [Header("Icon Sprites")]
+    [SerializeField] private Sprite flashSprite;        // ⚡
+    [SerializeField] private Sprite cashSprite;         // 💰
+    [SerializeField] private Sprite scoreSprite;        // ⭐ optional
+    // ========================================================================
+
     [Header("UI References")]
     [SerializeField] TextMeshProUGUI powerUpText;
     [SerializeField] Slider durationSlider;
-    [SerializeField] Image fillImage;   // -> Slider/Fill Area/Fill
-    [SerializeField] Image fillGlow;    // optional
-    [SerializeField] RectTransform shine; // optional
+    [SerializeField] Image fillImage;           // -> Slider/Fill Area/Fill
+    [SerializeField] Image fillGlow;            // optional
+    [SerializeField] RectTransform shine;       // optional
 
     [Header("Look & Feel")]
-    // WICHTIG: Gradient: 0 = ROT, 1 = GRÜN  (so passt die Logik unten)
-    [SerializeField] Gradient fillGradient;
+    [SerializeField] Gradient fillGradient;     // 0=rot, 1=grün
     [SerializeField] float warnThreshold = 0.15f;
     [SerializeField] float smooth = 10f;
     [SerializeField] float shineSpeed = 400f;
@@ -27,13 +36,15 @@ public class PowerUpUI : MonoBehaviour
     [SerializeField] AudioClip sfxEnd;
 
     Coroutine running;
-
     float target01;   // 1 -> 0 (voll -> leer)
     float current01;
 
     void Start()
     {
-        // Weiß/Background sicher AUS (damit nie was Weißes zu sehen ist)
+        // [NEU] Icon zunächst verbergen
+        if (icon) icon.enabled = false;
+
+        // -- dein bestehender Start-Code --
         if (durationSlider)
         {
             durationSlider.wholeNumbers = false;
@@ -42,20 +53,18 @@ public class PowerUpUI : MonoBehaviour
             durationSlider.targetGraphic = null;
             durationSlider.handleRect = null;
 
-            // Background-Image aus
             var imgs = durationSlider.GetComponentsInChildren<Image>(true);
             foreach (var img in imgs)
                 if (img.gameObject.name == "Background") img.enabled = false;
         }
 
-        // Fill korrekt als "Filled/Horizontal"
         if (fillImage)
         {
             fillImage.type = Image.Type.Filled;
             fillImage.fillMethod = Image.FillMethod.Horizontal;
             fillImage.fillOrigin = 0; // Left
-            fillImage.color = Color.white; // wird per Gradient eingefärbt
-            fillImage.enabled = false;     // bis wir >0 haben
+            fillImage.color = Color.white;
+            fillImage.enabled = false;
         }
 
         if (fillGlow) fillGlow.enabled = false;
@@ -69,19 +78,12 @@ public class PowerUpUI : MonoBehaviour
     {
         if (!durationSlider || !durationSlider.gameObject.activeSelf) return;
 
-        // smooth von target01 -> current01
         current01 = Mathf.Lerp(current01, target01, 1f - Mathf.Exp(-smooth * Time.deltaTime));
-
-        // Slider bekommt „vollen Start, wird kleiner“:
         durationSlider.value = current01 * durationSlider.maxValue;
 
-        // Farbe: 1 = grün, 0 = rot (Gradient: 0=rot,1=grün)
         if (fillImage)
         {
-            if (current01 <= 0.001f)
-            {
-                fillImage.enabled = false; // komplett weg bei 0
-            }
+            if (current01 <= 0.001f) fillImage.enabled = false;
             else
             {
                 if (!fillImage.enabled) fillImage.enabled = true;
@@ -89,7 +91,6 @@ public class PowerUpUI : MonoBehaviour
             }
         }
 
-        // Warn-Puls (optional)
         if (fillGlow)
         {
             if (current01 < warnThreshold && current01 > 0f)
@@ -102,11 +103,40 @@ public class PowerUpUI : MonoBehaviour
         }
     }
 
+    // === deine bestehende API (ohne Icon) bleibt erhalten ====================
     public void ShowPowerUp(string label, float duration)
     {
         if (running != null) StopCoroutine(running);
         running = StartCoroutine(ShowRoutine(label, duration));
     }
+    // ========================================================================
+
+    // === [NEU] Overload: zeigt Text + wählt automatisch das Icon ============
+    public void ShowPowerUp(PowerUp.PowerUpType type, string label, float duration)
+    {
+        // Icon auswählen
+        if (icon)
+        {
+            icon.sprite = GetSprite(type);
+            icon.enabled = icon.sprite != null;   // nur anzeigen, wenn Sprite vorhanden
+        }
+
+        // den bestehenden Flow (Text + Slider) verwenden
+        ShowPowerUp(label, duration);
+    }
+
+    // Sprite-Zuweisung je nach PowerUp-Typ
+    private Sprite GetSprite(PowerUp.PowerUpType t)
+    {
+        switch (t)
+        {
+            case PowerUp.PowerUpType.FireRate: return flashSprite;   // ⚡
+            case PowerUp.PowerUpType.ScoreBoost: return cashSprite;    // 💰 (oder scoreSprite)
+            // case PowerUp.PowerUpType.Health:  return heartSprite;   // falls du willst
+            default: return null;
+        }
+    }
+    // ========================================================================
 
     IEnumerator ShowRoutine(string label, float duration)
     {
@@ -116,23 +146,21 @@ public class PowerUpUI : MonoBehaviour
         if (durationSlider)
         {
             durationSlider.maxValue = duration;
-            durationSlider.value = duration;           // START: VOLL
+            durationSlider.value = duration;  // START: VOLL
             durationSlider.gameObject.SetActive(true);
         }
 
-        // Startzustand: voll
         target01 = 1f;
         current01 = 1f;
 
         if (sfxSource && sfxStart) sfxSource.PlayOneShot(sfxStart);
         if (shine && durationSlider) StartCoroutine(ShineWipeOnce());
 
-        // Zeit läuft runter
         float t = duration;
         while (t > 0f)
         {
             t -= Time.deltaTime;
-            target01 = Mathf.Clamp01(t / duration);    // 1 -> 0
+            target01 = Mathf.Clamp01(t / duration);
             yield return null;
         }
 
@@ -143,6 +171,9 @@ public class PowerUpUI : MonoBehaviour
         if (durationSlider) durationSlider.gameObject.SetActive(false);
         if (fillGlow) fillGlow.enabled = false;
         if (shine) shine.gameObject.SetActive(false);
+
+        // [NEU] Icon wieder ausblenden & Sprite löschen
+        if (icon) { icon.enabled = false; icon.sprite = null; }
 
         running = null;
     }
