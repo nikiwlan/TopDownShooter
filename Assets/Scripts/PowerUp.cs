@@ -19,9 +19,14 @@ public class PowerUp : MonoBehaviour
     void Awake()
     {
         if (ui == null) ui = FindObjectOfType<PowerUpUI>();
+
+        // 🟢 Sicherstellen, dass PowerUps immer auf der Y=0 Ebene liegen
+        Vector3 pos = transform.position;
+        pos.y = 0f;
+        transform.position = pos;
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    private void OnTriggerEnter(Collider other)  // 🔄 2D -> 3D geändert
     {
         if (!other.CompareTag("Player")) return;
 

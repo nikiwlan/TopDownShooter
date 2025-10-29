@@ -2,10 +2,13 @@
 
 public class EnemySpawner : MonoBehaviour
 {
+    [Header("References")]
     public PlayerHealth playerHealth;
     public GameObject enemyPrefab;
+
+    [Header("Spawn Settings")]
     public float spawnInterval = 2f;
-    public float spawnRadius = 10f;      // etwas größer, damit Gegner außerhalb spawnen
+    public float spawnRadius = 10f;           // Abstand um Spieler
     public float minDistanceFromCamera = 0.1f; // wie weit außerhalb des Sichtfelds
 
     private Transform player;
@@ -14,7 +17,7 @@ public class EnemySpawner : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        player = GameObject.FindGameObjectWithTag("Player")?.transform;
         mainCam = Camera.main;
         timer = spawnInterval;
     }
@@ -23,13 +26,13 @@ public class EnemySpawner : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            Debug.LogWarning("PlayerHealth ist im Spawner nicht gesetzt!");
+            Debug.LogWarning("[EnemySpawner] PlayerHealth ist im Spawner nicht gesetzt!");
             return;
         }
 
         if (playerHealth.currentHealth <= 0)
         {
-            Debug.Log("Spieler ist tot – Spawner stoppt und löscht alle Gegner.");
+            Debug.Log("[EnemySpawner] Spieler ist tot – Spawner stoppt und löscht alle Gegner.");
 
             GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
             foreach (GameObject enemy in enemies)
@@ -56,11 +59,15 @@ public class EnemySpawner : MonoBehaviour
         int maxAttempts = 20;
         for (int i = 0; i < maxAttempts; i++)
         {
-            // Zufällige Richtung rund um den Spieler
-            Vector2 spawnDir = Random.insideUnitCircle.normalized;
-            Vector3 spawnPos = player.position + (Vector3)(spawnDir * spawnRadius);
+            // 🔄 Zufällige Richtung im Kreis (XZ-Ebene)
+            Vector2 spawnDir2D = Random.insideUnitCircle.normalized;
+            Vector3 spawnPos = new Vector3(
+                player.position.x + spawnDir2D.x * spawnRadius,
+                0f, // 🟢 immer auf Bodenhöhe
+                player.position.z + spawnDir2D.y * spawnRadius
+            );
 
-            // Position in Viewport-Koordinaten umwandeln (0–1 = sichtbar)
+            // Kamera-Position in Viewport umwandeln
             Vector3 viewportPos = mainCam.WorldToViewportPoint(spawnPos);
 
             // Prüfen, ob Punkt außerhalb des Bildschirms liegt

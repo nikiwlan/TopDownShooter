@@ -2,10 +2,11 @@
 
 public class EnemyHealth : MonoBehaviour
 {
+    [Header("Settings")]
     public int health = 1;
     public int pointsOnKill = 10;
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter(Collider collision) // 🔄 2D → 3D
     {
         Debug.Log("[EnemyHealth] Enemy triggered with: " + collision.name);
 
@@ -17,7 +18,7 @@ public class EnemyHealth : MonoBehaviour
                 playerHealth.TakeDamage(1);
             }
 
-            Die(); // 👈 Statt direkt zerstören
+            Die(); // 👈 Gegner verschwindet nach Kollision mit Spieler
         }
     }
 

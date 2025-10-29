@@ -1,22 +1,29 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public float speed = 12f;
+    [Header("Bullet Settings")]
+    public float speed = 20f;
     public float lifetime = 2f;
 
     void Start()
     {
-        // Bullet zerst�rt sich nach X Sekunden
+        // Zerstöre die Kugel nach einer bestimmten Zeit
         Destroy(gameObject, lifetime);
+
+        // 🟢 Sicherstellen, dass Kugel auf Bodenebene bleibt
+        Vector3 pos = transform.position;
+        pos.y = 0f;
+        transform.position = pos;
     }
 
     void Update()
     {
-        // Bewege das Bullet nach oben (lokale Richtung)
-        transform.Translate(Vector2.up * speed * Time.deltaTime);
+        // Bewegung in Flugrichtung (vorwärts, also Z)
+        transform.Translate(Vector3.forward * speed * Time.deltaTime, Space.Self);
     }
-    void OnTriggerEnter2D(Collider2D other)
+
+    void OnTriggerEnter(Collider other) // 🔄 2D → 3D
     {
         if (other.CompareTag("Enemy"))
         {
@@ -25,9 +32,8 @@ public class Bullet : MonoBehaviour
             if (enemy != null)
                 enemy.TakeDamage(1);
 
-            // Kugel zerst�ren
+            // Kugel zerstören
             Destroy(gameObject);
         }
     }
-
 }

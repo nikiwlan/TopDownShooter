@@ -1,7 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PowerUpSpawner : MonoBehaviour
 {
+    [Header("Power-Up Einstellungen")]
     public GameObject[] powerUps;
     public float spawnInterval = 5f;
     public float spawnRadius = 6f;
@@ -23,15 +24,16 @@ public class PowerUpSpawner : MonoBehaviour
     {
         if (powerUps.Length == 0 || player == null) return;
 
-        Vector2 spawnPos;
+        Vector3 spawnPos;
         int maxAttempts = 10;
         bool foundSpot = false;
 
-        // Versuche 10x einen Platz zu finden, der frei ist
+        // Versuche 10x einen freien Platz zu finden
         for (int i = 0; i < maxAttempts; i++)
         {
-            Vector2 randomOffset = Random.insideUnitCircle * spawnRadius;
-            spawnPos = (Vector2)player.position + randomOffset;
+            // 🔄 Zufälliger Punkt im Kreis (XZ-Ebene!)
+            Vector2 randomOffset2D = Random.insideUnitCircle * spawnRadius;
+            spawnPos = new Vector3(player.position.x + randomOffset2D.x, 0f, player.position.z + randomOffset2D.y);
 
             if (!IsOccupied(spawnPos))
             {
@@ -48,10 +50,10 @@ public class PowerUpSpawner : MonoBehaviour
         }
     }
 
-    bool IsOccupied(Vector2 position)
+    bool IsOccupied(Vector3 position)
     {
-        // Pr�ft, ob in der N�he (Radius 1.5) schon ein anderes PowerUp ist
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(position, 1.2f);
+        // Prüft, ob in der Nähe (Radius 1.2) schon ein anderes PowerUp ist
+        Collider[] colliders = Physics.OverlapSphere(position, 1.2f);
         foreach (var col in colliders)
         {
             if (col.CompareTag("PowerUp"))
