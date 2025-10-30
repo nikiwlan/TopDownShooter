@@ -11,56 +11,59 @@ public class PlayerHealth : MonoBehaviour
 
     void Awake()
     {
+        // Lebenspunkte intern setzen
         currentHealth = maxHealth;
-        Debug.Log($"[PlayerHealth/Awake] maxHealth={maxHealth}, currentHealth={currentHealth}, UI set? {heartUIManager != null}");
-
-        if (heartUIManager != null)
-            heartUIManager.UpdateHearts(currentHealth);
     }
 
     void Start()
     {
-        Debug.Log("[PlayerHealth/Start] calling UpdateHearts again for safety.");
+        // Erst jetzt UI updaten, wenn alles initialisiert ist
         if (heartUIManager != null)
+        {
             heartUIManager.UpdateHearts(currentHealth);
+            Debug.Log($"[PlayerHealth/Start] Player startet mit {currentHealth}/{maxHealth} HP");
+        }
         else
-            Debug.LogWarning("[PlayerHealth/Start] heartUIManager is NULL. Bitte im Inspector PlayerHealth -> Heart UI Manager zuweisen (UI-Objekt).");
+        {
+            Debug.LogWarning("[PlayerHealth] Kein HeartUIManager zugewiesen!");
+        }
     }
 
     public void TakeDamage(int amount)
     {
+        if (currentHealth <= 0) return; // Schon tot
+
         int before = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        Debug.Log($"[PlayerHealth/TakeDamage] {before} -> {currentHealth}");
+        Debug.Log($"[PlayerHealth] Schaden: {before} → {currentHealth}");
 
-        if (heartUIManager != null) heartUIManager.UpdateHearts(currentHealth);
-        if (currentHealth <= 0) Die();
+        heartUIManager?.UpdateHearts(currentHealth);
+
+        if (currentHealth <= 0)
+            Die();
     }
 
     public void Heal(int amount)
     {
+        if (currentHealth <= 0) return; // Kein Heal bei Tod
+
         int before = currentHealth;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        Debug.Log($"[PlayerHealth] Heilung: {before} → {currentHealth}");
 
         if (heartUIManager != null)
         {
-            // Zuerst nur die Animation abspielen (Herz fliegt)
             heartUIManager.PlayHeartPickupEffect();
-
-            // Nach 1 Sekunde die UI aktualisieren (Herz oben sichtbar machen)
             LeanTween.delayedCall(1.5f, () =>
             {
                 heartUIManager.UpdateHearts(currentHealth);
             });
         }
-
-        Debug.Log($"[Heal] +{currentHealth - before} HP → {currentHealth}");
     }
 
-
-    void Die()
+    private void Die()
     {
-        Debug.Log("[PlayerHealth/Die] Player disabled.");
+        Debug.Log("[PlayerHealth] Spieler gestorben – Objekt deaktiviert.");
         gameObject.SetActive(false);
     }
 }

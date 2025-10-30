@@ -8,25 +8,37 @@ public class PlayerMovement : MonoBehaviour
 
     private Rigidbody rb;
     private Vector3 input;
+    private Vector3 moveDirection;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ; // Sicherheit
+        rb.useGravity = false; // 2.5D → keine Schwerkraft nötig
     }
 
     void Update()
     {
-        // Bewegungseingaben (WASD oder Pfeiltasten)
+        // Eingaben erfassen (WASD oder Pfeiltasten)
         input.x = Input.GetAxisRaw("Horizontal");
         input.z = Input.GetAxisRaw("Vertical");
-        input.y = 0f; // 🟢 bleibt auf Bodenebene
-        input = input.normalized; // verhindert schnellere Diagonalen
+        input.y = 0f;
+
+        // Diagonale normalisieren (gleiches Tempo in alle Richtungen)
+        moveDirection = input.normalized;
     }
 
     void FixedUpdate()
     {
         // Bewegung in XZ-Ebene
-        Vector3 velocity = input * moveSpeed;
-        rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+        Vector3 velocity = moveDirection * moveSpeed * Time.fixedDeltaTime;
+        rb.MovePosition(rb.position + velocity);
+
+        // Optional: Spieler schaut in Bewegungsrichtung
+        if (moveDirection != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, 0.2f));
+        }
     }
 }

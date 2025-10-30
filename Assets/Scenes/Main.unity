@@ -1146,10 +1146,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 1978811932}
-  enemyPrefab: {fileID: 3528550451843084299, guid: 322e9e3b36fcc6f42944d21211303dc1, type: 3}
+  fastEnemyPrefab: {fileID: 7356063783650253986, guid: 064caa12ead1b10458dbf963b485fe3f, type: 3}
+  tankEnemyPrefab: {fileID: 2274196589772995609, guid: f12573ea007087f4eb8adf8b0a959ce9, type: 3}
+  rangedEnemyPrefab: {fileID: 212501291692081593, guid: d331bf182a11fa84d9315add9d57f9d0, type: 3}
   spawnInterval: 2
-  spawnRadius: 15
-  minDistanceFromCamera: 0.1
+  maxEnemies: 0
+  spawnPositions:
+  - {x: 8.914398, y: 0, z: 32.58257}
+  - {x: 9.253807, y: 0, z: -24.72913}
+  fastEnemyChance: 0.6
+  tankEnemyChance: 0.2
+  rangedEnemyChance: 0.2
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0
