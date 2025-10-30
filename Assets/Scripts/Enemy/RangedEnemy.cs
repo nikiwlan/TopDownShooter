@@ -1,16 +1,20 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class RangedEnemy : EnemyBase
 {
+    [Header("Movement & Attack Settings")]
     public float moveSpeed = 3f;
-    public float attackRange = 8f;
+    public float attackRange = 8f;       // maximale Schussreichweite
+    public float approachDistance = 6f;  // Distanz, bis wohin er läuft
+    public float stopThreshold = 0.5f;   // wie nah er an approachDistance heranlaufen darf
     public float shootCooldown = 1.5f;
     public GameObject projectilePrefab;
 
     private Rigidbody rb;
     private Transform playerTransform;
     private float shootTimer;
+    private bool isWithinRange;
 
     protected override void Start()
     {
@@ -22,34 +26,61 @@ public class RangedEnemy : EnemyBase
     void Update()
     {
         shootTimer -= Time.deltaTime;
+
+        // Wenn Spieler in Reichweite → schießen
+        if (isWithinRange && shootTimer <= 0f)
+        {
+            Vector3 dir = (playerTransform.position - transform.position).normalized;
+            dir.y = 0;
+            Shoot(dir);
+            shootTimer = shootCooldown;
+        }
     }
 
     void FixedUpdate()
     {
         if (playerTransform == null) return;
 
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-        Vector3 dir = (playerTransform.position - transform.position);
-        dir.y = 0;
-        dir.Normalize();
+        Vector3 toPlayer = playerTransform.position - transform.position;
+        toPlayer.y = 0;
+        float distance = toPlayer.magnitude;
+        Vector3 direction = toPlayer.normalized;
 
-        if (distance > attackRange)
+        // 🧠 Lauf nur, wenn Spieler weiter als die gewünschte Distanz ist
+        if (distance > approachDistance + stopThreshold)
         {
-            rb.MovePosition(rb.position + dir * moveSpeed * Time.fixedDeltaTime);
+            rb.MovePosition(rb.position + direction * moveSpeed * Time.fixedDeltaTime);
+            isWithinRange = false;
         }
-        else if (shootTimer <= 0f)
+        else if (distance < approachDistance - stopThreshold)
         {
-            Shoot(dir);
-            shootTimer = shootCooldown;
+            // Spieler zu nah → einfach stehen bleiben (nicht rückwärtslaufen)
+            isWithinRange = true;
+        }
+        else
+        {
+            // Wir sind in der „Komfortzone“ → nicht bewegen
+            isWithinRange = true;
+        }
+
+        // Optional: Gegner schaut zum Spieler
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(direction);
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRot, 0.2f));
         }
     }
 
     void Shoot(Vector3 dir)
     {
         if (projectilePrefab == null) return;
-        GameObject proj = Instantiate(projectilePrefab, transform.position + dir * 1.5f, Quaternion.identity);
-        Rigidbody rbProj = proj.GetComponent<Rigidbody>();
-        rbProj.velocity = dir * 10f;
-        Destroy(proj, 5f);
+
+        Vector3 spawnPos = transform.position + dir * 1.2f + Vector3.up * 0.5f;
+        GameObject projGO = Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(dir));
+
+        // Richtung direkt übergeben
+        ProjectileEnemy projectile = projGO.GetComponent<ProjectileEnemy>();
+        if (projectile != null)
+            projectile.Init(dir);
     }
 }

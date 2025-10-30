@@ -26,9 +26,9 @@ public class EnemySpawner : MonoBehaviour
     };
 
     [Header("Spawn Wahrscheinlichkeiten (Summe = 1.0)")]
-    [Range(0f, 1f)] public float fastEnemyChance = 0.6f;
+    [Range(0f, 1f)] public float fastEnemyChance = 0.2f;
     [Range(0f, 1f)] public float tankEnemyChance = 0.2f;
-    [Range(0f, 1f)] public float rangedEnemyChance = 0.2f;
+    [Range(0f, 1f)] public float rangedEnemyChance = 0.6f;
 
     private float timer;
 
