@@ -2,81 +2,72 @@
 
 public class PowerUp : MonoBehaviour
 {
-    public enum PowerUpType { Health, FireRate, ScoreBoost }
+    public enum PowerUpType { Health, FireRate, ScoreBoost, SpeedBoost, TimeSlow }
 
     [Header("Settings")]
     public PowerUpType type;
-    public float duration = 5f;     // Für temporäre PowerUps
-    public int healthAmount = 1;    // Health Pack
-    public int scoreBonus = 50;     // Optional für Sofortpunkte
-
+    public float duration = 5f;
+    public int healthAmount = 1;
+    public int scoreBonus = 50;
     public AudioClip pickupSound;
     public GameObject pickupEffect;
 
-    [Header("UI")]
-    [SerializeField] private PowerUpUI ui;   // Im Inspector zuweisen (oder auto-find)
-
-    void Awake()
+    private void Awake()
     {
-        if (ui == null) ui = FindObjectOfType<PowerUpUI>();
-
-        // 🟢 Sicherstellen, dass PowerUps immer auf der Y=0 Ebene liegen
+        // PowerUps sollen immer auf Y=0 liegen
         Vector3 pos = transform.position;
         pos.y = 0f;
         transform.position = pos;
     }
 
-    private void OnTriggerEnter(Collider other)  // 🔄 2D -> 3D geändert
+    private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
 
         var playerHealth = other.GetComponent<PlayerHealth>();
         var playerShooting = other.GetComponent<PlayerShooting>();
+        var playerMovement = other.GetComponent<PlayerMovement>();
         var scoreManager = FindObjectOfType<ScoreManager>();
+        var enemyControllers = FindObjectsOfType<EnemyController>();
+        var uiManager = FindObjectOfType<PowerUpUIManager>();
 
         Debug.Log($"[PowerUp] {type} eingesammelt von {other.name}");
 
         switch (type)
         {
-            // ❤️ HEALTH POWER-UP
             case PowerUpType.Health:
                 if (playerHealth != null)
-                {
-                    Debug.Log("[PowerUp] Health-Pickup erkannt!");
                     playerHealth.Heal(healthAmount);
-                }
-                else
-                {
-                    Debug.LogWarning("[PowerUp] Kein PlayerHealth gefunden!");
-                }
                 break;
 
-            // 🔫 FIRE RATE BOOST
             case PowerUpType.FireRate:
                 if (playerShooting != null)
                 {
-                    Debug.Log("[PowerUp] FireRate Boost aktiviert!");
                     playerShooting.ApplyFireRateBoost(duration);
-                    if (ui) ui.ShowPowerUp(PowerUpType.FireRate, "FIRE RATE BOOST", duration);
-                }
-                else
-                {
-                    Debug.LogWarning("[PowerUp] Kein PlayerShooting gefunden!");
+                    if (uiManager) uiManager.ShowUI(PowerUpType.FireRate, duration);
                 }
                 break;
 
-            // 💰 SCORE BOOST
             case PowerUpType.ScoreBoost:
                 if (scoreManager != null)
                 {
-                    Debug.Log("[PowerUp] ScoreBoost aktiviert!");
                     scoreManager.ApplyScoreBoost(duration);
-                    if (ui) ui.ShowPowerUp(PowerUpType.ScoreBoost, "SCORE BOOST", duration);
+                    if (uiManager) uiManager.ShowUI(PowerUpType.ScoreBoost, duration);
                 }
-                else
+                break;
+
+            case PowerUpType.SpeedBoost:
+                if (playerMovement != null)
                 {
-                    Debug.LogWarning("[PowerUp] Kein ScoreManager gefunden!");
+                    playerMovement.ApplySpeedBoost(duration, 1.5f); // 50 % schneller
+                    if (uiManager) uiManager.ShowUI(PowerUpType.SpeedBoost, duration);
                 }
+                break;
+
+            case PowerUpType.TimeSlow:
+                foreach (var enemy in enemyControllers)
+                    enemy.ApplyTimeSlow(duration, 0.5f);
+                if (uiManager) uiManager.ShowUI(PowerUpType.TimeSlow, duration);
                 break;
         }
 
@@ -87,7 +78,6 @@ public class PowerUp : MonoBehaviour
         if (pickupSound)
             AudioSource.PlayClipAtPoint(pickupSound, transform.position);
 
-        Debug.Log($"[PowerUp] {type} erfolgreich angewendet – Objekt wird zerstört.");
         Destroy(gameObject);
     }
 }

@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: -7010379168561404261}
   - component: {fileID: 8899464504797245080}
   m_Layer: 0
-  m_Name: PowerUp_FireRate
+  m_Name: PowerUp_SpeedBoost
   m_TagString: PowerUp
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -98,7 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11cc8c7d2a9b8a84b8aecff494273861, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  type: 1
+  type: 3
   duration: 5
   healthAmount: 1
   scoreBonus: 50

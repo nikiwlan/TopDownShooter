@@ -5,46 +5,37 @@ using System.Collections;
 
 public class PowerUpUI : MonoBehaviour
 {
-    // === [NEU] ICON-FELDER ===================================================
-    [Header("Icon")]
-    [SerializeField] private Image icon;                // UI/PowerUpUI/Icon
-
-    [Header("Icon Sprites")]
-    [SerializeField] private Sprite flashSprite;        // ⚡
-    [SerializeField] private Sprite cashSprite;         // 💰
-    [SerializeField] private Sprite scoreSprite;        // ⭐ optional
-    // ========================================================================
-
     [Header("UI References")]
-    [SerializeField] TextMeshProUGUI powerUpText;
-    [SerializeField] Slider durationSlider;
-    [SerializeField] Image fillImage;           // -> Slider/Fill Area/Fill
-    [SerializeField] Image fillGlow;            // optional
-    [SerializeField] RectTransform shine;       // optional
+    [SerializeField] private Image iconImage;
+    [SerializeField] private TextMeshProUGUI powerUpText;
+    [SerializeField] private Slider durationSlider;
+    [SerializeField] private Image fillImage;
+    [SerializeField] private Image fillGlow;
+    [SerializeField] private RectTransform shine;
 
     [Header("Look & Feel")]
-    [SerializeField] Gradient fillGradient;     // 0=rot, 1=grün
-    [SerializeField] float warnThreshold = 0.15f;
-    [SerializeField] float smooth = 10f;
-    [SerializeField] float shineSpeed = 400f;
-    [SerializeField] float glowAlpha = 0.3f;
-    [SerializeField] float glowPulseSpeed = 8f;
-
-    [Header("Audio (optional)")]
-    [SerializeField] AudioSource sfxSource;
-    [SerializeField] AudioClip sfxStart;
-    [SerializeField] AudioClip sfxEnd;
+    [SerializeField] private Gradient fillGradient;
+    [SerializeField] private float warnThreshold = 0.15f;
+    [SerializeField] private float smooth = 10f;
+    [SerializeField] private float shineSpeed = 400f;
+    [SerializeField] private float glowAlpha = 0.3f;
+    [SerializeField] private float glowPulseSpeed = 8f;
 
     Coroutine running;
-    float target01;   // 1 -> 0 (voll -> leer)
+    float target01;
     float current01;
 
     void Start()
     {
-        // [NEU] Icon zunächst verbergen
-        if (icon) icon.enabled = false;
+        // Sicherstellen, dass alle UI-Elemente am Anfang ausgeblendet sind
+        if (powerUpText) powerUpText.gameObject.SetActive(false);
+        if (durationSlider) durationSlider.gameObject.SetActive(false);
+        if (fillImage) fillImage.enabled = false;
+        if (fillGlow) fillGlow.enabled = false;
+        if (shine) shine.gameObject.SetActive(false);
+        if (iconImage) iconImage.enabled = false;
 
-        // -- dein bestehender Start-Code --
+        // Slider korrekt konfigurieren
         if (durationSlider)
         {
             durationSlider.wholeNumbers = false;
@@ -53,8 +44,7 @@ public class PowerUpUI : MonoBehaviour
             durationSlider.targetGraphic = null;
             durationSlider.handleRect = null;
 
-            var imgs = durationSlider.GetComponentsInChildren<Image>(true);
-            foreach (var img in imgs)
+            foreach (var img in durationSlider.GetComponentsInChildren<Image>(true))
                 if (img.gameObject.name == "Background") img.enabled = false;
         }
 
@@ -62,16 +52,9 @@ public class PowerUpUI : MonoBehaviour
         {
             fillImage.type = Image.Type.Filled;
             fillImage.fillMethod = Image.FillMethod.Horizontal;
-            fillImage.fillOrigin = 0; // Left
+            fillImage.fillOrigin = 0;
             fillImage.color = Color.white;
-            fillImage.enabled = false;
         }
-
-        if (fillGlow) fillGlow.enabled = false;
-        if (shine) shine.gameObject.SetActive(false);
-
-        if (powerUpText) powerUpText.gameObject.SetActive(false);
-        if (durationSlider) durationSlider.gameObject.SetActive(false);
     }
 
     void Update()
@@ -81,6 +64,7 @@ public class PowerUpUI : MonoBehaviour
         current01 = Mathf.Lerp(current01, target01, 1f - Mathf.Exp(-smooth * Time.deltaTime));
         durationSlider.value = current01 * durationSlider.maxValue;
 
+        // Farbverlauf aktualisieren
         if (fillImage)
         {
             if (current01 <= 0.001f) fillImage.enabled = false;
@@ -91,6 +75,7 @@ public class PowerUpUI : MonoBehaviour
             }
         }
 
+        // Pulsierender Glow-Effekt
         if (fillGlow)
         {
             if (current01 < warnThreshold && current01 > 0f)
@@ -103,58 +88,41 @@ public class PowerUpUI : MonoBehaviour
         }
     }
 
-    // === deine bestehende API (ohne Icon) bleibt erhalten ====================
-    public void ShowPowerUp(string label, float duration)
-    {
-        if (running != null) StopCoroutine(running);
-        running = StartCoroutine(ShowRoutine(label, duration));
-    }
-    // ========================================================================
+    // ======================================================
+    // Öffentliche API
+    // ======================================================
 
-    // === [NEU] Overload: zeigt Text + wählt automatisch das Icon ============
     public void ShowPowerUp(PowerUp.PowerUpType type, string label, float duration)
     {
-        // Icon auswählen
-        if (icon)
-        {
-            icon.sprite = GetSprite(type);
-            icon.enabled = icon.sprite != null;   // nur anzeigen, wenn Sprite vorhanden
-        }
-
-        // den bestehenden Flow (Text + Slider) verwenden
-        ShowPowerUp(label, duration);
+        if (running != null) StopCoroutine(running);
+        gameObject.SetActive(true); // sicherstellen, dass das GO aktiv ist
+        running = StartCoroutine(ShowRoutine(label, duration));
     }
-
-    // Sprite-Zuweisung je nach PowerUp-Typ
-    private Sprite GetSprite(PowerUp.PowerUpType t)
-    {
-        switch (t)
-        {
-            case PowerUp.PowerUpType.FireRate: return flashSprite;   // ⚡
-            case PowerUp.PowerUpType.ScoreBoost: return cashSprite;    // 💰 (oder scoreSprite)
-            // case PowerUp.PowerUpType.Health:  return heartSprite;   // falls du willst
-            default: return null;
-        }
-    }
-    // ========================================================================
 
     IEnumerator ShowRoutine(string label, float duration)
     {
         duration = Mathf.Max(0.01f, duration);
 
-        if (powerUpText) { powerUpText.text = label; powerUpText.gameObject.SetActive(true); }
+        // Einschalten aller UI-Komponenten
+        if (iconImage) iconImage.enabled = true;
+        if (powerUpText)
+        {
+            powerUpText.text = label;
+            powerUpText.gameObject.SetActive(true);
+        }
+
         if (durationSlider)
         {
             durationSlider.maxValue = duration;
-            durationSlider.value = duration;  // START: VOLL
+            durationSlider.value = duration;
             durationSlider.gameObject.SetActive(true);
         }
 
+        if (fillImage) fillImage.enabled = true;
+        if (fillGlow) fillGlow.enabled = true;
+
         target01 = 1f;
         current01 = 1f;
-
-        if (sfxSource && sfxStart) sfxSource.PlayOneShot(sfxStart);
-        if (shine && durationSlider) StartCoroutine(ShineWipeOnce());
 
         float t = duration;
         while (t > 0f)
@@ -164,36 +132,15 @@ public class PowerUpUI : MonoBehaviour
             yield return null;
         }
 
-        if (sfxSource && sfxEnd) sfxSource.PlayOneShot(sfxEnd);
-        yield return null;
-
+        // Ausschalten nach Ablauf
+        if (iconImage) iconImage.enabled = false;
         if (powerUpText) powerUpText.gameObject.SetActive(false);
         if (durationSlider) durationSlider.gameObject.SetActive(false);
+        if (fillImage) fillImage.enabled = false;
         if (fillGlow) fillGlow.enabled = false;
         if (shine) shine.gameObject.SetActive(false);
 
-        // [NEU] Icon wieder ausblenden & Sprite löschen
-        if (icon) { icon.enabled = false; icon.sprite = null; }
-
         running = null;
-    }
-
-    IEnumerator ShineWipeOnce()
-    {
-        if (shine == null || durationSlider == null) yield break;
-
-        var rect = durationSlider.GetComponent<RectTransform>().rect;
-        float width = rect.width;
-
-        shine.gameObject.SetActive(true);
-        shine.anchoredPosition = new Vector2(-width, shine.anchoredPosition.y);
-
-        while (shine.anchoredPosition.x < width)
-        {
-            shine.anchoredPosition += Vector2.right * shineSpeed * Time.deltaTime;
-            yield return null;
-        }
-
-        shine.gameObject.SetActive(false);
+        gameObject.SetActive(true); // Objekt bleibt aktiv für künftige PowerUps
     }
 }
