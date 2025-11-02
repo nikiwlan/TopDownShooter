@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6914165748302174893}
   - component: {fileID: -1855095438876309336}
   - component: {fileID: -6289725308326133620}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: PowerUp_ScoreBoost
   m_TagString: PowerUp
   m_Icon: {fileID: 0}
@@ -104,7 +104,6 @@ MonoBehaviour:
   scoreBonus: 50
   pickupSound: {fileID: 0}
   pickupEffect: {fileID: 0}
-  ui: {fileID: 0}
 --- !u!54 &-1855095438876309336
 Rigidbody:
   m_ObjectHideFlags: 0

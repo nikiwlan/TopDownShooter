@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(SphereCollider))]
 public class ProjectileEnemy : MonoBehaviour
 {
     [Header("Projectile Settings")]
@@ -7,6 +8,13 @@ public class ProjectileEnemy : MonoBehaviour
     public float lifetime = 5f;
 
     private Vector3 moveDirection;
+
+    void Awake()
+    {
+        // SphereCollider konfigurieren
+        SphereCollider col = GetComponent<SphereCollider>();
+        col.isTrigger = true;
+    }
 
     // Wird direkt nach dem Erzeugen aufgerufen, um Flugrichtung zu setzen
     public void Init(Vector3 dir)
@@ -21,7 +29,7 @@ public class ProjectileEnemy : MonoBehaviour
 
     void Update()
     {
-        // Fliege konstant geradeaus
+        // Fliege konstant geradeaus (ohne Physik)
         transform.position += moveDirection * speed * Time.deltaTime;
     }
 
@@ -39,7 +47,7 @@ public class ProjectileEnemy : MonoBehaviour
         }
         else if (!other.CompareTag("Enemy"))
         {
-            // Falls es was anderes trifft (Wand etc.), ebenfalls zerstören
+            // Wenn Projektil etwas anderes trifft (z. B. Wand), zerstören
             Destroy(gameObject);
         }
     }

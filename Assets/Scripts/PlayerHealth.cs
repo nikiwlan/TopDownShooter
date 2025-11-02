@@ -11,17 +11,17 @@ public class PlayerHealth : MonoBehaviour
 
     void Awake()
     {
-        // Lebenspunkte intern setzen
+        // Lebenspunkte setzen
         currentHealth = maxHealth;
     }
 
     void Start()
     {
-        // Erst jetzt UI updaten, wenn alles initialisiert ist
+        // UI initialisieren
         if (heartUIManager != null)
         {
             heartUIManager.UpdateHearts(currentHealth);
-            Debug.Log($"[PlayerHealth/Start] Player startet mit {currentHealth}/{maxHealth} HP");
+            Debug.Log($"[PlayerHealth] Player startet mit {currentHealth}/{maxHealth} HP");
         }
         else
         {

@@ -1,28 +1,81 @@
-using UnityEngine;
+﻿using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public abstract class EnemyBase : MonoBehaviour
 {
     [Header("Stats")]
-    public int health = 1;
+    [Tooltip("Lebenspunkte des Gegners.")]
+    public int health = 3;
+
+    [Tooltip("Punkte, die dieser Gegnertyp beim Tod gibt.")]
     public int pointsOnKill = 10;
 
-    protected PlayerHealth player;
+    [Header("Debug")]
+    public bool debug = true;
+
+    [HideInInspector] public PlayerHealth player;
+
+    // ----------------------------------------------------
+    // INITIALISIERUNG
+    // ----------------------------------------------------
+    protected virtual void Awake()
+    {
+        var col = GetComponent<Collider>();
+        if (col == null)
+            Debug.LogError($"[{name}] ❌ Kein Collider gefunden!");
+        else
+            Debug.Log($"[{name}] ✅ Collider erkannt. isTrigger={col.isTrigger}, layer={LayerMask.LayerToName(gameObject.layer)}");
+
+        var rb = GetComponent<Rigidbody>();
+        Debug.Log($"[{name}] Rigidbody vorhanden: {rb != null}");
+    }
 
     protected virtual void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerHealth>();
+        var pObj = GameObject.FindGameObjectWithTag("Player");
+        player = pObj ? pObj.GetComponent<PlayerHealth>() : null;
+
+        if (debug)
+            Debug.Log($"[{name}] Player reference: {(player ? "FOUND" : "MISSING")}");
     }
 
-    public virtual void TakeDamage(int dmg)
+    // ----------------------------------------------------
+    // SCHADEN & TOD
+    // ----------------------------------------------------
+    public virtual void TakeDamage(int amount)
     {
-        health -= dmg;
-        if (health <= 0) Die();
+        health -= amount;
+        if (debug)
+            Debug.Log($"[{name}] Nimmt {amount} Schaden → verbleibend: {health}");
+
+        if (health <= 0)
+            Die();
     }
 
     protected virtual void Die()
     {
+        Debug.Log($"[EnemyBase] 💀 {gameObject.name} gestorben → +{pointsOnKill} Punkte");
+
+        // Punkte hinzufügen, wenn ScoreManager vorhanden ist
         if (ScoreManager.Instance != null)
+        {
             ScoreManager.Instance.AddScore(pointsOnKill);
+        }
+        else
+        {
+            Debug.LogWarning("[EnemyBase] ⚠️ Kein ScoreManager gefunden!");
+        }
+
         Destroy(gameObject);
+    }
+
+    // ----------------------------------------------------
+    // TRIGGER / DEBUG
+    // ----------------------------------------------------
+    protected virtual void OnTriggerEnter(Collider other)
+    {
+        if (!debug) return;
+
+        Debug.Log($"[{name}] BASE OnTriggerEnter → {other.name} (Tag={other.tag}, Layer={LayerMask.LayerToName(other.gameObject.layer)})");
     }
 }

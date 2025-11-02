@@ -2,19 +2,28 @@
 
 public class PowerUp : MonoBehaviour
 {
-    public enum PowerUpType { Health, FireRate, ScoreBoost, SpeedBoost, TimeSlow }
+    public enum PowerUpType
+    {
+        Health,      // heilt den Spieler
+        FireRate,    // erhöht Feuerrate
+        ScoreBoost,  // verdoppelt Punkte
+        SpeedBoost,  // macht Spieler schneller
+        TimeSlow     // verlangsamt Gegner
+    }
 
-    [Header("Settings")]
-    public PowerUpType type;
-    public float duration = 5f;
-    public int healthAmount = 1;
-    public int scoreBonus = 50;
-    public AudioClip pickupSound;
-    public GameObject pickupEffect;
+    [Header("General Settings")]
+    public PowerUpType type;            // Art des PowerUps (im Prefab einstellen)
+    public float duration = 5f;         // Dauer (z. B. 5 Sekunden)
+    public AudioClip pickupSound;       // Soundeffekt beim Einsammeln
+    public GameObject pickupEffect;     // Partikeleffekt beim Einsammeln
+
+    [Header("Specific Settings")]
+    public int healthAmount = 1;        // Heilungsmenge für Health PowerUp
+    public int scoreBonus = 50;         // Bonuspunkte für ScoreBoost (optional)
 
     private void Awake()
     {
-        // PowerUps sollen immer auf Y=0 liegen
+        // PowerUps sollen immer exakt auf Bodenhöhe liegen
         Vector3 pos = transform.position;
         pos.y = 0f;
         transform.position = pos;
@@ -71,7 +80,7 @@ public class PowerUp : MonoBehaviour
                 break;
         }
 
-        // ✨ Effekte & Sound
+        // ✨ Sound & Effekt abspielen
         if (pickupEffect)
             Instantiate(pickupEffect, transform.position, Quaternion.identity);
 

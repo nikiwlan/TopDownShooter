@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: -7010379168561404261}
   - component: {fileID: 8899464504797245080}
   - component: {fileID: 3988610226913429574}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: PowerUp_TimeSlow
   m_TagString: PowerUp
   m_Icon: {fileID: 0}
@@ -133,4 +133,3 @@ MonoBehaviour:
   scoreBonus: 50
   pickupSound: {fileID: 0}
   pickupEffect: {fileID: 0}
-  ui: {fileID: 0}

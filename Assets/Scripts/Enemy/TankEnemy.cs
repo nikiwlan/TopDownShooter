@@ -1,32 +1,45 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
 public class TankEnemy : EnemyBase
 {
+    [Header("Movement Settings")]
     public float moveSpeed = 2f;
+    public LayerMask wallLayer;
 
-    private Rigidbody rb;
     private Transform playerTransform;
 
     protected override void Start()
     {
         base.Start();
-        rb = GetComponent<Rigidbody>();
+        pointsOnKill = 25; // TankEnemy = 25 Punkte
         playerTransform = player?.transform;
-        health = 5;
+        health = 5; // Tank ist robuster
     }
 
-    void FixedUpdate()
+
+    void Update()
     {
         if (playerTransform == null) return;
+
         Vector3 dir = (playerTransform.position - transform.position).normalized;
         dir.y = 0;
-        rb.MovePosition(rb.position + dir * moveSpeed * Time.fixedDeltaTime);
+
+        // Blockierung durch Wand prüfen
+        if (!Physics.Raycast(transform.position, dir, out RaycastHit hit, moveSpeed * Time.deltaTime + 0.2f, wallLayer))
+        {
+            transform.position += dir * moveSpeed * Time.deltaTime;
+        }
+
+        if (dir != Vector3.zero)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 0.2f);
+        }
     }
 
-    void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.CompareTag("Player"))
+        if (other.CompareTag("Player"))
         {
             player.TakeDamage(1);
         }
