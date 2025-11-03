@@ -3,7 +3,6 @@
 public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("Referenz zur Spieler-Gesundheit (wird für Spawn-Stop benötigt).")]
     public PlayerHealth playerHealth;
 
     [Header("Enemy Prefabs")]
@@ -18,33 +17,36 @@ public class EnemySpawner : MonoBehaviour
     [Tooltip("Maximale Anzahl gleichzeitig aktiver Gegner (0 = unbegrenzt).")]
     public int maxEnemies = 0;
 
-    [Tooltip("Spawnpunkte für Gegner.")]
-    public Vector3[] spawnPositions = new Vector3[]
-    {
-        new Vector3(8.914398f, 0f, 32.58257f),
-        new Vector3(9.253807f, 0f, -24.72913f)
-    };
+    [Header("Spawnpunkte (empfohlen: Transforms in der Szene)")]
+    [Tooltip("Wenn gesetzt, werden diese Transforms als Spawnpunkte verwendet.")]
+    public Transform[] spawnPoints;
+
+    [Tooltip("Alternativ: feste Positionen. Entweder World- oder Local-Space.")]
+    public Vector3[] spawnPositions;
+
+    [Tooltip("Wenn true, werden spawnPositions relativ zu diesem Spawner interpretiert.")]
+    public bool positionsAreLocal = false;
 
     [Header("Spawn Wahrscheinlichkeiten (Summe = 1.0)")]
-    [Range(0f, 1f)] public float fastEnemyChance = 0.2f;
+    [Range(0f, 1f)] public float fastEnemyChance = 0.6f;
     [Range(0f, 1f)] public float tankEnemyChance = 0.2f;
-    [Range(0f, 1f)] public float rangedEnemyChance = 0.6f;
+    [Range(0f, 1f)] public float rangedEnemyChance = 0.2f;
 
-    private float timer;
+    float timer;
 
     void Start()
     {
         timer = spawnInterval;
+        NormalizeChances();
     }
 
     void Update()
     {
-        if (playerHealth == null)
+        if (!playerHealth)
         {
             Debug.LogWarning("[EnemySpawner] Keine PlayerHealth referenziert!");
             return;
         }
-
         if (playerHealth.currentHealth <= 0) return;
 
         timer -= Time.deltaTime;
@@ -57,43 +59,96 @@ public class EnemySpawner : MonoBehaviour
 
     void TrySpawnEnemy()
     {
-        // Falls Spawnlimit aktiv ist
         if (maxEnemies > 0)
         {
             int enemyCount = GameObject.FindGameObjectsWithTag("Enemy").Length;
-            if (enemyCount >= maxEnemies)
+            if (enemyCount >= maxEnemies) return;
+        }
+
+        Vector3 spawnPos;
+        Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+
+        if (TryGetSpawnPosition(out spawnPos))
+        {
+            GameObject prefab = PickPrefab();
+            var go = Instantiate(prefab, spawnPos, spawnRot);
+            Debug.Log($"[EnemySpawner] Spawned {prefab.name} at {spawnPos} (scene {go.scene.name})");
+        }
+        else
+        {
+            Debug.LogWarning("[EnemySpawner] Keine gültigen Spawnpunkte gefunden!");
+        }
+    }
+
+    bool TryGetSpawnPosition(out Vector3 pos)
+    {
+        // 1) Szene-Transforms
+        if (spawnPoints != null && spawnPoints.Length > 0)
+        {
+            var t = spawnPoints[Random.Range(0, spawnPoints.Length)];
+            if (t)
             {
-                Debug.Log("[EnemySpawner] Spawn-Limit erreicht.");
-                return;
+                pos = t.position;
+                return true;
             }
         }
 
-        SpawnRandomEnemy();
-    }
-
-    void SpawnRandomEnemy()
-    {
-        if (spawnPositions.Length == 0)
+        // 2) Feste Positionen
+        if (spawnPositions != null && spawnPositions.Length > 0)
         {
-            Debug.LogWarning("[EnemySpawner] Keine Spawnpositionen gesetzt!");
-            return;
+            var p = spawnPositions[Random.Range(0, spawnPositions.Length)];
+            pos = positionsAreLocal ? transform.TransformPoint(p) : p;
+            return true;
         }
 
-        int index = Random.Range(0, spawnPositions.Length);
-        Vector3 spawnPos = spawnPositions[index];
-        Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-
-        float roll = Random.value;
-        GameObject prefabToSpawn = fastEnemyPrefab;
-
-        if (roll < fastEnemyChance)
-            prefabToSpawn = fastEnemyPrefab;
-        else if (roll < fastEnemyChance + tankEnemyChance)
-            prefabToSpawn = tankEnemyPrefab;
-        else
-            prefabToSpawn = rangedEnemyPrefab;
-
-        Instantiate(prefabToSpawn, spawnPos, spawnRot);
-        Debug.Log($"[EnemySpawner] {prefabToSpawn.name} gespawnt bei {spawnPos}");
+        pos = default;
+        return false;
     }
+
+    GameObject PickPrefab()
+    {
+        float total = fastEnemyChance + tankEnemyChance + rangedEnemyChance;
+        float r = Random.value * Mathf.Max(total, 0.0001f);
+
+        if (r < fastEnemyChance) return fastEnemyPrefab;
+        r -= fastEnemyChance;
+        if (r < tankEnemyChance) return tankEnemyPrefab;
+        return rangedEnemyPrefab;
+    }
+
+    void NormalizeChances()
+    {
+        float total = fastEnemyChance + tankEnemyChance + rangedEnemyChance;
+        if (total <= 0f) { fastEnemyChance = 1f; tankEnemyChance = rangedEnemyChance = 0f; return; }
+        fastEnemyChance /= total;
+        tankEnemyChance /= total;
+        rangedEnemyChance /= total;
+    }
+
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        // spawnPoints
+        if (spawnPoints != null)
+        {
+            Gizmos.color = Color.green;
+            foreach (var t in spawnPoints)
+            {
+                if (!t) continue;
+                Gizmos.DrawWireSphere(t.position, 0.4f);
+            }
+        }
+
+        // spawnPositions
+        if (spawnPositions != null)
+        {
+            Gizmos.color = Color.cyan;
+            foreach (var p in spawnPositions)
+            {
+                Vector3 wp = positionsAreLocal ? transform.TransformPoint(p) : p;
+                Gizmos.DrawWireSphere(wp, 0.3f);
+            }
+        }
+    }
+#endif
 }
