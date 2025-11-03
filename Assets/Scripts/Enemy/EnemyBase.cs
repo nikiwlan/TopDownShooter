@@ -40,6 +40,19 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     // ----------------------------------------------------
+    // TIME-SLOW INTEGRATION (wirkt auch für später gespawnte Gegner)
+    // ----------------------------------------------------
+    protected virtual void OnEnable()
+    {
+        // Wenn ein globaler TimeSlow aktiv ist und dieser Gegner verlangsambar ist,
+        // dann direkt anwenden (restliche Dauer).
+        if (GameEffectsManager.TimeSlowActive && this is ITimeSlowable slowable)
+        {
+            slowable.ApplyTimeSlow(GameEffectsManager.Remaining, GameEffectsManager.Factor);
+        }
+    }
+
+    // ----------------------------------------------------
     // SCHADEN & TOD
     // ----------------------------------------------------
     public virtual void TakeDamage(int amount)

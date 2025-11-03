@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 public class PowerUp : MonoBehaviour
 {
@@ -74,10 +75,22 @@ public class PowerUp : MonoBehaviour
                 break;
 
             case PowerUpType.TimeSlow:
-                foreach (var enemy in enemyControllers)
-                    enemy.ApplyTimeSlow(duration, 0.5f);
-                if (uiManager) uiManager.ShowUI(PowerUpType.TimeSlow, duration);
-                break;
+                {
+                    // Globalen Status setzen (für später Spawnende)
+                    GameEffectsManager.ActivateTimeSlow(duration, 0.5f);
+
+                    // Alle aktuell aktiven verlangsambaren Gegner finden
+                    var slowables = FindObjectsOfType<MonoBehaviour>()
+                                    .OfType<ITimeSlowable>()
+                                    .ToArray();
+
+                    Debug.Log($"[PowerUp] TimeSlow: gefunden = {slowables.Length} Gegner (ITimeSlowable)");
+                    foreach (var s in slowables)
+                        s.ApplyTimeSlow(duration, 0.5f);
+
+                    if (uiManager) uiManager.ShowUI(PowerUpType.TimeSlow, duration);
+                    break;
+                }
         }
 
         // ✨ Sound & Effekt abspielen

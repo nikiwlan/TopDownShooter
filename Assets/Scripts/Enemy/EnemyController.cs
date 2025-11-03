@@ -54,7 +54,6 @@ public class EnemyController : MonoBehaviour
     {
         if (slowRoutine != null)
             StopCoroutine(slowRoutine);
-
         slowRoutine = StartCoroutine(TimeSlowRoutine(duration, slowFactor));
     }
 

@@ -94,7 +94,7 @@ CapsuleCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 212501291692081593}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   m_Radius: 0.5
   m_Height: 2
@@ -130,9 +130,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 1
   pointsOnKill: 10
+  debug: 1
+  player: {fileID: 0}
   moveSpeed: 3
   attackRange: 8
   approachDistance: 6
   stopThreshold: 0.5
   shootCooldown: 1.5
   projectilePrefab: {fileID: 730793640360983458, guid: b6255442bef908c45925ea58d91a927a, type: 3}
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 512

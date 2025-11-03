@@ -113,7 +113,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 1
   pointsOnKill: 10
+  debug: 1
+  player: {fileID: 0}
   moveSpeed: 6
   wallLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
