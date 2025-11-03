@@ -1,47 +1,45 @@
 ﻿using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class Bullet : MonoBehaviour
 {
     [Header("Bullet Settings")]
-    public float speed = 20f;
-    public float lifetime = 2f;
+    public float speed = 40f;
+    public float lifetime = 5f;
+    public int damage = 1;
+
+    private Rigidbody rb;
 
     void Start()
     {
-        // Zerstöre die Kugel nach einer bestimmten Zeit
+        rb = GetComponent<Rigidbody>();
+
+        // 🟢 Keine Gravitation für Top-Down-Bullets
+        rb.useGravity = false;
+
+        // 🟢 Vorwärtsbewegung mit Physik
+        rb.velocity = transform.forward * speed;
+
+        // 🟢 Sicheres Auto-Despawn
         Destroy(gameObject, lifetime);
-
-        // 🟢 Kugel auf Bodenebene fixieren (2.5D)
-        Vector3 pos = transform.position;
-        pos.y = 0f;
-        transform.position = pos;
-    }
-
-    void Update()
-    {
-        // Bewegung in Flugrichtung (vorwärts, also Z)
-        transform.Translate(Vector3.forward * speed * Time.deltaTime, Space.Self);
     }
 
     void OnTriggerEnter(Collider other)
     {
+        // Nur reagieren, wenn Gegner getroffen
         if (other.CompareTag("Enemy"))
         {
-            // Schaden verursachen, falls Gegner vorhanden
             EnemyBase enemy = other.GetComponent<EnemyBase>();
             if (enemy == null)
-            {
-                // Falls der Collider am Child liegt, suche im Parent (z. B. bei Modellen mit mehreren Collidern)
                 enemy = other.GetComponentInParent<EnemyBase>();
-            }
 
             if (enemy != null)
             {
-                enemy.TakeDamage(1);
+                enemy.TakeDamage(damage);
+                Debug.Log($"Enemy getroffen! Schaden: {damage}");
             }
 
-            // Kugel zerstören
-            Destroy(gameObject);
+            Destroy(gameObject); // Kugel entfernen
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider))]
+[RequireComponent(typeof(AudioSource))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -21,6 +22,10 @@ public class PlayerMovement : MonoBehaviour
     public float shrinkXZ = 0.03f;
     [Tooltip("Höhe der Cast-Box (Top-Down: flach)")]
     public float halfExtentY = 0.2f;
+
+    [Header("Animation Settings")]
+    [Tooltip("Animator-Referenz (z. B. vom RobotVisual)")]
+    [SerializeField] private Animator animator;
 
     private bool isSpeedBoostActive = false;
     private Coroutine speedBoostRoutine;
@@ -48,6 +53,20 @@ public class PlayerMovement : MonoBehaviour
             lastMoveDirection = moveDirection;
 
         TryMove(moveDirection);
+
+        // 🔹 Animator-Parameter aktualisieren
+        if (animator != null)
+        {
+            // Bewegungsgeschwindigkeit (0–1)
+            animator.SetFloat("Speed", moveDirection.magnitude);
+
+            // Rotation zur Bewegungsrichtung (für optische Ausrichtung)
+            if (moveDirection.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(moveDirection);
+                animator.transform.rotation = Quaternion.Slerp(animator.transform.rotation, targetRot, 0.2f);
+            }
+        }
     }
 
     // ------------------------------------------------------------
@@ -92,8 +111,6 @@ public class PlayerMovement : MonoBehaviour
         {
             centerNow = col.bounds.center;
 
-            // Wir checken Wände (non-trigger) UND Gates (nur trigger) und nehmen den
-            // NÄCHSTEN Treffer, damit Ecken korrekt funktionieren.
             bool hitSomething = false;
             float hitDist = Mathf.Infinity;
             Vector3 hitNormal = Vector3.zero;
@@ -126,7 +143,6 @@ public class PlayerMovement : MonoBehaviour
 
             if (hitSomething)
             {
-                // Bis kurz vor die Kante bewegen
                 float allowed = Mathf.Max(hitDist - castSkin, 0f);
                 if (allowed > 0f)
                 {
@@ -134,11 +150,10 @@ public class PlayerMovement : MonoBehaviour
                     transform.position = pos;
                 }
 
-                // Slide-Richtung (nur horizontal, damit Top-Down stabil bleibt)
+                // Slide-Richtung (nur horizontal)
                 Vector3 n = hitNormal; n.y = 0f; n.Normalize();
                 Vector3 slide = Vector3.ProjectOnPlane(move, n).normalized;
 
-                // Wenn kaum tangentiale Bewegung übrig bleibt -> komplett blockiert
                 if (slide.sqrMagnitude < 1e-4f) break;
 
                 remaining -= allowed;
@@ -147,16 +162,11 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
-                // Frei: Restdistanz gehen
                 pos += move * remaining;
                 transform.position = pos;
                 remaining = 0f;
             }
         }
-
-        // 2) Ausrichtung nur visuell
-        Quaternion targetRot = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 0.2f);
     }
 
     // ------------------------------------------------------------
