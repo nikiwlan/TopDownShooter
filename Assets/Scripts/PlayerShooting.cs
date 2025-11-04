@@ -63,33 +63,32 @@ public class PlayerShooting : MonoBehaviour
         {
             nextFireTime = Time.time + fireRate;
 
-            // Mausposition im Weltkoordinatensystem bestimmen
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
 
             if (groundPlane.Raycast(ray, out float rayDistance))
             {
                 Vector3 target = ray.GetPoint(rayDistance);
-                Vector3 shootDir = (target - firePoint.position).normalized;
+                Vector3 shootDir = (target - firePoint.position);
+                shootDir.y = 0f;
+                if (shootDir.sqrMagnitude < 0.01f)
+                    shootDir = firePoint.forward;
+                shootDir.Normalize();
 
-                // Projektil instantiieren
-                if (bulletPrefab && firePoint)
+                GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(shootDir));
+                Rigidbody rb = bullet.GetComponent<Rigidbody>();
+                if (rb != null)
                 {
-                    GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(shootDir));
-
-                    Rigidbody rb = bullet.GetComponent<Rigidbody>();
-                    if (rb != null)
-                        rb.velocity = shootDir * bulletSpeed;
-
-                    // Sicheres Auto-Despawn nach 5 Sekunden
-                    Destroy(bullet, bulletLifetime);
+                    rb.useGravity = false;
+                    rb.velocity = shootDir * bulletSpeed;
                 }
+                Destroy(bullet, bulletLifetime);
 
-                // 🔹 Animation Triggern
                 if (animator != null)
                 {
                     animator.ResetTrigger("Shoot");
                     animator.SetTrigger("Shoot");
+                    Debug.Log("[DEBUG] Shoot Trigger gesetzt auf Animator: " + animator.name);
                 }
             }
         }

@@ -63,9 +63,14 @@ public class PlayerMovement : MonoBehaviour
             // Rotation zur Bewegungsrichtung (für optische Ausrichtung)
             if (moveDirection.sqrMagnitude > 0.01f)
             {
-                Quaternion targetRot = Quaternion.LookRotation(moveDirection);
-                animator.transform.rotation = Quaternion.Slerp(animator.transform.rotation, targetRot, 0.2f);
+                // Nur optisch drehen, wenn NICHT geschossen wird
+                if (!Input.GetMouseButton(0))
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(moveDirection);
+                    animator.transform.rotation = Quaternion.Slerp(animator.transform.rotation, targetRot, 0.2f);
+                }
             }
+
         }
     }
 
