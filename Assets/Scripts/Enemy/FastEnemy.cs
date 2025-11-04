@@ -8,6 +8,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     public LayerMask wallLayer;
 
     private Transform playerTransform;
+    private Animator animator;
 
     // TimeSlow-Interna
     private float _baseSpeed;
@@ -22,6 +23,11 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         base.Start();
         pointsOnKill = 10;
         playerTransform = player ? player.transform : null;
+
+        animator = GetComponentInChildren<Animator>();
+        if (animator != null)
+            animator.Play("Injured Run");  // Name deines Mixamo-Run-Clips
+
 
         _baseSpeed = moveSpeed;
         _rend = GetComponentInChildren<Renderer>();
