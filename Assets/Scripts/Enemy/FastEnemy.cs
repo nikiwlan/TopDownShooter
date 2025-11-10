@@ -86,4 +86,17 @@ public class FastEnemy : EnemyBase, ITimeSlowable
             Die();
         }
     }
+    protected override void Die()
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+
+        // Optional: Bewegungen stoppen
+        moveSpeed = 0f;
+
+        // Danach zerstören, nachdem Animation fertig ist (z. B. nach 2 Sekunden)
+        Destroy(gameObject, 2f);
+    }
 }
