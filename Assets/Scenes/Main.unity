@@ -1463,7 +1463,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh25116
+  m_Name: pb_Mesh25358
   serializedVersion: 10
   m_SubMeshes:
   - serializedVersion: 2
@@ -2515,7 +2515,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 1978811932}
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
-  tankEnemyPrefab: {fileID: 2274196589772995609, guid: f12573ea007087f4eb8adf8b0a959ce9, type: 3}
+  tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
   spawnInterval: 2
   maxEnemies: 0
@@ -2527,8 +2527,8 @@ MonoBehaviour:
   - {x: 25, y: 0, z: -24.72913}
   positionsAreLocal: 0
   fastEnemyChance: 0
-  tankEnemyChance: 0
-  rangedEnemyChance: 1
+  tankEnemyChance: 1
+  rangedEnemyChance: 0
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0
@@ -8384,6 +8384,63 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
+--- !u!1001 &6692134043104766824
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_Name
+      value: TankEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_RootOrder
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6692134043831163638, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
 --- !u!1001 &6910753321658960112
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8445,12 +8502,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6910753323426935582, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
       propertyPath: m_WarningMessage
-      value: "\nBinding warning: Some generic clip(s) animate transforms that are
-        already bound by a Humanoid avatar. These transforms can only be changed
-        by Humanoid clips.\n\tTransform 'root'\n\tTransform 'lowerarm_l'\n\tTransform
-        'neck_01'\n\tTransform 'clavicle_l'\n\tTransform 'hand_l'\n\tTransform 'spine_02'\n\tTransform
-        'upperarm_r'\n\tTransform 'upperarm_l'\n\tTransform 'thigh_l'\n\tTransform
-        'calf_l'\n\tand more ...\n\tFrom animation clip 'Rifle Aiming Idle'"
+      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}

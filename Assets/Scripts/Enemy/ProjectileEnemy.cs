@@ -1,54 +1,69 @@
-using UnityEngine;
+﻿using UnityEngine;
 
-[RequireComponent(typeof(SphereCollider))]
 public class ProjectileEnemy : MonoBehaviour
 {
     [Header("Projectile Settings")]
     public float speed = 10f;
     public float lifetime = 5f;
+    public float hitRadius = 0.5f;
 
-    private Vector3 moveDirection;
+    private Vector3 moveDir;
+    private Transform player;
 
-    void Awake()
-    {
-        // SphereCollider konfigurieren
-        SphereCollider col = GetComponent<SphereCollider>();
-        col.isTrigger = true;
-    }
-
-    // Wird direkt nach dem Erzeugen aufgerufen, um Flugrichtung zu setzen
     public void Init(Vector3 dir)
     {
-        moveDirection = dir.normalized;
+        moveDir = dir.normalized;
     }
 
     void Start()
     {
+        // Player finden (einmalig)
+        var pObj = GameObject.FindGameObjectWithTag("Player");
+        if (pObj) player = pObj.transform;
+
         Destroy(gameObject, lifetime);
     }
 
     void Update()
     {
-        // Fliege konstant geradeaus (ohne Physik)
-        transform.position += moveDirection * speed * Time.deltaTime;
+        // Bewege Projektil
+        transform.position += moveDir * speed * Time.deltaTime;
+
+        // Prüfe, ob Player existiert
+        if (!player) return;
+
+        Vector3 projPos = transform.position;
+        Vector3 playerPos = player.position;
+        projPos.y = 0f;
+        playerPos.y = 0f;
+
+        float dist = Vector3.Distance(projPos, playerPos);
+
+        if (dist <= hitRadius)
+        {
+            Debug.Log($"[ProjectileEnemy] Treffer! Distanz={dist:F2}");
+
+            if (player.TryGetComponent<PlayerHealth>(out var ph))
+                ph.TakeDamage(1);
+
+            Destroy(gameObject);
+        }
+
+        // Optional: Treffer an Wände (einfach mit Raycast prüfen)
+        if (Physics.Raycast(transform.position, moveDir, out RaycastHit hit, speed * Time.deltaTime))
+        {
+            if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall"))
+            {
+                Destroy(gameObject);
+            }
+        }
     }
 
-    private void OnTriggerEnter(Collider other)
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
     {
-        if (other.CompareTag("Player"))
-        {
-            Debug.Log("[ProjectileEnemy] Hit Player!");
-
-            PlayerHealth player = other.GetComponent<PlayerHealth>();
-            if (player != null)
-                player.TakeDamage(1);
-
-            Destroy(gameObject);
-        }
-        else if (!other.CompareTag("Enemy"))
-        {
-            // Wenn Projektil etwas anderes trifft (z. B. Wand), zerst�ren
-            Destroy(gameObject);
-        }
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, hitRadius);
     }
+#endif
 }

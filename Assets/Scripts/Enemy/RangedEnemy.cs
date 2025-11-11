@@ -39,7 +39,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             animator.Play("Walking");
             animator.SetFloat("Speed", 1f);
             animator.SetBool("IsFiring", false);
-            animator.SetBool("InRange", false);
         }
 
         _baseSpeed = moveSpeed;
@@ -71,7 +70,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         // Animator-Parameter aktuell halten
         if (animator)
         {
-            animator.SetBool("InRange", distance <= approachDistance + 0.1f);
             animator.SetFloat("Speed", distance > approachDistance ? 1f : 0f);
         }
 
@@ -187,7 +185,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             animator.SetTrigger("Die");
             animator.SetBool("IsFiring", false);
             animator.SetFloat("Speed", 0f);
-            animator.SetBool("InRange", false);
         }
 
         moveSpeed = 0f;

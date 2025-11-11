@@ -5,7 +5,7 @@ public class PlayerShooting : MonoBehaviour
 {
     [Header("Shooting Settings")]
     public GameObject bulletPrefab;   // Projektil-Prefab
-    public Transform firePoint;       // Schussposition
+    public Transform firePoint;       // Schussposition (z. B. Waffe oder Hände)
     public float fireRate = 0.25f;    // Zeit zwischen Schüssen
     public float bulletSpeed = 40f;   // Geschwindigkeit der Kugel
     public float bulletLifetime = 5f; // Sekunden bis zum Auto-Despawn
@@ -68,22 +68,31 @@ public class PlayerShooting : MonoBehaviour
 
             if (groundPlane.Raycast(ray, out float rayDistance))
             {
+                // 🔹 Zielpunkt bestimmen
                 Vector3 target = ray.GetPoint(rayDistance);
-                Vector3 shootDir = (target - firePoint.position);
+
+                // 🔹 Richtung immer vom Spielerzentrum aus berechnen
+                Vector3 shootDir = (target - transform.position);
                 shootDir.y = 0f;
                 if (shootDir.sqrMagnitude < 0.01f)
                     shootDir = firePoint.forward;
                 shootDir.Normalize();
 
+                // 🔹 Bullet-Spawn bleibt beim firePoint (Mündung)
                 GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(shootDir));
+
+                // 🔹 Physikgeschwindigkeit zuweisen
                 Rigidbody rb = bullet.GetComponent<Rigidbody>();
                 if (rb != null)
                 {
                     rb.useGravity = false;
                     rb.velocity = shootDir * bulletSpeed;
                 }
+
+                // 🔹 Auto-Despawn
                 Destroy(bullet, bulletLifetime);
 
+                // 🔹 Animation triggern
                 if (animator != null)
                 {
                     animator.ResetTrigger("Shoot");
