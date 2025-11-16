@@ -8,25 +8,25 @@ public class Bullet : MonoBehaviour
     public float lifetime = 5f;
     public int damage = 1;
 
+    [Header("Audio")]
+    public AudioClip gateHitSound;
+    public float gateSoundVolume = 1f;
+
     private Rigidbody rb;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
 
-        // 🟢 Keine Gravitation für Top-Down-Bullets
         rb.useGravity = false;
-
-        // 🟢 Vorwärtsbewegung mit Physik
         rb.velocity = transform.forward * speed;
 
-        // 🟢 Sicheres Auto-Despawn
         Destroy(gameObject, lifetime);
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        // Nur reagieren, wenn Gegner getroffen
+        // 1️⃣ Enemy getroffen
         if (other.CompareTag("Enemy"))
         {
             EnemyBase enemy = other.GetComponent<EnemyBase>();
@@ -34,12 +34,35 @@ public class Bullet : MonoBehaviour
                 enemy = other.GetComponentInParent<EnemyBase>();
 
             if (enemy != null)
-            {
                 enemy.TakeDamage(damage);
-                Debug.Log($"Enemy getroffen! Schaden: {damage}");
+
+            Destroy(gameObject);
+            return;
+        }
+
+        // 2️⃣ Gate getroffen → Sound sicher abspielen
+        if (other.CompareTag("Gate"))
+        {
+            if (gateHitSound != null)
+            {
+                GameObject audioObj = new GameObject("GateHitSound");
+                AudioSource src = audioObj.AddComponent<AudioSource>();
+                src.clip = gateHitSound;
+                src.volume = gateSoundVolume;
+                src.spatialBlend = 0f;
+                src.Play();
+                Destroy(audioObj, gateHitSound.length);
             }
 
-            Destroy(gameObject); // Kugel entfernen
+            Destroy(gameObject);
+            return;
+        }
+
+        // 3️⃣ Wand getroffen
+        if (other.CompareTag("Wall"))
+        {
+            Destroy(gameObject);
+            return;
         }
     }
 }

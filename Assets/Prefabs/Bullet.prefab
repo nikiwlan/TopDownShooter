@@ -50,6 +50,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 20
   lifetime: 2
+  damage: 1
+  gateHitSound: {fileID: 8300000, guid: b8e128bdaeb099f478c1e480d4321af9, type: 3}
+  gateSoundVolume: 1
 --- !u!135 &-8009326086299192199
 SphereCollider:
   m_ObjectHideFlags: 0

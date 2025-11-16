@@ -78,6 +78,7 @@ MonoBehaviour:
   attackDamageDelay: 0.8
   hitSound: {fileID: 8300000, guid: ef085c6872ea9f84e904e2031d8ee3c7, type: 3}
   hitVolume: 1
+  deathSound: {fileID: 8300000, guid: d7b0427132ed54b479c6842219f004ea, type: 3}
 --- !u!1001 &7157631294308166
 PrefabInstance:
   m_ObjectHideFlags: 0

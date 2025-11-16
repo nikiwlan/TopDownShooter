@@ -15,27 +15,30 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    public AudioClip attackSound;
+    public AudioClip hitSound;
+    public AudioClip deathSound;
+    private AudioSource audioSource;
+
     private Transform playerTransform;
 
-    // TimeSlow-Interna
+    // TimeSlow
     private float _baseSpeed;
     private bool _isSlowed;
     private float _slowEndTime;
     private Renderer _rend;
     private Color _origColor;
 
-    // Angriff / Bewegung
+    // Attack
     private bool isAttacking = false;
     private float nextAttackTime = 0f;
     private bool isInAttackRange = false;
 
-    // Kontakt-Treffer-Schutz
+    // Contact cooldown
     private float _nextHitTime;
     [SerializeField] private float _contactCooldown = 0.4f;
 
-    // ------------------------------------------
-    // INIT
-    // ------------------------------------------
     protected override void Start()
     {
         base.Start();
@@ -50,23 +53,24 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         if (_rend) _origColor = _rend.material.color;
 
         if (!animator) animator = GetComponentInChildren<Animator>();
+
+        // AUDIO SOURCE INITIALISIEREN
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f; // 2D Sound
+        audioSource.loop = false;
     }
 
-    // ------------------------------------------
-    // TIME-SLOW
-    // ------------------------------------------
+    // -------------------- TIME SLOW ------------------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         _isSlowed = true;
         _slowEndTime = Mathf.Max(_slowEndTime, Time.time + duration);
         moveSpeed = _baseSpeed * factor;
         if (_rend) _rend.material.color = Color.cyan;
-        Debug.Log($"[TankEnemy] TimeSlow aktiv für {duration:0.##}s @ x{factor}");
     }
 
-    // ------------------------------------------
-    // UPDATE LOOP
-    // ------------------------------------------
+    // -------------------- UPDATE ---------------------------
     void Update()
     {
         if (_isSlowed && Time.time >= _slowEndTime)
@@ -77,7 +81,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         }
 
         if (playerTransform == null || animator == null) return;
-
         if (animator.GetBool("isDead")) return;
 
         float distance = Vector3.Distance(transform.position, playerTransform.position);
@@ -111,8 +114,8 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         if (dir.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRot = Quaternion.LookRotation(dir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 0.2f);
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                Quaternion.LookRotation(dir), 0.2f);
         }
     }
 
@@ -121,7 +124,14 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         isAttacking = true;
         animator.SetBool("isAttacking", true);
 
+        // 🔊 Attack Sound abspielen
+        if (attackSound)
+            audioSource.pitch = 0.4f;   
+            audioSource.PlayDelayed(0.5f);  
+            audioSource.PlayOneShot(attackSound);
+
         yield return new WaitForSeconds(attackDuration * 0.5f);
+
         if (player != null)
             player.TakeDamage(1);
 
@@ -133,11 +143,22 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         nextAttackTime = Time.time + attackCooldown;
     }
 
-    // ------------------------------------------
-    // SCHADEN & TOD
-    // ------------------------------------------
+    // -------------------- DAMAGE / DEATH --------------------
+    public override void TakeDamage(int amount)
+    {
+        // 🔊 Hit Sound abspielen
+        if (hitSound)
+            audioSource.PlayOneShot(hitSound);
+
+        base.TakeDamage(amount); // wichtig!
+    }
+
     protected override void Die()
     {
+        // 🔊 Death Sound abspielen
+        if (deathSound)
+            audioSource.PlayOneShot(deathSound);
+
         if (animator)
         {
             animator.SetBool("isDead", true);
@@ -149,22 +170,14 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         if (_rend) _rend.material.color = Color.gray;
 
-        // Score + Popup + Final Points kommen aus EnemyBase
         base.Die();
     }
 
-    // ------------------------------------------
-    // EnemyBase zerstört normalerweise SOFORT.
-    // Wir überschreiben es, um das Modell 2.5 Sekunden liegen zu lassen.
-    // ------------------------------------------
     protected override void OnDeathDestroyed()
     {
         Destroy(gameObject, 2.5f);
     }
 
-    // ------------------------------------------
-    // TRIGGER-KONTAKT
-    // ------------------------------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);

@@ -11,6 +11,10 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     public AudioClip hitSound;
     [Range(0f, 1f)] public float hitVolume = 1f;
 
+    [Header("Death Sound")]
+    public AudioClip deathSound;           // 🔊 Sound wenn er durch Bullet stirbt
+    private AudioSource deathAudio;        // 🎧 Eigener AudioSource dafür
+
     private Transform playerTransform;
     private Animator animator;
 
@@ -26,7 +30,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     private float slowEndTime;
 
     private readonly string RUN_STATE = "Injured Run";
-    private readonly string ATTACK_STATE = "Zombie Attack";   // ← GENAU SO WIE IM ANIMATOR!!!
+    private readonly string ATTACK_STATE = "Zombie Attack";
     private readonly string DIE_TRIGGER = "Die";
 
     protected override void Start()
@@ -45,9 +49,14 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         attackAudio.spatialBlend = 0f;
         attackAudio.volume = hitVolume;
 
+        // 🔊 Death AudioSource
+        deathAudio = gameObject.AddComponent<AudioSource>();
+        deathAudio.playOnAwake = false;
+        deathAudio.loop = false;
+        deathAudio.spatialBlend = 0f;
+
         baseSpeed = moveSpeed;
 
-        // WICHTIG: Sofortiger Tod durch EnemyBase verhindern
         pointsOnKill = 10;
     }
 
@@ -134,7 +143,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
         animator.SetTrigger(DIE_TRIGGER);
 
-        // Score wird NACH Animation gezählt
         base.Die();
 
         Destroy(gameObject, 2f);
@@ -142,7 +150,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
     protected override void Die()
     {
-        // Wird von EnemyBase aufgerufen (z.B. durch Kugel)
+        // ⚠️ Nur hier wird er von Spieler/Bullet getötet
+        if (!isDead && deathSound != null)
+        {
+            deathAudio.PlayOneShot(deathSound);
+        }
+
         TriggerDeath();
     }
 

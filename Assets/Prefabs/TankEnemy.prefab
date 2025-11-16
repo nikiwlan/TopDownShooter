@@ -73,6 +73,9 @@ MonoBehaviour:
   attackDuration: 1.5
   attackCooldown: 1.5
   animator: {fileID: 0}
+  attackSound: {fileID: 8300000, guid: e5c869a79684ee646b51cf969e34c44e, type: 3}
+  hitSound: {fileID: 0}
+  deathSound: {fileID: 8300000, guid: bb2991261bfad564e8deed2819c90224, type: 3}
   _contactCooldown: 0.4
 --- !u!54 &4722642441661417236
 Rigidbody:

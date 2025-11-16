@@ -8,6 +8,7 @@ TagManager:
   - PowerUp
   - Wall
   - EnemyProjectile
+  - Gate
   layers:
   - Default
   - TransparentFX
