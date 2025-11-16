@@ -802,19 +802,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de75e9f03c547814fa9ca4ea4f666be5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 3
+  health: 2
   pointsOnKill: 10
   debug: 1
   player: {fileID: 0}
   moveSpeed: 3
-  attackRange: 8
-  approachDistance: 6
+  attackRange: 10
+  approachDistance: 8
   shootCooldown: 1
   wallLayer:
     serializedVersion: 2
     m_Bits: 512
   projectilePrefab: {fileID: 730793640360983458, guid: b6255442bef908c45925ea58d91a927a, type: 3}
   muzzle: {fileID: 6910753323539956157}
+  shootSound: {fileID: 8300000, guid: 8b5e4f2a60651264d9a94711050329e7, type: 3}
 --- !u!33 &6910753321948634839
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider))]
-[RequireComponent(typeof(AudioSource))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -15,11 +15,15 @@ public class PlayerMovement : MonoBehaviour
     public GameObject speedBoostEffect;
     public AudioClip boostSound;
 
+    [Header("Footstep Settings")]
+    public AudioClip footstepSound;
+    [Range(0f, 1f)] public float footstepVolume = 0.65f;
+
     [Header("Collision Tuning")]
     [Tooltip("Sicherheitsabstand vor Kanten")]
-    public float castSkin = 0.015f;
+    public float castSkin = 0.2f;
     [Tooltip("Schrumpft die Cast-Box in X/Z für feineres Anfühlen")]
-    public float shrinkXZ = 0.03f;
+    public float shrinkXZ = 0.02f;
     [Tooltip("Höhe der Cast-Box (Top-Down: flach)")]
     public float halfExtentY = 0.2f;
 
@@ -29,7 +33,10 @@ public class PlayerMovement : MonoBehaviour
 
     private bool isSpeedBoostActive = false;
     private Coroutine speedBoostRoutine;
-    private AudioSource audioSource;
+
+    // ⭐ Zwei getrennte AudioSources
+    private AudioSource movementSource;   // nur fürs Laufen (Loop)
+    private AudioSource sfxSource;        // Boost, Treffer, Schüsse etc.
 
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
@@ -39,8 +46,19 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         col = GetComponent<BoxCollider>();
-        audioSource = GetComponent<AudioSource>();
-        if (!audioSource) audioSource = gameObject.AddComponent<AudioSource>();
+
+        // --- AudioSource 1: Movement / Footsteps ---
+        movementSource = gameObject.AddComponent<AudioSource>();
+        movementSource.loop = true;
+        movementSource.playOnAwake = false;
+        movementSource.spatialBlend = 0f; // 2D
+        movementSource.volume = footstepVolume;
+
+        // --- AudioSource 2: SFX (Boost, Schüsse, Treffer, …) ---
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.loop = false;
+        sfxSource.playOnAwake = false;
+        sfxSource.spatialBlend = 0f; // 2D
     }
 
     void Update()
@@ -54,34 +72,58 @@ public class PlayerMovement : MonoBehaviour
 
         TryMove(moveDirection);
 
-        // 🔹 Animator-Parameter aktualisieren
-        if (animator != null)
+        HandleAnimator();
+        HandleFootstepSound();
+    }
+
+    // ------------------------------------------------------------
+    // ⭐ Laufgeräusch
+    // ------------------------------------------------------------
+    private void HandleFootstepSound()
+    {
+        bool isMoving = moveDirection.sqrMagnitude > 0.01f;
+
+        if (isMoving)
         {
-            // Bewegungsgeschwindigkeit (0–1)
-            animator.SetFloat("Speed", moveDirection.magnitude);
-
-            // Rotation zur Bewegungsrichtung (für optische Ausrichtung)
-            if (moveDirection.sqrMagnitude > 0.01f)
+            if (!movementSource.isPlaying && footstepSound != null)
             {
-                // Nur optisch drehen, wenn NICHT geschossen wird
-                if (!Input.GetMouseButton(0))
-                {
-                    Quaternion targetRot = Quaternion.LookRotation(moveDirection);
-                    animator.transform.rotation = Quaternion.Slerp(animator.transform.rotation, targetRot, 0.2f);
-                }
+                movementSource.clip = footstepSound;
+                movementSource.volume = footstepVolume;
+                movementSource.Play();
             }
-
+        }
+        else
+        {
+            if (movementSource.isPlaying)
+                movementSource.Stop();
         }
     }
 
     // ------------------------------------------------------------
-    // Bewegung mit Sliding an Wänden UND Gates (Gate = Trigger!)
+    // Animation
+    // ------------------------------------------------------------
+    private void HandleAnimator()
+    {
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", moveDirection.magnitude);
+
+            if (moveDirection.sqrMagnitude > 0.01f && !Input.GetMouseButton(0))
+            {
+                Quaternion targetRot = Quaternion.LookRotation(moveDirection);
+                animator.transform.rotation = Quaternion.Slerp(animator.transform.rotation, targetRot, 0.2f);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // Bewegung mit Sliding an Wänden UND Gates
+    // (dein bestehender Code, nur unverändert übernommen)
     // ------------------------------------------------------------
     private void TryMove(Vector3 direction)
     {
         if (direction == Vector3.zero) return;
 
-        // präzise Half-Extents aus Collidergröße
         Vector3 halfExtents = Vector3.Scale(col.size * 0.5f, transform.lossyScale);
         halfExtents = new Vector3(
             Mathf.Max(halfExtents.x - shrinkXZ, 0.005f),
@@ -92,7 +134,6 @@ public class PlayerMovement : MonoBehaviour
         Quaternion orient = transform.rotation;
         float step = moveSpeed * Time.deltaTime;
 
-        // 0) Falls wir bereits in einer Wand stecken: sanft heraus schieben
         Vector3 centerNow = col.bounds.center;
         var overlaps = Physics.OverlapBox(centerNow, halfExtents, orient, wallLayer, QueryTriggerInteraction.Ignore);
         foreach (var o in overlaps)
@@ -107,7 +148,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // 1) Bis zu zwei Iterationen: gewünschte Richtung, dann evtl. Slide-Richtung
         Vector3 pos = transform.position;
         Vector3 move = direction;
         float remaining = step;
@@ -120,7 +160,6 @@ public class PlayerMovement : MonoBehaviour
             float hitDist = Mathf.Infinity;
             Vector3 hitNormal = Vector3.zero;
 
-            // a) Wände
             if (Physics.BoxCast(centerNow, halfExtents, move, out RaycastHit wallHit, orient,
                                 remaining + castSkin, wallLayer, QueryTriggerInteraction.Ignore))
             {
@@ -129,7 +168,6 @@ public class PlayerMovement : MonoBehaviour
                 hitNormal = wallHit.normal;
             }
 
-            // b) Gates (nur Trigger zählen!)
             var gateHits = Physics.BoxCastAll(centerNow, halfExtents, move, orient,
                                               remaining + castSkin, gateLayer, QueryTriggerInteraction.Collide);
             foreach (var gh in gateHits)
@@ -155,7 +193,6 @@ public class PlayerMovement : MonoBehaviour
                     transform.position = pos;
                 }
 
-                // Slide-Richtung (nur horizontal)
                 Vector3 n = hitNormal; n.y = 0f; n.Normalize();
                 Vector3 slide = Vector3.ProjectOnPlane(move, n).normalized;
 
@@ -181,9 +218,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (other.CompareTag("PowerUp"))
             Debug.Log("[PlayerMovement] PowerUp: " + other.name);
-
-        if (other.CompareTag("Enemy"))
-            GetComponent<PlayerHealth>()?.TakeDamage(1);
     }
 
     // ------------------------------------------------------------
@@ -199,7 +233,7 @@ public class PlayerMovement : MonoBehaviour
     public void ApplySpeedBoost(float duration) => ApplySpeedBoost(duration, 2f);
     public void ApplySpeedBoost() => ApplySpeedBoost(3f, 2f);
 
-    private System.Collections.IEnumerator SpeedBoostRoutine(float duration, float multiplier)
+    private IEnumerator SpeedBoostRoutine(float duration, float multiplier)
     {
         if (isSpeedBoostActive) yield break;
         isSpeedBoostActive = true;
@@ -209,13 +243,22 @@ public class PlayerMovement : MonoBehaviour
 
         GameObject fx = null;
         if (speedBoostEffect) fx = Instantiate(speedBoostEffect, transform.position, Quaternion.identity, transform);
-        if (boostSound) audioSource.PlayOneShot(boostSound);
+
+        // ⭐ Boost-Sound über SFX-Source
+        if (boostSound && sfxSource != null)
+            sfxSource.PlayOneShot(boostSound);
 
         yield return new WaitForSeconds(duration);
 
         moveSpeed = original;
         if (fx) Destroy(fx);
         isSpeedBoostActive = false;
+    }
+
+    // ⭐ Zugriff für andere Skripte (z.B. PlayerShooting)
+    public AudioSource GetSfxSource()
+    {
+        return sfxSource;
     }
 
 #if UNITY_EDITOR

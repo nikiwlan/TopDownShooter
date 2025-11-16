@@ -4,10 +4,7 @@
 public abstract class EnemyBase : MonoBehaviour
 {
     [Header("Stats")]
-    [Tooltip("Lebenspunkte des Gegners.")]
     public int health = 3;
-
-    [Tooltip("Punkte, die dieser Gegnertyp beim Tod gibt.")]
     public int pointsOnKill = 10;
 
     [Header("Debug")]
@@ -15,19 +12,22 @@ public abstract class EnemyBase : MonoBehaviour
 
     [HideInInspector] public PlayerHealth player;
 
-    // ----------------------------------------------------
-    // INITIALISIERUNG
-    // ----------------------------------------------------
+    private Collider[] allColliders;
+    private Rigidbody rb;
+
+    // ----------------------------------------------------------
+    // START / AWAKE
+    // ----------------------------------------------------------
     protected virtual void Awake()
     {
-        var col = GetComponent<Collider>();
-        if (col == null)
-            Debug.LogError($"[{name}] ❌ Kein Collider gefunden!");
-        else
-            Debug.Log($"[{name}] ✅ Collider erkannt. isTrigger={col.isTrigger}, layer={LayerMask.LayerToName(gameObject.layer)}");
+        allColliders = GetComponentsInChildren<Collider>(true);
+        rb = GetComponent<Rigidbody>();
 
-        var rb = GetComponent<Rigidbody>();
-        Debug.Log($"[{name}] Rigidbody vorhanden: {rb != null}");
+        if (debug)
+        {
+            Debug.Log($"[{name}] Collider Count: {allColliders.Length}");
+            Debug.Log($"[{name}] Rigidbody vorhanden: {rb != null}");
+        }
     }
 
     protected virtual void Start()
@@ -36,59 +36,87 @@ public abstract class EnemyBase : MonoBehaviour
         player = pObj ? pObj.GetComponent<PlayerHealth>() : null;
 
         if (debug)
-            Debug.Log($"[{name}] Player reference: {(player ? "FOUND" : "MISSING")}");
+            Debug.Log($"[{name}] Player found: {(player ? "YES" : "NO")}");
     }
 
-    // ----------------------------------------------------
-    // TIME-SLOW INTEGRATION (wirkt auch für später gespawnte Gegner)
-    // ----------------------------------------------------
-    protected virtual void OnEnable()
-    {
-        // Wenn ein globaler TimeSlow aktiv ist und dieser Gegner verlangsambar ist,
-        // dann direkt anwenden (restliche Dauer).
-        if (GameEffectsManager.TimeSlowActive && this is ITimeSlowable slowable)
-        {
-            slowable.ApplyTimeSlow(GameEffectsManager.Remaining, GameEffectsManager.Factor);
-        }
-    }
-
-    // ----------------------------------------------------
-    // SCHADEN & TOD
-    // ----------------------------------------------------
+    // ----------------------------------------------------------
+    // DAMAGE
+    // ----------------------------------------------------------
     public virtual void TakeDamage(int amount)
     {
         health -= amount;
+
         if (debug)
-            Debug.Log($"[{name}] Nimmt {amount} Schaden → verbleibend: {health}");
+            Debug.Log($"[{name}] Schaden: {amount} → verbleibend {health}");
 
         if (health <= 0)
             Die();
     }
 
+    // ----------------------------------------------------------
+    // DEATH (ZENTRAL FÜR SCORE & POPUP)
+    // ----------------------------------------------------------
     protected virtual void Die()
     {
-        Debug.Log($"[EnemyBase] 💀 {gameObject.name} gestorben → +{pointsOnKill} Punkte");
+        DisableAllColliders();   // ✅ Gegner kollidiert ab jetzt mit NICHTS mehr
+        DisablePhysics();        // ✅ Physik abschalten (optional)
 
-        // Punkte hinzufügen, wenn ScoreManager vorhanden ist
-        if (ScoreManager.Instance != null)
-        {
-            ScoreManager.Instance.AddScore(pointsOnKill);
-        }
-        else
-        {
-            Debug.LogWarning("[EnemyBase] ⚠️ Kein ScoreManager gefunden!");
-        }
+        int multiplier = ScoreManager.Instance != null
+            ? ScoreManager.Instance.scoreMultiplier
+            : 1;
 
-        Destroy(gameObject);
+        int finalPoints = pointsOnKill * multiplier;
+
+        ScoreManager.Instance?.AddScore(pointsOnKill);
+
+        ScorePopupManager.Instance?.SpawnPopup(
+            finalPoints,
+            transform.position + Vector3.up * 1f
+        );
+
+        if (debug)
+            Debug.Log($"[{name}] gestorben → Base {pointsOnKill}, Final {finalPoints}");
+
+        // Gegner wird NICHT sofort zerstört!
+        OnDeathDestroyed();
     }
 
-    // ----------------------------------------------------
-    // TRIGGER / DEBUG
-    // ----------------------------------------------------
+    // ----------------------------------------------------------
+    // SEPARATE ZERSTÖRUNG (damit Animation ablaufen kann)
+    // ----------------------------------------------------------
+    protected virtual void OnDeathDestroyed()
+    {
+        // wird von FastEnemy, TankEnemy, RangedEnemy überschrieben
+        Destroy(gameObject, 2f);
+    }
+
+    // ----------------------------------------------------------
+    // HILFE: Collider / Physik ausschalten
+    // ----------------------------------------------------------
+    protected void DisableAllColliders()
+    {
+        foreach (var c in allColliders)
+            c.enabled = false;
+    }
+
+    protected void DisablePhysics()
+    {
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.useGravity = false;
+            rb.isKinematic = true;
+        }
+    }
+
+    // ----------------------------------------------------------
+    // DEBUG TRIGGER
+    // ----------------------------------------------------------
     protected virtual void OnTriggerEnter(Collider other)
     {
         if (!debug) return;
 
-        Debug.Log($"[{name}] BASE OnTriggerEnter → {other.name} (Tag={other.tag}, Layer={LayerMask.LayerToName(other.gameObject.layer)})");
+        Debug.Log($"[{name}] Trigger → {other.name}");
     }
 }

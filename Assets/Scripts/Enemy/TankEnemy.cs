@@ -9,8 +9,8 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
     [Header("Attack Settings")]
     [SerializeField] private float attackRange = 1.8f;
-    [SerializeField] private float attackDuration = 1.5f;  // Dauer der Attack-Animation
-    [SerializeField] private float attackCooldown = 1.5f;  // Pause zwischen Attacken
+    [SerializeField] private float attackDuration = 1.5f;
+    [SerializeField] private float attackCooldown = 1.5f;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
@@ -38,7 +38,7 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     // ------------------------------------------
     protected override void Start()
     {
-        base.Start(); // base.Start() setzt player in EnemyBase
+        base.Start();
 
         pointsOnKill = 25;
         health = 5;
@@ -78,14 +78,11 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         if (playerTransform == null || animator == null) return;
 
-        // Wenn tot → nichts mehr tun
         if (animator.GetBool("isDead")) return;
 
-        // Abstand zum Spieler
         float distance = Vector3.Distance(transform.position, playerTransform.position);
         isInAttackRange = distance <= attackRange;
 
-        // Wenn nicht angreifend und außerhalb der Range → Bewegen
         if (!isAttacking && !isInAttackRange)
         {
             MoveTowardsPlayer();
@@ -93,32 +90,25 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         }
         else
         {
-            // Innerhalb der Range oder beim Angriff → stehen bleiben
             animator.SetFloat("Speed", 0f);
         }
 
-        // Wenn in Reichweite und Angriff möglich → Attack starten
         if (!isAttacking && isInAttackRange && Time.time >= nextAttackTime)
         {
             StartCoroutine(AttackRoutine());
         }
     }
 
-    // ------------------------------------------
-    // BEWEGUNG ZUM SPIELER
-    // ------------------------------------------
     private void MoveTowardsPlayer()
     {
         Vector3 dir = (playerTransform.position - transform.position).normalized;
         dir.y = 0;
 
-        // Wände vermeiden
         if (!Physics.Raycast(transform.position, dir, out RaycastHit hit, moveSpeed * Time.deltaTime + 0.2f, wallLayer))
         {
             transform.position += dir * moveSpeed * Time.deltaTime;
         }
 
-        // Sanft rotieren
         if (dir.sqrMagnitude > 0.001f)
         {
             Quaternion targetRot = Quaternion.LookRotation(dir);
@@ -126,47 +116,26 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-    // ------------------------------------------
-    // ATTACK
-    // ------------------------------------------
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
         animator.SetBool("isAttacking", true);
 
-        // Schlag nach halber Dauer
         yield return new WaitForSeconds(attackDuration * 0.5f);
         if (player != null)
             player.TakeDamage(1);
 
-        // Rest der Animation abwarten
         yield return new WaitForSeconds(attackDuration * 0.5f);
 
-        // Angriff beenden
         isAttacking = false;
         animator.SetBool("isAttacking", false);
 
-        // Cooldown aktivieren – währenddessen bleibt er stehen
         nextAttackTime = Time.time + attackCooldown;
     }
 
     // ------------------------------------------
     // SCHADEN & TOD
     // ------------------------------------------
-    public override void TakeDamage(int amount)
-    {
-        if (animator != null && animator.GetBool("isDead")) return;
-
-        health -= amount;
-        if (debug)
-            Debug.Log($"[TankEnemy] Nimmt {amount} Schaden → verbleibend: {health}");
-
-        if (health <= 0)
-        {
-            Die();
-        }
-    }
-
     protected override void Die()
     {
         if (animator)
@@ -180,9 +149,16 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         if (_rend) _rend.material.color = Color.gray;
 
-        if (ScoreManager.Instance != null)
-            ScoreManager.Instance.AddScore(pointsOnKill);
+        // Score + Popup + Final Points kommen aus EnemyBase
+        base.Die();
+    }
 
+    // ------------------------------------------
+    // EnemyBase zerstört normalerweise SOFORT.
+    // Wir überschreiben es, um das Modell 2.5 Sekunden liegen zu lassen.
+    // ------------------------------------------
+    protected override void OnDeathDestroyed()
+    {
         Destroy(gameObject, 2.5f);
     }
 

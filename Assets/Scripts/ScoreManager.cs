@@ -12,18 +12,19 @@ public class ScoreManager : MonoBehaviour
 
     [Header("Score Settings")]
     [SerializeField] private int startingScore = 0;
-    [SerializeField] private int scoreMultiplier = 1;
 
     private int score = 0;
-    private bool scoreBoostActive = false;
+
+    [HideInInspector] public int scoreMultiplier = 1;
+
     private Coroutine boostRoutine;
+    private Coroutine delayedUIRoutine;
 
     // ----------------------------------------------------------
     // INITIALISIERUNG
     // ----------------------------------------------------------
     void Awake()
     {
-        // Singleton-Zuweisung
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -31,54 +32,55 @@ public class ScoreManager : MonoBehaviour
         }
         Instance = this;
 
-        // Falls im Inspector kein ScoreText gesetzt wurde → automatisch suchen
         if (scoreText == null)
         {
             scoreText = FindObjectOfType<TextMeshProUGUI>();
-            if (scoreText != null)
-                Debug.Log("[ScoreManager] scoreText automatisch gefunden.");
-            else
-                Debug.LogWarning("[ScoreManager] Kein ScoreText gefunden – bitte im Inspector zuweisen!");
         }
 
-        // Startwerte setzen
         score = startingScore;
-        UpdateUI();
-
-        Debug.Log("[ScoreManager] Awake – Instance aktiv und Score initialisiert.");
+        UpdateUIImmediate();
     }
 
     // ----------------------------------------------------------
-    // SCORE HANDLING
+    // SCORE VERGEBEN
     // ----------------------------------------------------------
-    public void AddScore(int points)
+    public void AddScore(int basePoints)
     {
-        if (points <= 0) return;
+        if (basePoints <= 0) return;
 
-        int finalPoints = points * scoreMultiplier;
+        int finalPoints = basePoints * scoreMultiplier;
         score += finalPoints;
 
-        Debug.Log($"[ScoreManager] AddScore({points}) x{scoreMultiplier} = +{finalPoints} → Neuer Score: {score}");
-        UpdateUI();
+        Debug.Log($"[ScoreManager] AddScore({basePoints}) x{scoreMultiplier} = +{finalPoints}");
+
+        // ✨ Hier NICHT sofort UI updaten → verzögert!
+        StartDelayedUIUpdate();
     }
 
-    public void ResetScore()
+    // ----------------------------------------------------------
+    // VERZÖGERTE UI-AKTUALISIERUNG
+    // ----------------------------------------------------------
+    private void StartDelayedUIUpdate()
     {
-        score = startingScore;
-        Debug.Log("[ScoreManager] ResetScore() auf " + score);
-        UpdateUI();
+        if (delayedUIRoutine != null)
+            StopCoroutine(delayedUIRoutine);
+
+        delayedUIRoutine = StartCoroutine(DelayedUI());
     }
 
-    private void UpdateUI()
+    private IEnumerator DelayedUI()
+    {
+        // Delay länger als Popup-Flug (1.2s) → z. B. 1.35 Sekunden
+        yield return new WaitForSeconds(1.35f);
+
+        UpdateUIImmediate();
+        delayedUIRoutine = null;
+    }
+
+    private void UpdateUIImmediate()
     {
         if (scoreText != null)
-        {
             scoreText.text = "Score: " + score;
-        }
-        else
-        {
-            Debug.LogWarning("[ScoreManager] ⚠️ scoreText ist NULL – keine Anzeige möglich!");
-        }
     }
 
     // ----------------------------------------------------------
@@ -89,7 +91,6 @@ public class ScoreManager : MonoBehaviour
         if (boostRoutine != null)
         {
             StopCoroutine(boostRoutine);
-            Debug.Log("[ScoreManager] Vorheriger ScoreBoost überschrieben.");
         }
 
         boostRoutine = StartCoroutine(TempScoreBoost(duration));
@@ -97,30 +98,24 @@ public class ScoreManager : MonoBehaviour
 
     private IEnumerator TempScoreBoost(float duration)
     {
-        scoreBoostActive = true;
-        scoreMultiplier = 2; // doppelte Punkte
+        scoreMultiplier = 2;
         Debug.Log($"[ScoreManager] 🔥 ScoreBoost aktiviert für {duration} Sekunden.");
 
-        float timer = duration;
-        while (timer > 0f)
+        float t = duration;
+        while (t > 0f)
         {
-            timer -= Time.deltaTime;
+            t -= Time.deltaTime;
             yield return null;
         }
 
         scoreMultiplier = 1;
-        scoreBoostActive = false;
         boostRoutine = null;
-        Debug.Log("[ScoreManager] ⏳ ScoreBoost abgelaufen – zurück auf normalen Score.");
+
+        Debug.Log("[ScoreManager] ⏳ ScoreBoost abgelaufen.");
     }
 
-    // ----------------------------------------------------------
-    // DEBUGGING HILFE
-    // ----------------------------------------------------------
-#if UNITY_EDITOR
-    void OnDrawGizmos()
+    public int GetScore()
     {
-        UnityEditor.Handles.Label(transform.position + Vector3.up * 2f, $"Score: {score}");
+        return score;
     }
-#endif
 }

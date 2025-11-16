@@ -1,102 +1,166 @@
-﻿// FastEnemy.cs
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FastEnemy : EnemyBase, ITimeSlowable
 {
     [Header("Movement Settings")]
     public float moveSpeed = 6f;
-    public LayerMask wallLayer;
+    public float attackRange = 1.8f;
+
+    [Header("Attack Settings")]
+    public float attackDamageDelay = 0.8f;
+    public AudioClip hitSound;
+    [Range(0f, 1f)] public float hitVolume = 1f;
 
     private Transform playerTransform;
     private Animator animator;
 
-    // TimeSlow-Interna
-    private float _baseSpeed;
-    private bool _isSlowed;
-    private bool _didHitPlayer;
-    private float _slowEndTime;
-    private Renderer _rend;
-    private Color _origColor;
+    private bool isAttacking = false;
+    private bool hasDealtDamage = false;
+    private float attackTimer = 0f;
+
+    private AudioSource attackAudio;
+    private bool isDead = false;
+
+    private float baseSpeed;
+    private bool isSlowed;
+    private float slowEndTime;
+
+    private readonly string RUN_STATE = "Injured Run";
+    private readonly string ATTACK_STATE = "Zombie Attack";   // ← GENAU SO WIE IM ANIMATOR!!!
+    private readonly string DIE_TRIGGER = "Die";
 
     protected override void Start()
     {
         base.Start();
-        pointsOnKill = 10;
-        playerTransform = player ? player.transform : null;
 
+        playerTransform = player?.transform;
         animator = GetComponentInChildren<Animator>();
+
         if (animator != null)
-            animator.Play("Injured Run");  // Name deines Mixamo-Run-Clips
+            animator.Play(RUN_STATE);
 
+        attackAudio = gameObject.AddComponent<AudioSource>();
+        attackAudio.playOnAwake = false;
+        attackAudio.loop = false;
+        attackAudio.spatialBlend = 0f;
+        attackAudio.volume = hitVolume;
 
-        _baseSpeed = moveSpeed;
-        _rend = GetComponentInChildren<Renderer>();
-        if (_rend) _origColor = _rend.material.color;
+        baseSpeed = moveSpeed;
+
+        // WICHTIG: Sofortiger Tod durch EnemyBase verhindern
+        pointsOnKill = 10;
     }
 
-    public void ApplyTimeSlow(float duration, float factor)
-    {
-        // Start/Verlängerung des Effekts
-        _isSlowed = true;
-        _slowEndTime = Mathf.Max(_slowEndTime, Time.time + duration);
-        moveSpeed = _baseSpeed * factor;
-        if (_rend) _rend.material.color = Color.cyan;
-        Debug.Log($"[FastEnemy] TimeSlow aktiv für {duration:0.##}s @ x{factor}");
-    }
 
     void Update()
     {
-        // TimeSlow Ablauf prüfen
-        if (_isSlowed && Time.time >= _slowEndTime)
+        if (isDead || playerTransform == null)
+            return;
+
+        HandleTimeSlow();
+
+        if (isAttacking)
         {
-            _isSlowed = false;
-            moveSpeed = _baseSpeed;
-            if (_rend) _rend.material.color = _origColor;
-            Debug.Log("[FastEnemy] TimeSlow Ende → Speed reset");
+            HandleAttack();
+            return;
         }
 
-        if (!playerTransform) return;
+        float dist = Vector3.Distance(transform.position, playerTransform.position);
 
-        Vector3 dir = (playerTransform.position - transform.position);
-        dir.y = 0f;
-        var n = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector3.zero;
-
-        Debug.DrawRay(transform.position + Vector3.up * 0.25f, n * 1.0f, Color.cyan);
-
-        float step = moveSpeed * Time.deltaTime;
-        if (!Physics.Raycast(transform.position + Vector3.up * 0.25f, n, out RaycastHit hit, step + 0.2f, wallLayer))
-            transform.position += n * step;
-
-        if (n != Vector3.zero)
+        if (dist <= attackRange)
         {
-            var targetRot = Quaternion.LookRotation(n);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 0.2f);
+            StartAttack();
+            return;
+        }
+
+        MoveTowardsPlayer();
+    }
+
+    private void MoveTowardsPlayer()
+    {
+        Vector3 dir = playerTransform.position - transform.position;
+        dir.y = 0;
+        Vector3 n = dir.normalized;
+
+        transform.position += n * (moveSpeed * Time.deltaTime);
+
+        if (n.sqrMagnitude > 0.01f)
+        {
+            Quaternion rot = Quaternion.LookRotation(n);
+            transform.rotation = Quaternion.Slerp(transform.rotation, rot, 0.2f);
         }
     }
 
-    protected override void OnTriggerEnter(Collider other)
+    private void StartAttack()
     {
-        // optional: call base for logging
-        base.OnTriggerEnter(other);
+        isAttacking = true;
+        hasDealtDamage = false;
+        attackTimer = 0f;
 
-        Debug.Log($"[FastEnemy] TRIGGER with {other.name} (tag={other.tag})");
-
-        if (other.CompareTag("Player") && player != null)
-        {
-            Die();
-        }
-    }
-    protected override void Die()
-    {
-        if (animator != null)
-        {
-            animator.SetTrigger("Die");
-        }
-
-        // Optional: Bewegungen stoppen
         moveSpeed = 0f;
 
-        // Danach zerstören, nachdem Animation fertig ist (z. B. nach 2 Sekunden)
+        animator.ResetTrigger(DIE_TRIGGER);
+        animator.Play(ATTACK_STATE, 0, 0f);
+    }
+
+    private void HandleAttack()
+    {
+        attackTimer += Time.deltaTime;
+
+        if (!hasDealtDamage && attackTimer >= attackDamageDelay)
+        {
+            hasDealtDamage = true;
+
+            if (hitSound)
+                attackAudio.PlayOneShot(hitSound);
+
+            player?.TakeDamage(1);
+        }
+
+        var info = animator.GetCurrentAnimatorStateInfo(0);
+
+        if (info.IsName(ATTACK_STATE) && info.normalizedTime >= 0.6f)
+        {
+            TriggerDeath();
+        }
+    }
+
+    private void TriggerDeath()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        isAttacking = false;
+
+        animator.SetTrigger(DIE_TRIGGER);
+
+        // Score wird NACH Animation gezählt
+        base.Die();
+
         Destroy(gameObject, 2f);
+    }
+
+    protected override void Die()
+    {
+        // Wird von EnemyBase aufgerufen (z.B. durch Kugel)
+        TriggerDeath();
+    }
+
+
+    // Time Slow
+    public void ApplyTimeSlow(float duration, float factor)
+    {
+        isSlowed = true;
+        slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
+        moveSpeed = baseSpeed * factor;
+    }
+
+    private void HandleTimeSlow()
+    {
+        if (isSlowed && Time.time >= slowEndTime)
+        {
+            isSlowed = false;
+            moveSpeed = baseSpeed;
+        }
     }
 }

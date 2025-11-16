@@ -4,15 +4,19 @@ using System.Collections;
 public class PlayerShooting : MonoBehaviour
 {
     [Header("Shooting Settings")]
-    public GameObject bulletPrefab;   // Projektil-Prefab
-    public Transform firePoint;       // Schussposition (z. B. Waffe oder Hände)
-    public float fireRate = 0.25f;    // Zeit zwischen Schüssen
-    public float bulletSpeed = 40f;   // Geschwindigkeit der Kugel
-    public float bulletLifetime = 5f; // Sekunden bis zum Auto-Despawn
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+    public float fireRate = 0.25f;
+    public float bulletSpeed = 40f;
+    public float bulletLifetime = 5f;
 
     [Header("Animation")]
-    [SerializeField] private Animator animator; // Animator des RobotVisual
+    [SerializeField] private Animator animator;
 
+    [Header("Audio")]
+    public AudioClip shootSound;
+
+    private AudioSource sfxSource;      // 👉 von PlayerMovement
     private float nextFireTime = 0f;
 
     // --- FireRate Boost Variablen ---
@@ -24,7 +28,22 @@ public class PlayerShooting : MonoBehaviour
     void Start()
     {
         baseFireRate = fireRate;
-        boostedFireRate = fireRate / 2f; // doppelt so schnell
+        boostedFireRate = fireRate / 2f;
+
+        // 👉 SFX-Source vom PlayerMovement holen
+        PlayerMovement pm = GetComponent<PlayerMovement>();
+        if (pm != null)
+        {
+            sfxSource = pm.GetSfxSource();
+        }
+
+        // Fallback, falls etwas Unerwartetes passiert
+        if (sfxSource == null)
+        {
+            sfxSource = gameObject.AddComponent<AudioSource>();
+            sfxSource.playOnAwake = false;
+            sfxSource.spatialBlend = 0f;
+        }
     }
 
     void Update()
@@ -36,27 +55,35 @@ public class PlayerShooting : MonoBehaviour
             boostTimeLeft -= Time.deltaTime;
     }
 
-    // 🎯 Visuelles Zielen
+    // -------------------------------------------------------
+    // 🎯 Visuelles Zielen zur Maus
+    // -------------------------------------------------------
     void AimAtMouse3D()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+
         if (groundPlane.Raycast(ray, out float rayDistance))
         {
             Vector3 hitPoint = ray.GetPoint(rayDistance);
-            Vector3 dir = (hitPoint - transform.position).normalized;
-            dir.y = 0f;
+            Vector3 lookDir = hitPoint - transform.position;
+            lookDir.y = 0f;
 
-            if (animator != null && dir.sqrMagnitude > 0.001f)
+            if (lookDir.sqrMagnitude < 0.001f)
+                return;
+
+            if (animator != null)
             {
                 Transform robotVisual = animator.transform;
-                Quaternion lookRotation = Quaternion.LookRotation(dir, Vector3.up);
+                Quaternion lookRotation = Quaternion.LookRotation(lookDir);
                 robotVisual.rotation = Quaternion.Slerp(robotVisual.rotation, lookRotation, 0.25f);
             }
         }
     }
 
-    // 🔫 Schießen + Projektilrichtung zur Maus
+    // -------------------------------------------------------
+    // 🔫 Schießen
+    // -------------------------------------------------------
     void HandleShooting()
     {
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
@@ -64,49 +91,53 @@ public class PlayerShooting : MonoBehaviour
             nextFireTime = Time.time + fireRate;
 
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+            Plane plane = new Plane(Vector3.up, Vector3.zero);
 
-            if (groundPlane.Raycast(ray, out float rayDistance))
+            if (plane.Raycast(ray, out float dist))
             {
-                // 🔹 Zielpunkt bestimmen
-                Vector3 target = ray.GetPoint(rayDistance);
+                Vector3 target = ray.GetPoint(dist);
+                Vector3 dir = target - transform.position;
+                dir.y = 0f;
 
-                // 🔹 Richtung immer vom Spielerzentrum aus berechnen
-                Vector3 shootDir = (target - transform.position);
-                shootDir.y = 0f;
-                if (shootDir.sqrMagnitude < 0.01f)
-                    shootDir = firePoint.forward;
-                shootDir.Normalize();
+                if (dir.magnitude < 0.5f)
+                    dir = firePoint.forward;
+                else
+                    dir.Normalize();
 
-                // 🔹 Bullet-Spawn bleibt beim firePoint (Mündung)
-                GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(shootDir));
+                // --- Bullet spawnen ---
+                GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(dir));
 
-                // 🔹 Physikgeschwindigkeit zuweisen
-                Rigidbody rb = bullet.GetComponent<Rigidbody>();
-                if (rb != null)
+                if (bullet.TryGetComponent<Rigidbody>(out Rigidbody rb))
                 {
                     rb.useGravity = false;
-                    rb.velocity = shootDir * bulletSpeed;
+                    rb.velocity = dir * bulletSpeed;
                 }
 
-                // 🔹 Auto-Despawn
                 Destroy(bullet, bulletLifetime);
 
-                // 🔹 Animation triggern
+                // --- Animation ---
                 if (animator != null)
                 {
                     animator.ResetTrigger("Shoot");
                     animator.SetTrigger("Shoot");
-                    Debug.Log("[DEBUG] Shoot Trigger gesetzt auf Animator: " + animator.name);
+                }
+
+                // --- 🔊 Schuss-Sound ---
+                if (shootSound != null && sfxSource != null)
+                {
+                    sfxSource.PlayOneShot(shootSound);
                 }
             }
         }
     }
 
-    // --- FireRate Boost ---
+    // -------------------------------------------------------
+    // 🔥 FireRate Boost
+    // -------------------------------------------------------
     public void ApplyFireRateBoost(float duration)
     {
         boostTimeLeft = Mathf.Min(boostTimeLeft + duration, 5f);
+
         if (fireRateRoutine == null)
             fireRateRoutine = StartCoroutine(FireRateBoostRoutine());
     }
@@ -115,11 +146,13 @@ public class PlayerShooting : MonoBehaviour
     {
         fireRate = boostedFireRate;
         Debug.Log("[PlayerShooting] FireRate Boost aktiv!");
+
         while (boostTimeLeft > 0f)
             yield return null;
 
         fireRate = baseFireRate;
         fireRateRoutine = null;
+
         Debug.Log("[PlayerShooting] FireRate Boost vorbei.");
     }
 }

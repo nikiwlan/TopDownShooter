@@ -65,7 +65,7 @@ public class HeartUIManager : MonoBehaviour
 
         // Zielpunkte
         Vector2 midPoint = new Vector2(-150f, 150f);
-        Vector2 endPoint = new Vector2(-450f, 230f);
+        Vector2 endPoint = new Vector2(-450f, 365f);
         float duration = 1.2f;
 
         // Flugbahn
