@@ -3,6 +3,10 @@ using System.Collections;
 
 public class RangedEnemy : EnemyBase, ITimeSlowable
 {
+    [Header("Gate Hit Sound")]
+    public AudioClip gateHitSound;
+    public float gateHitVolume = 1f;
+
     [Header("Movement & Attack Settings")]
     public float moveSpeed = 3f;
     public float attackRange = 8f;
@@ -15,8 +19,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     public Transform muzzle;
 
     [Header("Audio")]
-    public AudioClip shootSound;           // 👉 Ziehst du im Inspector rein
-    private AudioSource audioSource;       // 👉 Zum Abspielen des Sounds
+    public AudioClip shootSound;
+    private AudioSource audioSource;
 
     private Transform playerTransform;
     private Animator animator;
@@ -52,15 +56,16 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         _rend = GetComponentInChildren<SkinnedMeshRenderer>();
         if (_rend) _origColor = _rend.material.color;
 
-        // ⭐ AUDIO SOURCE INITIALISIERUNG
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
 
         audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f; // 2D-Sound – logisch für Shooter
+        audioSource.spatialBlend = 0f;
     }
 
+
+    // ---------------- TIME SLOW ----------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         _isSlowed = true;
@@ -70,19 +75,12 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         if (_rend) _rend.material.color = Color.cyan;
     }
 
+
+    // ---------------- UPDATE ----------------
     void Update()
     {
         if (_didDie) return;
         if (!playerTransform) return;
-
-        if (_isSlowed)
-        {
-            if (_rend) _rend.material.color = Color.cyan;
-        }
-        else
-        {
-            if (_rend) _rend.material.color = _origColor;
-        }
 
         if (_isSlowed && Time.time >= _slowEndTime)
         {
@@ -142,6 +140,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
+
+    // ---------------- SHOOTING ----------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -160,23 +160,35 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         if (proj.TryGetComponent(out ProjectileEnemy projectile))
             projectile.Init(dir);
 
-        // ⭐ SOUND ABFEUERN
         if (shootSound != null)
             audioSource.PlayOneShot(shootSound);
     }
 
+
+    // ---------------- COLLISION ----------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
 
+        // Player collision (wie vorher)
         if (other.CompareTag("Player") && !_didDie)
         {
             killedByCollision = true;
             player.TakeDamage(1);
             Die();
+            return;
+        }
+
+        // Gate collision → EXACT wie beim TankEnemy
+        if (other.CompareTag("Gate"))
+        {
+            if (gateHitSound != null)
+                audioSource.PlayOneShot(gateHitSound, gateHitVolume);
         }
     }
 
+
+    // ---------------- DEATH ----------------
     protected override void Die()
     {
         if (_didDie) return;
@@ -191,9 +203,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         moveSpeed = 0f;
 
         if (!killedByCollision)
-        {
             base.Die();
-        }
 
         Destroy(gameObject, 2.5f);
     }

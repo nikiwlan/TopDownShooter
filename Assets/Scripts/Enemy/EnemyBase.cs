@@ -15,9 +15,6 @@ public abstract class EnemyBase : MonoBehaviour
     private Collider[] allColliders;
     private Rigidbody rb;
 
-    // ----------------------------------------------------------
-    // START / AWAKE
-    // ----------------------------------------------------------
     protected virtual void Awake()
     {
         allColliders = GetComponentsInChildren<Collider>(true);
@@ -39,9 +36,6 @@ public abstract class EnemyBase : MonoBehaviour
             Debug.Log($"[{name}] Player found: {(player ? "YES" : "NO")}");
     }
 
-    // ----------------------------------------------------------
-    // DAMAGE
-    // ----------------------------------------------------------
     public virtual void TakeDamage(int amount)
     {
         health -= amount;
@@ -53,13 +47,10 @@ public abstract class EnemyBase : MonoBehaviour
             Die();
     }
 
-    // ----------------------------------------------------------
-    // DEATH (ZENTRAL FÜR SCORE & POPUP)
-    // ----------------------------------------------------------
     protected virtual void Die()
     {
-        DisableAllColliders();   // ✅ Gegner kollidiert ab jetzt mit NICHTS mehr
-        DisablePhysics();        // ✅ Physik abschalten (optional)
+        DisableAllColliders();
+        DisablePhysics();
 
         int multiplier = ScoreManager.Instance != null
             ? ScoreManager.Instance.scoreMultiplier
@@ -77,22 +68,14 @@ public abstract class EnemyBase : MonoBehaviour
         if (debug)
             Debug.Log($"[{name}] gestorben → Base {pointsOnKill}, Final {finalPoints}");
 
-        // Gegner wird NICHT sofort zerstört!
         OnDeathDestroyed();
     }
 
-    // ----------------------------------------------------------
-    // SEPARATE ZERSTÖRUNG (damit Animation ablaufen kann)
-    // ----------------------------------------------------------
     protected virtual void OnDeathDestroyed()
     {
-        // wird von FastEnemy, TankEnemy, RangedEnemy überschrieben
         Destroy(gameObject, 2f);
     }
 
-    // ----------------------------------------------------------
-    // HILFE: Collider / Physik ausschalten
-    // ----------------------------------------------------------
     protected void DisableAllColliders()
     {
         foreach (var c in allColliders)
@@ -110,13 +93,19 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    // ----------------------------------------------------------
-    // DEBUG TRIGGER
-    // ----------------------------------------------------------
     protected virtual void OnTriggerEnter(Collider other)
     {
-        if (!debug) return;
+        if (other.CompareTag("Gate"))
+        {
+            OnGateHit();
+        }
 
+        if (!debug) return;
         Debug.Log($"[{name}] Trigger → {other.name}");
+    }
+
+    protected virtual void OnGateHit()
+    {
+        // Wird in Kindklassen überschrieben.
     }
 }

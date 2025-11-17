@@ -3,6 +3,10 @@ using System.Collections;
 
 public class TankEnemy : EnemyBase, ITimeSlowable
 {
+    [Header("Gate Hit Sound")]
+    public AudioClip gateHitSound;
+    public float gateHitVolume = 1f;
+
     [Header("Movement Settings")]
     public float moveSpeed = 2f;
     public LayerMask wallLayer;
@@ -23,19 +27,16 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
     private Transform playerTransform;
 
-    // TimeSlow
     private float _baseSpeed;
     private bool _isSlowed;
     private float _slowEndTime;
     private Renderer _rend;
     private Color _origColor;
 
-    // Attack
     private bool isAttacking = false;
     private float nextAttackTime = 0f;
     private bool isInAttackRange = false;
 
-    // Contact cooldown
     private float _nextHitTime;
     [SerializeField] private float _contactCooldown = 0.4f;
 
@@ -54,14 +55,13 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         if (!animator) animator = GetComponentInChildren<Animator>();
 
-        // AUDIO SOURCE INITIALISIEREN
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f; // 2D Sound
+        audioSource.spatialBlend = 0f;
         audioSource.loop = false;
     }
 
-    // -------------------- TIME SLOW ------------------------
+    // -------- TIME SLOW ----------
     public void ApplyTimeSlow(float duration, float factor)
     {
         _isSlowed = true;
@@ -70,7 +70,7 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         if (_rend) _rend.material.color = Color.cyan;
     }
 
-    // -------------------- UPDATE ---------------------------
+    // -------- UPDATE ----------
     void Update()
     {
         if (_isSlowed && Time.time >= _slowEndTime)
@@ -91,15 +91,10 @@ public class TankEnemy : EnemyBase, ITimeSlowable
             MoveTowardsPlayer();
             animator.SetFloat("Speed", moveSpeed);
         }
-        else
-        {
-            animator.SetFloat("Speed", 0f);
-        }
+        else animator.SetFloat("Speed", 0f);
 
         if (!isAttacking && isInAttackRange && Time.time >= nextAttackTime)
-        {
             StartCoroutine(AttackRoutine());
-        }
     }
 
     private void MoveTowardsPlayer()
@@ -108,15 +103,10 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         dir.y = 0;
 
         if (!Physics.Raycast(transform.position, dir, out RaycastHit hit, moveSpeed * Time.deltaTime + 0.2f, wallLayer))
-        {
             transform.position += dir * moveSpeed * Time.deltaTime;
-        }
 
         if (dir.sqrMagnitude > 0.001f)
-        {
-            transform.rotation = Quaternion.Slerp(transform.rotation,
-                Quaternion.LookRotation(dir), 0.2f);
-        }
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), 0.2f);
     }
 
     private IEnumerator AttackRoutine()
@@ -124,10 +114,7 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         isAttacking = true;
         animator.SetBool("isAttacking", true);
 
-        // 🔊 Attack Sound abspielen
         if (attackSound)
-            audioSource.pitch = 0.4f;   
-            audioSource.PlayDelayed(0.5f);  
             audioSource.PlayOneShot(attackSound);
 
         yield return new WaitForSeconds(attackDuration * 0.5f);
@@ -143,19 +130,17 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         nextAttackTime = Time.time + attackCooldown;
     }
 
-    // -------------------- DAMAGE / DEATH --------------------
+    // -------- DAMAGE / DEATH ----------
     public override void TakeDamage(int amount)
     {
-        // 🔊 Hit Sound abspielen
         if (hitSound)
             audioSource.PlayOneShot(hitSound);
 
-        base.TakeDamage(amount); // wichtig!
+        base.TakeDamage(amount);
     }
 
     protected override void Die()
     {
-        // 🔊 Death Sound abspielen
         if (deathSound)
             audioSource.PlayOneShot(deathSound);
 
@@ -176,6 +161,13 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     protected override void OnDeathDestroyed()
     {
         Destroy(gameObject, 2.5f);
+    }
+
+    // -------- GATE HIT ----------
+    protected override void OnGateHit()
+    {
+        if (gateHitSound != null)
+            audioSource.PlayOneShot(gateHitSound, gateHitVolume);
     }
 
     protected override void OnTriggerEnter(Collider other)

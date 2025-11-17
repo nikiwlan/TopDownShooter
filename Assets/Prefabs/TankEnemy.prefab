@@ -65,10 +65,12 @@ MonoBehaviour:
   pointsOnKill: 10
   debug: 1
   player: {fileID: 0}
+  gateHitSound: {fileID: 8300000, guid: 74047d1efac8b6e469be0911bc801656, type: 3}
+  gateHitVolume: 1
   moveSpeed: 2
   wallLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   attackRange: 3
   attackDuration: 1.5
   attackCooldown: 1.5

@@ -12,8 +12,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     [Range(0f, 1f)] public float hitVolume = 1f;
 
     [Header("Death Sound")]
-    public AudioClip deathSound;           // 🔊 Sound wenn er durch Bullet stirbt
-    private AudioSource deathAudio;        // 🎧 Eigener AudioSource dafür
+    public AudioClip deathSound;
+    private AudioSource deathAudio;
+
+    [Header("Gate Hit Sound")]
+    public AudioClip gateHitSound;
+    public float gateHitVolume = 1f;
 
     private Transform playerTransform;
     private Animator animator;
@@ -33,6 +37,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     private readonly string ATTACK_STATE = "Zombie Attack";
     private readonly string DIE_TRIGGER = "Die";
 
+    // ---------------------- START ----------------------
     protected override void Start()
     {
         base.Start();
@@ -49,18 +54,16 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         attackAudio.spatialBlend = 0f;
         attackAudio.volume = hitVolume;
 
-        // 🔊 Death AudioSource
         deathAudio = gameObject.AddComponent<AudioSource>();
         deathAudio.playOnAwake = false;
         deathAudio.loop = false;
         deathAudio.spatialBlend = 0f;
 
         baseSpeed = moveSpeed;
-
         pointsOnKill = 10;
     }
 
-
+    // ---------------------- UPDATE ----------------------
     void Update()
     {
         if (isDead || playerTransform == null)
@@ -85,6 +88,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         MoveTowardsPlayer();
     }
 
+    // ---------------------- MOVEMENT ----------------------
     private void MoveTowardsPlayer()
     {
         Vector3 dir = playerTransform.position - transform.position;
@@ -100,12 +104,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
+    // ---------------------- ATTACK ----------------------
     private void StartAttack()
     {
         isAttacking = true;
         hasDealtDamage = false;
         attackTimer = 0f;
-
         moveSpeed = 0f;
 
         animator.ResetTrigger(DIE_TRIGGER);
@@ -134,6 +138,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
+    // ---------------------- DEATH ----------------------
     private void TriggerDeath()
     {
         if (isDead) return;
@@ -144,23 +149,43 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         animator.SetTrigger(DIE_TRIGGER);
 
         base.Die();
-
         Destroy(gameObject, 2f);
     }
 
     protected override void Die()
     {
-        // ⚠️ Nur hier wird er von Spieler/Bullet getötet
         if (!isDead && deathSound != null)
-        {
             deathAudio.PlayOneShot(deathSound);
-        }
 
         TriggerDeath();
     }
 
+    // ---------------------- GATE HIT (NEUE TANK-LOGIK) ----------------------
+    protected override void OnGateHit()
+    {
+        if (gateHitSound != null)
+            attackAudio.PlayOneShot(gateHitSound, gateHitVolume);
+    }
 
-    // Time Slow
+    // ---------------------- TRIGGER (EXAKT WIE TANKENEMY) ----------------------
+    protected override void OnTriggerEnter(Collider other)
+    {
+        base.OnTriggerEnter(other);
+
+        // Gate-Hit — Funktioniert jetzt 100%
+        if (other.CompareTag("Gate"))
+        {
+            OnGateHit();
+        }
+
+        // Player-Hit — Für Kontakt-Schaden wie beim Tank
+        if (other.CompareTag("Player") && player != null)
+        {
+            player.TakeDamage(1);
+        }
+    }
+
+    // ---------------------- TIME SLOW ----------------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         isSlowed = true;
