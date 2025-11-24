@@ -16,6 +16,8 @@ public class PlayerShooting : MonoBehaviour
     [Header("Audio")]
     public AudioClip shootSound;
 
+    public bool isFrozen = false;
+
     private AudioSource sfxSource;      // 👉 von PlayerMovement
     private float nextFireTime = 0f;
 
@@ -48,6 +50,7 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
+        if (isFrozen) return;
         AimAtMouse3D();
         HandleShooting();
 

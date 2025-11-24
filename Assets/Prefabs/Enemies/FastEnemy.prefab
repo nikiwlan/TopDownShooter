@@ -70,7 +70,9 @@ MonoBehaviour:
   attackDamageDelay: 0.8
   hitSound: {fileID: 8300000, guid: ef085c6872ea9f84e904e2031d8ee3c7, type: 3}
   hitVolume: 1
-  deathSound: {fileID: 8300000, guid: d7b0427132ed54b479c6842219f004ea, type: 3}
+  normalDeathHitSound: {fileID: 8300000, guid: 426400114a0bccf4f8a640d77db7c891, type: 3}
+  normalDeathSound: {fileID: 8300000, guid: b3f2e6dc343d1f149b5d19ae427a1b69, type: 3}
+  attackDeathSound: {fileID: 8300000, guid: c98d32a2a3a774c4f951741bcfbafc56, type: 3}
   gateHitSound: {fileID: 8300000, guid: 5b910654428053f4ebf00a854a03a432, type: 3}
   gateHitVolume: 1
 --- !u!54 &7231332852345590285
@@ -167,6 +169,20 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 100106, guid: 655a837a2979acd49b85d1a0401fc0aa, type: 3}
   m_PrefabInstance: {fileID: 7157631294308166}
   m_PrefabAsset: {fileID: 0}
+--- !u!136 &2242592742839337158
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7157631294339148}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  m_Radius: 0.5
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &7157631274949462
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -209,20 +225,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &2242592742839337158
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7157631294339148}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 1
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &7157631294432684 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400106, guid: 655a837a2979acd49b85d1a0401fc0aa, type: 3}

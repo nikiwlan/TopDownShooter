@@ -802,7 +802,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de75e9f03c547814fa9ca4ea4f666be5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 2
+  health: 1
   pointsOnKill: 10
   debug: 1
   player: {fileID: 0}
@@ -817,7 +817,8 @@ MonoBehaviour:
     m_Bits: 512
   projectilePrefab: {fileID: 730793640360983458, guid: b6255442bef908c45925ea58d91a927a, type: 3}
   muzzle: {fileID: 6910753323539956157}
-  shootSound: {fileID: 8300000, guid: 8b5e4f2a60651264d9a94711050329e7, type: 3}
+  shootSound: {fileID: 8300000, guid: 0fb89f6c078758448bb6ecd22191e814, type: 3}
+  deathSound: {fileID: 8300000, guid: 9325b8c85b32eda4cb943f8789e69a8c, type: 3}
 --- !u!54 &1665694905973868149
 Rigidbody:
   m_ObjectHideFlags: 0

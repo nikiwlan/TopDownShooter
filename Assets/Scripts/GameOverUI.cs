@@ -44,7 +44,9 @@ public class GameOverUI : MonoBehaviour
     void Update()
     {
         if (!isGameOver)
+        {
             survivedTime += Time.deltaTime;
+        }
 
         if (!isGameOver && playerHealth.currentHealth <= 0)
         {
@@ -52,18 +54,25 @@ public class GameOverUI : MonoBehaviour
         }
     }
 
+
     void ShowGameOver()
     {
         isGameOver = true;
 
-        // 1. Alle HUD-Elemente ausblenden (Score, Boosts, Popups etc.)
+        // Spieler dauerhaft einfrieren
+        var pm = FindObjectOfType<PlayerMovement>();
+        if (pm != null) pm.isFrozen = true;
+
+        var ps = FindObjectOfType<PlayerShooting>();
+        if (ps != null) ps.isFrozen = true;
+
+        // HUD verstecken
         foreach (GameObject ui in uiToHide)
         {
             if (ui != null)
                 ui.SetActive(false);
         }
 
-        // 2. Game Over UI einschalten
         gameOverOverlay.SetActive(true);
         gameOverText.gameObject.SetActive(true);
         survivedText.gameObject.SetActive(true);
@@ -73,17 +82,18 @@ public class GameOverUI : MonoBehaviour
         if (mainMenuButton != null)
             mainMenuButton.gameObject.SetActive(true);
 
-        // 3. Überlebenszeit formatieren
+
+
         int minutes = Mathf.FloorToInt(survivedTime / 60f);
         int seconds = Mathf.FloorToInt(survivedTime % 60f);
         survivedText.text = $"You survived: {minutes:00}:{seconds:00}";
 
-        // 4. Score anzeigen
         gameOverScoreText.text = $"Score: {ScoreManager.Instance.GetScore()}";
 
-        // 5. Spiel einfrieren
+        // Time freeze
         Time.timeScale = 0f;
     }
+
 
     void RestartGame()
     {

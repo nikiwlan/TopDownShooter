@@ -6,9 +6,7 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    [Tooltip("Nicht-Trigger-Collider der Arena/Wände")]
     public LayerMask wallLayer;
-    [Tooltip("Trigger-Collider der Gates/Portale")]
     public LayerMask gateLayer;
 
     [Header("Speed Boost Settings")]
@@ -19,24 +17,25 @@ public class PlayerMovement : MonoBehaviour
     public AudioClip footstepSound;
     [Range(0f, 1f)] public float footstepVolume = 0.65f;
 
+    [Header("PowerUp Sounds")]
+    public AudioClip genericPowerUpSound;   // FireRate + ScoreBoost + TimeSlow + SpeedBoost
+    public AudioClip healPowerUpSound;      // Hearts
+
     [Header("Collision Tuning")]
-    [Tooltip("Sicherheitsabstand vor Kanten")]
     public float castSkin = 0.2f;
-    [Tooltip("Schrumpft die Cast-Box in X/Z für feineres Anfühlen")]
     public float shrinkXZ = 0.02f;
-    [Tooltip("Höhe der Cast-Box (Top-Down: flach)")]
     public float halfExtentY = 0.2f;
 
+    public bool isFrozen = false;
+
     [Header("Animation Settings")]
-    [Tooltip("Animator-Referenz (z. B. vom RobotVisual)")]
     [SerializeField] private Animator animator;
 
     private bool isSpeedBoostActive = false;
     private Coroutine speedBoostRoutine;
 
-    // ⭐ Zwei getrennte AudioSources
-    private AudioSource movementSource;   // nur fürs Laufen (Loop)
-    private AudioSource sfxSource;        // Boost, Treffer, Schüsse etc.
+    private AudioSource movementSource;
+    private AudioSource sfxSource;
 
     private Vector3 moveDirection;
     private Vector3 lastMoveDirection;
@@ -47,18 +46,16 @@ public class PlayerMovement : MonoBehaviour
     {
         col = GetComponent<BoxCollider>();
 
-        // --- AudioSource 1: Movement / Footsteps ---
         movementSource = gameObject.AddComponent<AudioSource>();
         movementSource.loop = true;
         movementSource.playOnAwake = false;
-        movementSource.spatialBlend = 0f; // 2D
+        movementSource.spatialBlend = 0f;
         movementSource.volume = footstepVolume;
 
-        // --- AudioSource 2: SFX (Boost, Schüsse, Treffer, …) ---
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.loop = false;
         sfxSource.playOnAwake = false;
-        sfxSource.spatialBlend = 0f; // 2D
+        sfxSource.spatialBlend = 0f;
     }
 
     void Update()
@@ -74,6 +71,12 @@ public class PlayerMovement : MonoBehaviour
 
         HandleAnimator();
         HandleFootstepSound();
+
+        if (isFrozen)
+        {
+            movementSource.Stop();
+            return;
+        }
     }
 
     // ------------------------------------------------------------
@@ -117,8 +120,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------------------------------------
-    // Bewegung mit Sliding an Wänden UND Gates
-    // (dein bestehender Code, nur unverändert übernommen)
+    // Bewegung + Sliding (unverändert)
     // ------------------------------------------------------------
     private void TryMove(Vector3 direction)
     {
@@ -200,7 +202,6 @@ public class PlayerMovement : MonoBehaviour
 
                 remaining -= allowed;
                 move = slide;
-                continue;
             }
             else
             {
@@ -216,8 +217,22 @@ public class PlayerMovement : MonoBehaviour
     // ------------------------------------------------------------
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PowerUp"))
-            Debug.Log("[PlayerMovement] PowerUp: " + other.name);
+        if (!other.CompareTag("PowerUp")) return;
+
+        string name = other.name.ToLower();
+
+        // ⭐ Heart / Heal
+        if (name.Contains("heart") || name.Contains("heal"))
+        {
+            if (healPowerUpSound != null)
+                sfxSource.PlayOneShot(healPowerUpSound);
+        }
+        else
+        {
+            // ⭐ Alle anderen PowerUps → derselbe Sound
+            if (genericPowerUpSound != null)
+                sfxSource.PlayOneShot(genericPowerUpSound);
+        }
     }
 
     // ------------------------------------------------------------
@@ -244,7 +259,6 @@ public class PlayerMovement : MonoBehaviour
         GameObject fx = null;
         if (speedBoostEffect) fx = Instantiate(speedBoostEffect, transform.position, Quaternion.identity, transform);
 
-        // ⭐ Boost-Sound über SFX-Source
         if (boostSound && sfxSource != null)
             sfxSource.PlayOneShot(boostSound);
 
@@ -255,11 +269,7 @@ public class PlayerMovement : MonoBehaviour
         isSpeedBoostActive = false;
     }
 
-    // ⭐ Zugriff für andere Skripte (z.B. PlayerShooting)
-    public AudioSource GetSfxSource()
-    {
-        return sfxSource;
-    }
+    public AudioSource GetSfxSource() => sfxSource;
 
 #if UNITY_EDITOR
     void OnDrawGizmos()

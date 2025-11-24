@@ -20,6 +20,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
     [Header("Audio")]
     public AudioClip shootSound;
+    public AudioClip deathSound;     // 🔥 NEU: Sound wenn der RangedEnemy stirbt
     private AudioSource audioSource;
 
     private Transform playerTransform;
@@ -64,7 +65,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         audioSource.spatialBlend = 0f;
     }
 
-
     // ---------------- TIME SLOW ----------------
     public void ApplyTimeSlow(float duration, float factor)
     {
@@ -74,7 +74,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
         if (_rend) _rend.material.color = Color.cyan;
     }
-
 
     // ---------------- UPDATE ----------------
     void Update()
@@ -140,7 +139,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
     // ---------------- SHOOTING ----------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
     {
@@ -164,13 +162,11 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             audioSource.PlayOneShot(shootSound);
     }
 
-
     // ---------------- COLLISION ----------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
 
-        // Player collision (wie vorher)
         if (other.CompareTag("Player") && !_didDie)
         {
             killedByCollision = true;
@@ -179,14 +175,12 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             return;
         }
 
-        // Gate collision → EXACT wie beim TankEnemy
         if (other.CompareTag("Gate"))
         {
             if (gateHitSound != null)
                 audioSource.PlayOneShot(gateHitSound, gateHitVolume);
         }
     }
-
 
     // ---------------- DEATH ----------------
     protected override void Die()
@@ -201,6 +195,10 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
 
         moveSpeed = 0f;
+
+        // 🔥 HIER → Death sound abspielen
+        if (deathSound != null)
+            audioSource.PlayOneShot(deathSound);
 
         if (!killedByCollision)
             base.Die();

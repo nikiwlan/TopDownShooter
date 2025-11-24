@@ -11,9 +11,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     public AudioClip hitSound;
     [Range(0f, 1f)] public float hitVolume = 1f;
 
-    [Header("Death Sound")]
-    public AudioClip deathSound;
-    private AudioSource deathAudio;
+    [Header("Death Sounds")]
+    public AudioClip normalDeathHitSound;   // NEU → abgespielt direkt vor normalem DeathSound
+    public AudioClip normalDeathSound;      // normaler Tod (gibt Score)
+    public AudioClip attackDeathSound;      // Tod nach eigenem Angriff (kein Score)
+
+    private AudioSource audioSrc;
 
     [Header("Gate Hit Sound")]
     public AudioClip gateHitSound;
@@ -26,8 +29,8 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     private bool hasDealtDamage = false;
     private float attackTimer = 0f;
 
-    private AudioSource attackAudio;
     private bool isDead = false;
+    private bool deathByAttack = false;
 
     private float baseSpeed;
     private bool isSlowed;
@@ -36,6 +39,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     private readonly string RUN_STATE = "Injured Run";
     private readonly string ATTACK_STATE = "Zombie Attack";
     private readonly string DIE_TRIGGER = "Die";
+
 
     // ---------------------- START ----------------------
     protected override void Start()
@@ -48,20 +52,15 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         if (animator != null)
             animator.Play(RUN_STATE);
 
-        attackAudio = gameObject.AddComponent<AudioSource>();
-        attackAudio.playOnAwake = false;
-        attackAudio.loop = false;
-        attackAudio.spatialBlend = 0f;
-        attackAudio.volume = hitVolume;
-
-        deathAudio = gameObject.AddComponent<AudioSource>();
-        deathAudio.playOnAwake = false;
-        deathAudio.loop = false;
-        deathAudio.spatialBlend = 0f;
+        audioSrc = gameObject.AddComponent<AudioSource>();
+        audioSrc.playOnAwake = false;
+        audioSrc.loop = false;
+        audioSrc.spatialBlend = 0f;
 
         baseSpeed = moveSpeed;
         pointsOnKill = 10;
     }
+
 
     // ---------------------- UPDATE ----------------------
     void Update()
@@ -88,6 +87,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         MoveTowardsPlayer();
     }
 
+
     // ---------------------- MOVEMENT ----------------------
     private void MoveTowardsPlayer()
     {
@@ -104,12 +104,14 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
+
     // ---------------------- ATTACK ----------------------
     private void StartAttack()
     {
         isAttacking = true;
         hasDealtDamage = false;
         attackTimer = 0f;
+
         moveSpeed = 0f;
 
         animator.ResetTrigger(DIE_TRIGGER);
@@ -124,10 +126,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         {
             hasDealtDamage = true;
 
-            if (hitSound)
-                attackAudio.PlayOneShot(hitSound);
+            if (hitSound != null)
+                audioSrc.PlayOneShot(hitSound, hitVolume);
 
             player?.TakeDamage(1);
+
+            deathByAttack = true;
         }
 
         var info = animator.GetCurrentAnimatorStateInfo(0);
@@ -138,52 +142,74 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-    // ---------------------- DEATH ----------------------
+
+    // ---------------------- DEATH HANDLING ----------------------
     private void TriggerDeath()
     {
         if (isDead) return;
-
         isDead = true;
         isAttacking = false;
 
         animator.SetTrigger(DIE_TRIGGER);
 
-        base.Die();
+        // Score nur, wenn KEIN Angriffstod
+        if (!deathByAttack)
+            base.Die();
+        else
+            DisableAllColliders(); // kein Score bei AttackDeath
+
+        // ---------- SOUND LOGIK ----------
+        if (deathByAttack)
+        {
+            // Angriffstod → nur attackDeathSound
+            if (attackDeathSound != null)
+                audioSrc.PlayOneShot(attackDeathSound);
+        }
+        else
+        {
+            // normaler Tod → ZWEI SOUNDS nacheinander
+            if (normalDeathHitSound != null)
+                audioSrc.PlayOneShot(normalDeathHitSound);
+
+            if (normalDeathSound != null)
+                audioSrc.PlayOneShot(normalDeathSound);
+        }
+
         Destroy(gameObject, 2f);
     }
 
+
     protected override void Die()
     {
-        if (!isDead && deathSound != null)
-            deathAudio.PlayOneShot(deathSound);
-
-        TriggerDeath();
+        if (!isDead)
+            TriggerDeath();
     }
 
-    // ---------------------- GATE HIT (NEUE TANK-LOGIK) ----------------------
+
+    // ---------------------- GATE HIT ----------------------
     protected override void OnGateHit()
     {
         if (gateHitSound != null)
-            attackAudio.PlayOneShot(gateHitSound, gateHitVolume);
+            audioSrc.PlayOneShot(gateHitSound, gateHitVolume);
     }
 
-    // ---------------------- TRIGGER (EXAKT WIE TANKENEMY) ----------------------
+
+    // ---------------------- TRIGGER ----------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
 
-        // Gate-Hit — Funktioniert jetzt 100%
         if (other.CompareTag("Gate"))
         {
             OnGateHit();
         }
 
-        // Player-Hit — Für Kontakt-Schaden wie beim Tank
         if (other.CompareTag("Player") && player != null)
         {
             player.TakeDamage(1);
         }
     }
+
 
     // ---------------------- TIME SLOW ----------------------
     public void ApplyTimeSlow(float duration, float factor)

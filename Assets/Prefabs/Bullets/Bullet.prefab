@@ -51,7 +51,7 @@ MonoBehaviour:
   speed: 20
   lifetime: 2
   damage: 1
-  gateHitSound: {fileID: 8300000, guid: b8e128bdaeb099f478c1e480d4321af9, type: 3}
+  gateHitSound: {fileID: 8300000, guid: 6f65af6e1417a1943bd815cb7c905622, type: 3}
   gateSoundVolume: 1
 --- !u!135 &-8009326086299192199
 SphereCollider:
