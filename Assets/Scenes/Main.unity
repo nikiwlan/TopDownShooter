@@ -1357,9 +1357,15 @@ MonoBehaviour:
   - {fileID: 5309475703758809266, guid: 5059590f4132c2243ae214b6f0165acb, type: 3}
   - {fileID: 3568326025226569032, guid: 5b65641f2bf282e4db49a6554fac5dc5, type: 3}
   - {fileID: 8860364449981237179, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
-  spawnInterval: 5
-  spawnRadius: 6
+  spawnInterval: 4
+  spawnRadius: 50
+  spawnMinDistance: 2
+  spawnHeight: 2
   player: {fileID: 1978811930}
+  minX: -12
+  maxX: 16
+  minZ: -15
+  maxZ: 15
 --- !u!4 &608432043
 Transform:
   m_ObjectHideFlags: 0
