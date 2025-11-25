@@ -16,24 +16,26 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
     [Header("Audio")]
     public AudioClip shootSound;
-    public AudioClip deathSound;     // 🔥 NEU: Sound wenn der RangedEnemy stirbt
+    public AudioClip deathSound;
     private AudioSource audioSource;
 
     private Transform playerTransform;
     private Animator animator;
 
-    private float _baseSpeed;
-    private bool _isSlowed;
-    private float _slowEndTime;
-    private Renderer _rend;
-    private Color _origColor;
+    // Time Slow
+    private float baseSpeed;
+    private bool isSlowed;
+    private float slowEndTime;
 
-    private float _shootTimer;
-    private float _aimTimer;
+    // Attack logic
+    private float shootTimer;
+    private float aimTimer;
 
     private bool killedByCollision = false;
-    private bool _didDie;
+    private bool didDie = false;
 
+
+    // ---------------- START ----------------
     protected override void Start()
     {
         base.Start();
@@ -42,58 +44,44 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         playerTransform = player ? player.transform : null;
 
         animator = GetComponentInChildren<Animator>();
-        if (animator != null)
+        if (animator)
         {
             animator.Play("Walking");
             animator.SetFloat("Speed", 1f);
         }
 
-        _baseSpeed = moveSpeed;
-
-        _rend = GetComponentInChildren<SkinnedMeshRenderer>();
-        if (_rend) _origColor = _rend.material.color;
+        baseSpeed = moveSpeed;
 
         audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
+        if (!audioSource)
             audioSource = gameObject.AddComponent<AudioSource>();
 
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
     }
 
-    // ---------------- TIME SLOW ----------------
-    public void ApplyTimeSlow(float duration, float factor)
-    {
-        _isSlowed = true;
-        _slowEndTime = Mathf.Max(_slowEndTime, Time.time + duration);
-        moveSpeed = _baseSpeed * factor;
-
-        if (_rend) _rend.material.color = Color.cyan;
-    }
 
     // ---------------- UPDATE ----------------
     void Update()
     {
-        if (_didDie) return;
+        if (didDie) return;
         if (!playerTransform) return;
 
-        if (_isSlowed && Time.time >= _slowEndTime)
-        {
-            _isSlowed = false;
-            moveSpeed = _baseSpeed;
-            if (_rend) _rend.material.color = _origColor;
-        }
+        // TimeSlow verarbeiten
+        HandleTimeSlow();
 
-        _shootTimer -= Time.deltaTime;
+        shootTimer -= Time.deltaTime;
 
         Vector3 dir = playerTransform.position - transform.position;
         dir.y = 0f;
         Vector3 n = dir.normalized;
         float dist = dir.magnitude;
 
+        // Rotation
         if (n != Vector3.zero)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(n), 0.2f);
 
+        // Bewegung / Angriff
         if (dist > approachDistance)
         {
             float step = moveSpeed * Time.deltaTime;
@@ -101,7 +89,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             if (!Physics.Raycast(transform.position + Vector3.up * 0.25f, n, out RaycastHit hit, step + 0.2f, wallLayer))
                 transform.position += n * step;
 
-            _aimTimer = 0f;
+            aimTimer = 0f;
 
             if (animator)
             {
@@ -111,20 +99,20 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
         else
         {
-            _aimTimer += Time.deltaTime;
+            aimTimer += Time.deltaTime;
 
             if (animator)
                 animator.SetFloat("Speed", 0f);
 
-            if (_aimTimer >= 0.25f)
+            if (aimTimer >= 0.25f)
             {
                 if (animator)
                     animator.SetBool("IsFiring", true);
 
-                if (_shootTimer <= 0f)
+                if (shootTimer <= 0f)
                 {
                     StartCoroutine(ShootWithDelay(n, 0.25f));
-                    _shootTimer = shootCooldown;
+                    shootTimer = shootCooldown;
                 }
             }
             else
@@ -134,6 +122,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             }
         }
     }
+
 
     // ---------------- SHOOTING ----------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
@@ -158,25 +147,26 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             audioSource.PlayOneShot(shootSound);
     }
 
+
     // ---------------- COLLISION ----------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
 
-        if (other.CompareTag("Player") && !_didDie)
+        if (other.CompareTag("Player") && !didDie)
         {
             killedByCollision = true;
             player.TakeDamage(1);
             Die();
-            return;
         }
     }
+
 
     // ---------------- DEATH ----------------
     protected override void Die()
     {
-        if (_didDie) return;
-        _didDie = true;
+        if (didDie) return;
+        didDie = true;
 
         if (animator)
         {
@@ -186,13 +176,33 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
         moveSpeed = 0f;
 
-        // 🔥 HIER → Death sound abspielen
-        if (deathSound != null)
+        if (deathSound)
             audioSource.PlayOneShot(deathSound);
 
         if (!killedByCollision)
             base.Die();
 
         Destroy(gameObject, 2.5f);
+    }
+
+
+    // ---------------- TIME SLOW ----------------
+    public void ApplyTimeSlow(float duration, float factor)
+    {
+        isSlowed = true;
+        slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
+        moveSpeed = baseSpeed * factor;
+
+        SetColorAll(Color.cyan);
+    }
+
+    private void HandleTimeSlow()
+    {
+        if (isSlowed && Time.time >= slowEndTime)
+        {
+            isSlowed = false;
+            moveSpeed = baseSpeed;
+            ResetColorAll();
+        }
     }
 }

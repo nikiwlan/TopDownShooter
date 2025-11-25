@@ -15,7 +15,10 @@ public abstract class EnemyBase : MonoBehaviour
     private Collider[] allColliders;
     private Rigidbody rb;
 
-    // optional – falls du später für Sounds den Root brauchst
+    // Renderer-Cache für TimeSlow-Farbe
+    protected Renderer[] allRenderers;
+    protected Color[] originalColors;
+
     public Transform Root => transform;
 
     protected virtual void Awake()
@@ -23,8 +26,19 @@ public abstract class EnemyBase : MonoBehaviour
         allColliders = GetComponentsInChildren<Collider>(true);
         rb = GetComponent<Rigidbody>();
 
+        // ---------------- Renderer sammeln ----------------
+        allRenderers = GetComponentsInChildren<Renderer>(true);
+        originalColors = new Color[allRenderers.Length];
+
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            if (allRenderers[i].material.HasProperty("_Color"))
+                originalColors[i] = allRenderers[i].material.color;
+        }
+
         if (debug)
         {
+            Debug.Log($"[{name}] Renderer Count: {allRenderers.Length}");
             Debug.Log($"[{name}] Collider Count: {allColliders.Length}");
             Debug.Log($"[{name}] Rigidbody vorhanden: {rb != null}");
         }
@@ -39,6 +53,26 @@ public abstract class EnemyBase : MonoBehaviour
             Debug.Log($"[{name}] Player found: {(player ? "YES" : "NO")}");
     }
 
+    // ---------------- COLOR HANDLING ----------------
+    public void SetColorAll(Color c)
+    {
+        foreach (var r in allRenderers)
+        {
+            if (r.material.HasProperty("_Color"))
+                r.material.color = c;
+        }
+    }
+
+    public void ResetColorAll()
+    {
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            if (allRenderers[i].material.HasProperty("_Color"))
+                allRenderers[i].material.color = originalColors[i];
+        }
+    }
+
+    // --------------------------------------------------------
     public virtual void TakeDamage(int amount)
     {
         health -= amount;

@@ -12,9 +12,9 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     [Range(0f, 1f)] public float hitVolume = 1f;
 
     [Header("Death Sounds")]
-    public AudioClip normalDeathHitSound;   // NEU → abgespielt direkt vor normalem DeathSound
-    public AudioClip normalDeathSound;      // normaler Tod (gibt Score)
-    public AudioClip attackDeathSound;      // Tod nach eigenem Angriff (kein Score)
+    public AudioClip normalDeathHitSound;
+    public AudioClip normalDeathSound;
+    public AudioClip attackDeathSound;
 
     private AudioSource audioSrc;
 
@@ -36,8 +36,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     private readonly string ATTACK_STATE = "Zombie Attack";
     private readonly string DIE_TRIGGER = "Die";
 
-
-    // ---------------------- START ----------------------
     protected override void Start()
     {
         base.Start();
@@ -57,8 +55,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         pointsOnKill = 10;
     }
 
-
-    // ---------------------- UPDATE ----------------------
     void Update()
     {
         if (isDead || playerTransform == null)
@@ -83,8 +79,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         MoveTowardsPlayer();
     }
 
-
-    // ---------------------- MOVEMENT ----------------------
     private void MoveTowardsPlayer()
     {
         Vector3 dir = playerTransform.position - transform.position;
@@ -100,8 +94,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
-    // ---------------------- ATTACK ----------------------
     private void StartAttack()
     {
         isAttacking = true;
@@ -138,8 +130,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
-    // ---------------------- DEATH HANDLING ----------------------
     private void TriggerDeath()
     {
         if (isDead) return;
@@ -148,22 +138,18 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
         animator.SetTrigger(DIE_TRIGGER);
 
-        // Score nur, wenn KEIN Angriffstod
         if (!deathByAttack)
             base.Die();
         else
-            DisableAllColliders(); // kein Score bei AttackDeath
+            DisableAllColliders();
 
-        // ---------- SOUND LOGIK ----------
         if (deathByAttack)
         {
-            // Angriffstod → nur attackDeathSound
             if (attackDeathSound != null)
                 audioSrc.PlayOneShot(attackDeathSound);
         }
         else
         {
-            // normaler Tod → ZWEI SOUNDS nacheinander
             if (normalDeathHitSound != null)
                 audioSrc.PlayOneShot(normalDeathHitSound);
 
@@ -174,14 +160,12 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         Destroy(gameObject, 2f);
     }
 
-
     protected override void Die()
     {
         if (!isDead)
             TriggerDeath();
     }
 
-    // ---------------------- TRIGGER ----------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
@@ -192,13 +176,13 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
-    // ---------------------- TIME SLOW ----------------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         isSlowed = true;
         slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
         moveSpeed = baseSpeed * factor;
+
+        SetColorAll(Color.cyan);  // <--- NEU
     }
 
     private void HandleTimeSlow()
@@ -207,6 +191,8 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         {
             isSlowed = false;
             moveSpeed = baseSpeed;
+
+            ResetColorAll(); // <--- NEU
         }
     }
 }
