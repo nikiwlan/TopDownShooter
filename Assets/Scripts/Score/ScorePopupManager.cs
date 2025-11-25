@@ -7,7 +7,10 @@ public class ScorePopupManager : MonoBehaviour
 
     [Header("Settings")]
     public GameObject scorePopupPrefab;    // TMP UI Prefab
-    public Transform scoreTarget; // <-- Im Inspector zuweisen!
+    public Transform scoreTarget; // <-- Zielpunkt (z. B. UI-Score-Text)
+
+    [Header("Endpunkt Offset")]
+    public Vector2 endOffset = new Vector2(0f, 0f);
 
     private Canvas canvas;
 
@@ -38,42 +41,38 @@ public class ScorePopupManager : MonoBehaviour
         Vector2 start = Camera.main.WorldToScreenPoint(worldPos);
         rect.position = start + new Vector2(25f, 40f);
 
-        // --- Endposition ---
-        Vector2 end = scoreTarget.position;
+        // --- Endposition (MIT OFFSET) ---
+        Vector2 end = (Vector2)scoreTarget.position + endOffset;
 
-        // --- Apex: der höchste Punkt des Bogens ---
+        // --- Apex: höchster Punkt ---
         Vector2 apex = (start + end) * 0.5f;
-        apex.y += 120f;    // Höhe des Bogens
-        apex.x += 40f;     // etwas nach rechts schieben, für diagonalen Bogen
+        apex.y += 120f;
+        apex.x += 40f;
 
-        float duration = 1.2f; // schön langsam
+        float duration = 1.2f;
 
-        // --- Animation: t von 0 → 1 ---
         LeanTween.value(rect.gameObject, 0f, 1f, duration)
-             .setEaseOutSine()
-             .setOnUpdate((float t) =>
-             {
-                 Vector2 pos =
-                     (1 - t) * (1 - t) * start +
-                     2 * (1 - t) * t * apex +
-                     (t * t) * end;
+            .setEaseOutSine()
+            .setOnUpdate((float t) =>
+            {
+                Vector2 pos =
+                    (1 - t) * (1 - t) * start +
+                    2 * (1 - t) * t * apex +
+                    (t * t) * end;
 
-                 rect.position = pos;
-             })
-             .setOnComplete(() =>
-             {
-                 // NICHT sofort löschen: Erst langsam ausblassen
-                 LeanTween.alphaCanvas(cg, 0f, 1.2f)   // ← LANGSAM ausblassen (1.2 Sekunden)
-                     .setEaseOutQuad()
-                     .setOnComplete(() =>
-                     {
-                         Destroy(popup);
-                     });
-             });
+                rect.position = pos;
+            })
+            .setOnComplete(() =>
+            {
+                LeanTween.alphaCanvas(cg, 0f, 1.2f)
+                    .setEaseOutQuad()
+                    .setOnComplete(() =>
+                    {
+                        Destroy(popup);
+                    });
+            });
 
-        // Optional: leichte Größenveränderung während des Flugs
         LeanTween.scale(rect, Vector3.one * 0.8f, duration)
             .setEaseInOutSine();
     }
-
 }

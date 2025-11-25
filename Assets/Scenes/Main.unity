@@ -1357,7 +1357,7 @@ MonoBehaviour:
   - {fileID: 5309475703758809266, guid: 5059590f4132c2243ae214b6f0165acb, type: 3}
   - {fileID: 3568326025226569032, guid: 5b65641f2bf282e4db49a6554fac5dc5, type: 3}
   - {fileID: 8860364449981237179, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
-  spawnInterval: 1
+  spawnInterval: 4
   spawnRadius: 50
   spawnMinDistance: 2
   spawnHeight: 2
@@ -2600,7 +2600,7 @@ MonoBehaviour:
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
   tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
-  spawnInterval: 3
+  spawnInterval: 1
   maxEnemies: 0
   spawnPoints:
   - {fileID: 1629991534}
@@ -3124,6 +3124,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scorePopupPrefab: {fileID: 8677300796906775204, guid: 948e101df026e434491ddb98517df504, type: 3}
   scoreTarget: {fileID: 342261420}
+  endOffset: {x: -40, y: 0}
 --- !u!1 &1294025826
 GameObject:
   m_ObjectHideFlags: 0
