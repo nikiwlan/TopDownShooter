@@ -3,10 +3,6 @@ using System.Collections;
 
 public class TankEnemy : EnemyBase, ITimeSlowable
 {
-    [Header("Gate Hit Sound")]
-    public AudioClip gateHitSound;
-    public float gateHitVolume = 1f;
-
     [Header("Movement Settings")]
     public float moveSpeed = 2f;
     public LayerMask wallLayer;
@@ -170,13 +166,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     protected override void OnDeathDestroyed()
     {
         Destroy(gameObject, 2.5f);
-    }
-
-    // ---------------------------------------------------
-    protected override void OnGateHit()
-    {
-        if (gateHitSound != null)
-            audioSource.PlayOneShot(gateHitSound, gateHitVolume);
     }
 
     // ---------------------------------------------------

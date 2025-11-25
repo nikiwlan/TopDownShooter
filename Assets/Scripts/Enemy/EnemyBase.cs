@@ -15,6 +15,9 @@ public abstract class EnemyBase : MonoBehaviour
     private Collider[] allColliders;
     private Rigidbody rb;
 
+    // optional – falls du später für Sounds den Root brauchst
+    public Transform Root => transform;
+
     protected virtual void Awake()
     {
         allColliders = GetComponentsInChildren<Collider>(true);
@@ -95,17 +98,5 @@ public abstract class EnemyBase : MonoBehaviour
 
     protected virtual void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Gate"))
-        {
-            OnGateHit();
-        }
-
-        if (!debug) return;
-        Debug.Log($"[{name}] Trigger → {other.name}");
-    }
-
-    protected virtual void OnGateHit()
-    {
-        // Wird in Kindklassen überschrieben.
     }
 }

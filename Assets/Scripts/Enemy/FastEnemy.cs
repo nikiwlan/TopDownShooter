@@ -18,10 +18,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
     private AudioSource audioSrc;
 
-    [Header("Gate Hit Sound")]
-    public AudioClip gateHitSound;
-    public float gateHitVolume = 1f;
-
     private Transform playerTransform;
     private Animator animator;
 
@@ -185,24 +181,10 @@ public class FastEnemy : EnemyBase, ITimeSlowable
             TriggerDeath();
     }
 
-
-    // ---------------------- GATE HIT ----------------------
-    protected override void OnGateHit()
-    {
-        if (gateHitSound != null)
-            audioSrc.PlayOneShot(gateHitSound, gateHitVolume);
-    }
-
-
     // ---------------------- TRIGGER ----------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
-
-        if (other.CompareTag("Gate"))
-        {
-            OnGateHit();
-        }
 
         if (other.CompareTag("Player") && player != null)
         {

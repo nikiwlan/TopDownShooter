@@ -3,10 +3,6 @@ using System.Collections;
 
 public class RangedEnemy : EnemyBase, ITimeSlowable
 {
-    [Header("Gate Hit Sound")]
-    public AudioClip gateHitSound;
-    public float gateHitVolume = 1f;
-
     [Header("Movement & Attack Settings")]
     public float moveSpeed = 3f;
     public float attackRange = 8f;
@@ -173,12 +169,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             player.TakeDamage(1);
             Die();
             return;
-        }
-
-        if (other.CompareTag("Gate"))
-        {
-            if (gateHitSound != null)
-                audioSource.PlayOneShot(gateHitSound, gateHitVolume);
         }
     }
 
