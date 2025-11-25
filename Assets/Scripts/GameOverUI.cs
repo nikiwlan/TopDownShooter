@@ -59,7 +59,7 @@ public class GameOverUI : MonoBehaviour
     {
         isGameOver = true;
 
-        // Spieler dauerhaft einfrieren
+        // Spieler kontrollen einfrieren
         var pm = FindObjectOfType<PlayerMovement>();
         if (pm != null) pm.isFrozen = true;
 
@@ -73,6 +73,7 @@ public class GameOverUI : MonoBehaviour
                 ui.SetActive(false);
         }
 
+        // Game Over UI anzeigen
         gameOverOverlay.SetActive(true);
         gameOverText.gameObject.SetActive(true);
         survivedText.gameObject.SetActive(true);
@@ -82,17 +83,22 @@ public class GameOverUI : MonoBehaviour
         if (mainMenuButton != null)
             mainMenuButton.gameObject.SetActive(true);
 
-
-
+        // Zeit berechnen
         int minutes = Mathf.FloorToInt(survivedTime / 60f);
         int seconds = Mathf.FloorToInt(survivedTime % 60f);
         survivedText.text = $"You survived: {minutes:00}:{seconds:00}";
 
-        gameOverScoreText.text = $"Score: {ScoreManager.Instance.GetScore()}";
+        // Score anzeigen
+        int finalScore = ScoreManager.Instance.GetScore();
+        gameOverScoreText.text = $"Score: {finalScore}";
 
-        // Time freeze
+        // ⭐⭐⭐ HIER SPEICHERN WIR DEN SCORE ⭐⭐⭐
+        HighscoreManager.SaveScore(finalScore);
+
+        // Spiel einfrieren
         Time.timeScale = 0f;
     }
+
 
 
     void RestartGame()
