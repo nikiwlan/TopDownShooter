@@ -152,7 +152,7 @@ RectTransform:
   m_GameObject: {fileID: 79245445}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.02544, y: 1.02544, z: 1.02544}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1961981078}
@@ -222,19 +222,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 79245449}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1518230013}
-        m_TargetAssemblyTypeName: SceneLoader, Assembly-CSharp
-        m_MethodName: LoadMain
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &79245449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1508,7 +1496,7 @@ MonoBehaviour:
   - {fileID: 5309475703758809266, guid: 5059590f4132c2243ae214b6f0165acb, type: 3}
   - {fileID: 3568326025226569032, guid: 5b65641f2bf282e4db49a6554fac5dc5, type: 3}
   - {fileID: 8860364449981237179, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
-  spawnInterval: 4
+  spawnInterval: 3
   spawnRadius: 50
   spawnMinDistance: 2
   spawnHeight: 2
@@ -2616,15 +2604,15 @@ MonoBehaviour:
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
   tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
-  spawnInterval: 1
+  spawnInterval: 0.6
   maxEnemies: 0
   spawnPoints:
   - {fileID: 1629991534}
   spawnPositions: []
   positionsAreLocal: 0
   fastEnemyChance: 0.5
-  tankEnemyChance: 0
-  rangedEnemyChance: 0.5
+  tankEnemyChance: 0.2
+  rangedEnemyChance: 0.3
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0
@@ -3321,7 +3309,7 @@ RectTransform:
   m_GameObject: {fileID: 1220813979}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.02544, y: 1.02544, z: 1.02544}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1737905844}
@@ -3330,7 +3318,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 280, y: 220}
+  m_AnchoredPosition: {x: 280, y: 219.99997}
   m_SizeDelta: {x: 200, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1220813981
@@ -4086,8 +4074,8 @@ MonoBehaviour:
   gameOverText: {fileID: 1637647314}
   survivedText: {fileID: 2102735512}
   gameOverScoreText: {fileID: 1888457480}
-  restartButton: {fileID: 0}
-  mainMenuButton: {fileID: 0}
+  restartButton: {fileID: 79245448}
+  mainMenuButton: {fileID: 1220813982}
   uiToHide:
   - {fileID: 1694309541}
   - {fileID: 793695151}
@@ -5688,7 +5676,7 @@ RectTransform:
   m_GameObject: {fileID: 1820477421}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.02544, y: 1.02544, z: 1.02544}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1097243599}
@@ -5697,7 +5685,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 227, y: 140}
+  m_AnchoredPosition: {x: 229, y: 140}
   m_SizeDelta: {x: 100, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1820477423
@@ -6088,7 +6076,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -100, y: 10}
+  m_AnchoredPosition: {x: -100, y: 0}
   m_SizeDelta: {x: 800, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1888457480
@@ -6138,13 +6126,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 54
-  m_fontSizeBase: 54
+  m_fontSize: 48
+  m_fontSizeBase: 48
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
