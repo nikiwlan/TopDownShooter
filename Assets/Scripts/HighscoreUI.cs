@@ -3,19 +3,30 @@ using TMPro;
 
 public class HighscoreUI : MonoBehaviour
 {
-    [SerializeField] private TMP_Text highscoreText;
+    public TextMeshProUGUI HighscoreLeft;   // NEU
+    public TextMeshProUGUI HighscoreRight;  // NEU
 
-    private void Start()
+    void Start()
+    {
+        LoadAndDisplayScores();
+    }
+
+    void LoadAndDisplayScores()
     {
         var data = HighscoreManager.LoadScores();
 
-        string output = "Highscores\n\n";
+        // Spalten leeren
+        HighscoreLeft.text = "";
+        HighscoreRight.text = "";
 
         for (int i = 0; i < data.scores.Count; i++)
         {
-            output += $"{i + 1}.   {data.scores[i]}\n";
-        }
+            string entry = $"{i + 1}.  {data.scores[i]}";
 
-        highscoreText.text = output;
+            if (i < 5)
+                HighscoreLeft.text += entry + "\n";
+            else
+                HighscoreRight.text += entry + "\n";
+        }
     }
 }
