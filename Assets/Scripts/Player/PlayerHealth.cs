@@ -8,6 +8,7 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("UI References")]
     public HeartUIManager heartUIManager;
+    public DamageFlash damageFlash;
 
     // ---------------------- AUDIO ----------------------
     [Header("Damage Sounds (Randomized)")]
@@ -18,6 +19,9 @@ public class PlayerHealth : MonoBehaviour
     [Header("Death Sounds (Played In Order)")]
     public AudioClip deathSound_1;      // Stöhnen
     public AudioClip deathSound_2;      // Body fall
+
+
+
 
     void Awake()
     {
@@ -42,6 +46,8 @@ public class PlayerHealth : MonoBehaviour
     // ------------------------------------------------------------
     public void TakeDamage(int amount)
     {
+        damageFlash.Flash();
+
         if (currentHealth <= 0) return;
 
         int before = currentHealth;
