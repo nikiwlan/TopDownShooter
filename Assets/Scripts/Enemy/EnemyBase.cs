@@ -11,14 +11,13 @@ public abstract class EnemyBase : MonoBehaviour
     public bool debug = true;
 
     [Header("VFX")]
-    public GameObject bloodHitVFX;   // Einfaches Blutbild bei Treffer
+    public GameObject bloodHitVFX;   
 
     [HideInInspector] public PlayerHealth player;
 
     private Collider[] allColliders;
     private Rigidbody rb;
 
-    // Renderer-Cache für TimeSlow-Farbe
     protected Renderer[] allRenderers;
     protected Color[] originalColors;
 
@@ -74,14 +73,12 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    // Alte Version bleibt bestehen für Kompatibilität
     public virtual void TakeDamage(int amount)
     {
         TakeDamage(amount, Vector3.forward, transform.position);
     }
 
 
-    // Neue Version mit Treffer-Richtung
     public virtual void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
         if (hitPoint == default)
@@ -100,28 +97,22 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
 
-
-    // Blut-Effekt hinter dem Hitpoint und höher auf Y
     protected void SpawnBloodVFX(Vector3 hitDir, Vector3 hitPoint)
     {
         if (bloodHitVFX == null)
             return;
 
-        // Richtung der Kugel normalisieren
         Vector3 dir = hitDir.normalized;
 
-        // Basis ist die Mitte des Gegners, nicht der Hitpoint
-        // → so ist das Blut immer "auf der Rückseite" des Gegners
-        // Collider-Größe erkennen
-        float depthSize = 0.5f; // fallback
+        float depthSize = 0.5f; 
 
         if (TryGetComponent<Collider>(out Collider col))
         {
             depthSize = col.bounds.extents.z;
         }
 
-        // Abstand dynamisch abhängig von Gegnergröße
-        float offsetDistance = depthSize * 0.4f; // 20% weiter nach hinten
+
+        float offsetDistance = depthSize * 0.4f; 
 
         Vector3 spawnPos =
             transform.position

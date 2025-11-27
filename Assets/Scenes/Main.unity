@@ -161,7 +161,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -400, y: -200}
+  m_AnchoredPosition: {x: -400, y: -120}
   m_SizeDelta: {x: 200, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &79245447
@@ -7598,15 +7598,15 @@ MonoBehaviour:
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
   tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
-  spawnInterval: 6
+  spawnInterval: 0.6
   maxEnemies: 0
   spawnPoints:
   - {fileID: 1629991534}
   spawnPositions: []
   positionsAreLocal: 0
-  fastEnemyChance: 0
-  tankEnemyChance: 1
-  rangedEnemyChance: 0
+  fastEnemyChance: 0.5
+  tankEnemyChance: 0.3
+  rangedEnemyChance: 0.3
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0
@@ -8413,7 +8413,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -400, y: -120}
+  m_AnchoredPosition: {x: -400, y: -200}
   m_SizeDelta: {x: 200, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1220813981
@@ -9705,8 +9705,7 @@ MonoBehaviour:
   fadeDuration: 0.7
   centerAlpha: 0.25
   edgeAlpha: 0.75
-  wobbleAmount: 12
-  wobbleSpeed: 3
+  deathOverlayAlpha: 1
 --- !u!1 &1651322458
 GameObject:
   m_ObjectHideFlags: 0
@@ -11944,10 +11943,10 @@ MonoBehaviour:
   firePoint: {fileID: 1156986019}
   fireRate: 0.5
   bulletSpeed: 40
-  bulletLifetime: 5
+  bulletLifetime: 2
   animator: {fileID: 1875319476}
   shootSound: {fileID: 8300000, guid: c5096addfd715814da4c0825801ae2ca, type: 3}
-  shootVolume: 0.4
+  shootVolume: 0.25
   isFrozen: 0
 --- !u!114 &1978811932
 MonoBehaviour:
@@ -11970,6 +11969,9 @@ MonoBehaviour:
   damageSound3: {fileID: 8300000, guid: 5b04df7e10127f044b0d54f95c4f3f66, type: 3}
   deathSound_1: {fileID: 8300000, guid: 16379c57b820fe143a4958abc97e5d24, type: 3}
   deathSound_2: {fileID: 8300000, guid: 02c605f90a46fe343be5cf4dcd966043, type: 3}
+  rangeBloodVFX: {fileID: 9071036190686454750, guid: f96637e18c026d4408d3342ae0985a74, type: 3}
+  meleeBloodVFX: {fileID: 9071036190686454750, guid: 9f0b6790c8bb7524c82ed447519aa544, type: 3}
+  lastDamageType: 0
 --- !u!65 &1978811933
 BoxCollider:
   m_ObjectHideFlags: 0

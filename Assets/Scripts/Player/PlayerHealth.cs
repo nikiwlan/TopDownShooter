@@ -2,6 +2,12 @@
 
 public class PlayerHealth : MonoBehaviour
 {
+    public enum DamageType
+    {
+        Range,
+        Melee
+    }
+
     [Header("Health Settings")]
     public int maxHealth = 3;
     [HideInInspector] public int currentHealth;
@@ -20,8 +26,13 @@ public class PlayerHealth : MonoBehaviour
     public AudioClip deathSound_1;      // Stöhnen
     public AudioClip deathSound_2;      // Body fall
 
+    // ---------------------- VFX ----------------------
+    [Header("Blood VFX")]
+    public GameObject rangeBloodVFX;   // Blut bei Fernkampfschaden
+    public GameObject meleeBloodVFX;   // Blut bei Nahkampfschaden
 
-
+    [HideInInspector]
+    public DamageType lastDamageType = DamageType.Range; // Default
 
     void Awake()
     {
@@ -46,7 +57,12 @@ public class PlayerHealth : MonoBehaviour
     // ------------------------------------------------------------
     public void TakeDamage(int amount)
     {
-        damageFlash.Flash();
+        // Screen-Flash
+        if (damageFlash != null)
+            damageFlash.Flash();
+
+        // Blut-Effekt (Range / Melee)
+        SpawnBloodVFX();
 
         if (currentHealth <= 0) return;
 
@@ -63,7 +79,45 @@ public class PlayerHealth : MonoBehaviour
             Die();
     }
 
-    // Random Damage Sound über AudioManager
+    // ------------------------------------------------------------
+    // BLOOD VFX (wie beim Tank, nur mit Range/Melee-Auswahl)
+    // ------------------------------------------------------------
+    private void SpawnBloodVFX()
+    {
+        GameObject prefab = null;
+
+        switch (lastDamageType)
+        {
+            case DamageType.Melee:
+                prefab = meleeBloodVFX;
+                break;
+
+            case DamageType.Range:
+            default:
+                prefab = rangeBloodVFX;
+                break;
+        }
+
+        if (prefab == null)
+            return;
+
+        Vector3 spawnPos =
+            transform.position +
+            Vector3.up * 1f;
+
+        float randomRot = Random.Range(0f, 360f);
+
+        GameObject vfx = Instantiate(
+            prefab,
+            spawnPos,
+            Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
+        );
+        Destroy(vfx, 1f);
+    }
+
+    // ------------------------------------------------------------
+    // AUDIO
+    // ------------------------------------------------------------
     private void PlayRandomDamageSound()
     {
         AudioClip[] clips = new AudioClip[] { damageSound1, damageSound2, damageSound3 };
@@ -106,7 +160,6 @@ public class PlayerHealth : MonoBehaviour
     private void Die()
     {
         Debug.Log("[PlayerHealth] Spieler gestorben – Objekt deaktiviert.");
-
         StartCoroutine(PlayDeathSequence());
     }
 
