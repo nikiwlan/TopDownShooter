@@ -15,6 +15,10 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
+    [Header("Tank VFX")]
+    public GameObject tankHitVFX;
+    public GameObject tankDeathVFX;
+
     [Header("Audio Clips")]
     public AudioClip attackHitSound;
     public AudioClip hitSound;
@@ -121,16 +125,57 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         nextAttackTime = Time.time + attackCooldown;
     }
 
-    public override void TakeDamage(int amount)
+    public override void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
+
+        if (health <= 0)
+        {
+            return;
+        }
+
         if (hitSound)
             AudioManager.Instance.PlaySound3D(hitSound, transform.position);
 
-        base.TakeDamage(amount);
+        // eigene Health-Logik (base NICHT aufrufen!)
+        health -= amount;
+
+        if (debug)
+            Debug.Log($"[TANK] Schaden: {amount} → verbleibend {health}");
+
+        if (health <= 0)
+        {
+            Die();
+        }
+
+        // Tank-spezifisches Blut beim Treffer
+        if (tankHitVFX != null)
+        {
+            GameObject vfx = Instantiate(
+                tankHitVFX,
+                transform.position + Vector3.up * 1.5f,
+                Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
+            );
+
+            Destroy(vfx, 0.5f);
+        }
     }
+
 
     protected override void Die()
     {
+        // 1️⃣ Tank-spezifisches Death VFX
+        if (tankDeathVFX != null)
+        {
+            GameObject vfx = Instantiate(
+                tankDeathVFX,
+                transform.position + Vector3.up * 1.5f,
+                Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
+            );
+
+            Destroy(vfx, 1.2f); // VFX nach 1.2s löschen
+        }
+
+        // 2️⃣ Sound + Animation
         if (deathSound)
             AudioManager.Instance.PlaySound3D(deathSound, transform.position);
 
@@ -143,10 +188,14 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         Collider col = GetComponent<Collider>();
         if (col) col.enabled = false;
 
-        if (_rend) _rend.material.color = Color.gray;
+        if (_rend)
+            _rend.material.color = Color.gray;
 
+        // 3️⃣ EnemyBase-Death (Score etc.)
         base.Die();
     }
+
+
 
     protected override void OnDeathDestroyed()
     {

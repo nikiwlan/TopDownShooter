@@ -65,9 +65,8 @@ MonoBehaviour:
   health: 3
   pointsOnKill: 10
   debug: 1
+  bloodHitVFX: {fileID: 0}
   player: {fileID: 0}
-  gateHitSound: {fileID: 8300000, guid: 74047d1efac8b6e469be0911bc801656, type: 3}
-  gateHitVolume: 1
   moveSpeed: 2
   wallLayer:
     serializedVersion: 2
@@ -76,6 +75,8 @@ MonoBehaviour:
   attackDuration: 1.5
   attackCooldown: 1.5
   animator: {fileID: 0}
+  tankHitVFX: {fileID: 9071036190686454750, guid: f96637e18c026d4408d3342ae0985a74, type: 3}
+  tankDeathVFX: {fileID: 9071036190686454750, guid: 9f0b6790c8bb7524c82ed447519aa544, type: 3}
   attackHitSound: {fileID: 8300000, guid: 871209c55b8ab5e4ea83fd1eb3d8018a, type: 3}
   hitSound: {fileID: 8300000, guid: 572cd863de790f640b89b55fdd340e13, type: 3}
   deathSound: {fileID: 8300000, guid: bb2991261bfad564e8deed2819c90224, type: 3}

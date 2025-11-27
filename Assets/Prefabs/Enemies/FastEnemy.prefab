@@ -64,6 +64,7 @@ MonoBehaviour:
   health: 1
   pointsOnKill: 10
   debug: 1
+  bloodHitVFX: {fileID: 9071036190686454750, guid: da8d7663570bf6d478f51711720173d5, type: 3}
   player: {fileID: 0}
   moveSpeed: 6
   attackRange: 1.8

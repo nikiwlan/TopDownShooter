@@ -7522,15 +7522,15 @@ MonoBehaviour:
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
   tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
-  spawnInterval: 0.6
+  spawnInterval: 6
   maxEnemies: 0
   spawnPoints:
   - {fileID: 1629991534}
   spawnPositions: []
   positionsAreLocal: 0
-  fastEnemyChance: 0.5
-  tankEnemyChance: 0.2
-  rangedEnemyChance: 0.3
+  fastEnemyChance: 0
+  tankEnemyChance: 1
+  rangedEnemyChance: 0
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0

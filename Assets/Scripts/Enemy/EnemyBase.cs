@@ -10,6 +10,9 @@ public abstract class EnemyBase : MonoBehaviour
     [Header("Debug")]
     public bool debug = true;
 
+    [Header("VFX")]
+    public GameObject bloodHitVFX;   // Einfaches Blutbild bei Treffer
+
     [HideInInspector] public PlayerHealth player;
 
     private Collider[] allColliders;
@@ -26,7 +29,6 @@ public abstract class EnemyBase : MonoBehaviour
         allColliders = GetComponentsInChildren<Collider>(true);
         rb = GetComponent<Rigidbody>();
 
-        // ---------------- Renderer sammeln ----------------
         allRenderers = GetComponentsInChildren<Renderer>(true);
         originalColors = new Color[allRenderers.Length];
 
@@ -72,10 +74,23 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    // --------------------------------------------------------
+    // Alte Version bleibt bestehen für Kompatibilität
     public virtual void TakeDamage(int amount)
     {
+        TakeDamage(amount, Vector3.forward, transform.position);
+    }
+
+
+    // Neue Version mit Treffer-Richtung
+    public virtual void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
+    {
+        if (hitPoint == default)
+            hitPoint = transform.position;
+
         health -= amount;
+
+        if (!(this is TankEnemy))
+            SpawnBloodVFX(hitDir, hitPoint);
 
         if (debug)
             Debug.Log($"[{name}] Schaden: {amount} → verbleibend {health}");
@@ -83,6 +98,50 @@ public abstract class EnemyBase : MonoBehaviour
         if (health <= 0)
             Die();
     }
+
+
+
+    // Blut-Effekt hinter dem Hitpoint und höher auf Y
+    protected void SpawnBloodVFX(Vector3 hitDir, Vector3 hitPoint)
+    {
+        if (bloodHitVFX == null)
+            return;
+
+        // Richtung der Kugel normalisieren
+        Vector3 dir = hitDir.normalized;
+
+        // Basis ist die Mitte des Gegners, nicht der Hitpoint
+        // → so ist das Blut immer "auf der Rückseite" des Gegners
+        // Collider-Größe erkennen
+        float depthSize = 0.5f; // fallback
+
+        if (TryGetComponent<Collider>(out Collider col))
+        {
+            depthSize = col.bounds.extents.z;
+        }
+
+        // Abstand dynamisch abhängig von Gegnergröße
+        float offsetDistance = depthSize * 0.4f; // 20% weiter nach hinten
+
+        Vector3 spawnPos =
+            transform.position
+            + Vector3.up * 0.9f
+            + dir * offsetDistance;
+
+
+        float randomRot = Random.Range(0f, 360f);
+
+        GameObject vfx = Instantiate(
+            bloodHitVFX,
+            spawnPos,
+            Quaternion.Euler(90f, randomRot, 0f)
+        );
+
+        Destroy(vfx, 0.4f);
+    }
+
+
+
 
     protected virtual void Die()
     {
@@ -134,3 +193,4 @@ public abstract class EnemyBase : MonoBehaviour
     {
     }
 }
+

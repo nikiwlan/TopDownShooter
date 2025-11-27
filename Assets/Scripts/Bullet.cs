@@ -34,7 +34,13 @@ public class Bullet : MonoBehaviour
                 enemy = other.GetComponentInParent<EnemyBase>();
 
             if (enemy != null)
-                enemy.TakeDamage(damage);
+            {
+                enemy.TakeDamage(
+                    damage,
+                    transform.forward,        // Richtung
+                    transform.position        // Einschlagspunkt
+                );
+            }
 
             Destroy(gameObject);
             return;
