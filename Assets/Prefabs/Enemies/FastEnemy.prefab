@@ -71,10 +71,8 @@ MonoBehaviour:
   hitSound: {fileID: 8300000, guid: ef085c6872ea9f84e904e2031d8ee3c7, type: 3}
   hitVolume: 1
   normalDeathHitSound: {fileID: 8300000, guid: 426400114a0bccf4f8a640d77db7c891, type: 3}
-  normalDeathSound: {fileID: 8300000, guid: b3f2e6dc343d1f149b5d19ae427a1b69, type: 3}
+  normalDeathSound: {fileID: 0}
   attackDeathSound: {fileID: 8300000, guid: c98d32a2a3a774c4f951741bcfbafc56, type: 3}
-  gateHitSound: {fileID: 8300000, guid: 5b910654428053f4ebf00a854a03a432, type: 3}
-  gateHitVolume: 1
 --- !u!54 &7231332852345590285
 Rigidbody:
   m_ObjectHideFlags: 0
