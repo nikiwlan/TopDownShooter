@@ -19,21 +19,9 @@ public class PlayerHealth : MonoBehaviour
     public AudioClip deathSound_1;      // Stöhnen
     public AudioClip deathSound_2;      // Body fall
 
-    private AudioSource audioSource;
-
     void Awake()
     {
         currentHealth = maxHealth;
-
-        // AudioSource erzeugen, falls keiner vorhanden
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.playOnAwake = false;
-            audioSource.loop = false;
-            audioSource.spatialBlend = 0f;  // 2D Sound
-        }
     }
 
     void Start()
@@ -63,27 +51,25 @@ public class PlayerHealth : MonoBehaviour
 
         heartUIManager?.UpdateHearts(currentHealth);
 
-        // ------ RANDOM DAMAGE SOUND ------
         PlayRandomDamageSound();
 
         if (currentHealth <= 0)
             Die();
     }
 
-    // Spielt zufälligen Schaden-Sound
+    // Random Damage Sound über AudioManager
     private void PlayRandomDamageSound()
     {
         AudioClip[] clips = new AudioClip[] { damageSound1, damageSound2, damageSound3 };
 
-        // Filtere leere Slots raus
         var valid = new System.Collections.Generic.List<AudioClip>();
         foreach (var c in clips)
             if (c != null) valid.Add(c);
 
-        if (valid.Count == 0) return;  // nix drin → nix spielen
+        if (valid.Count == 0) return;
 
         int index = Random.Range(0, valid.Count);
-        audioSource.PlayOneShot(valid[index]);
+        AudioManager.Instance.PlaySound2D(valid[index]);
     }
 
     // ------------------------------------------------------------
@@ -120,18 +106,14 @@ public class PlayerHealth : MonoBehaviour
 
     private System.Collections.IEnumerator PlayDeathSequence()
     {
-        // Sound 1: Stöhnen
         if (deathSound_1 != null)
-            audioSource.PlayOneShot(deathSound_1);
+            AudioManager.Instance.PlaySound2D(deathSound_1);
 
-        // mini Delay, damit Sound 2 nicht gleichzeitig kommt
         yield return new WaitForSeconds(0.1f);
 
-        // Sound 2: Body Fall
         if (deathSound_2 != null)
-            audioSource.PlayOneShot(deathSound_2);
+            AudioManager.Instance.PlaySound2D(deathSound_2);
 
-        // kurze Verzögerung damit der Sound fertig läuft
         yield return new WaitForSeconds(0.5f);
 
         gameObject.SetActive(false);

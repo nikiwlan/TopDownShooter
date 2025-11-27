@@ -40,25 +40,20 @@ public class Bullet : MonoBehaviour
             return;
         }
 
-        // 2️⃣ Gate getroffen → Sound sicher abspielen
+        // 2️⃣ Gate getroffen → Sound über AudioManager
         if (other.CompareTag("Gate"))
         {
             if (gateHitSound != null)
             {
-                GameObject audioObj = new GameObject("GateHitSound");
-                AudioSource src = audioObj.AddComponent<AudioSource>();
-                src.clip = gateHitSound;
-                src.volume = gateSoundVolume;
-                src.spatialBlend = 0f;
-                src.Play();
-                Destroy(audioObj, gateHitSound.length);
+                // ⭐ 2D-Sound, damit Treffer immer hörbar bleibt
+                AudioManager.Instance.PlaySound2D(gateHitSound, gateSoundVolume);
             }
 
             Destroy(gameObject);
             return;
         }
 
-        // 3️⃣ Wand getroffen
+        // 3️⃣ Wand getroffen → einfach verschwinden
         if (other.CompareTag("Wall"))
         {
             Destroy(gameObject);

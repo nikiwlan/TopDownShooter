@@ -17,25 +17,22 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     [Header("Audio")]
     public AudioClip shootSound;
     public AudioClip deathSound;
-    private AudioSource audioSource;
 
     private Transform playerTransform;
     private Animator animator;
 
-    // Time Slow
+    // TimeSlow
     private float baseSpeed;
     private bool isSlowed;
     private float slowEndTime;
 
-    // Attack logic
     private float shootTimer;
     private float aimTimer;
 
     private bool killedByCollision = false;
     private bool didDie = false;
 
-
-    // ---------------- START ----------------
+    // ----------------------------------------
     protected override void Start()
     {
         base.Start();
@@ -51,23 +48,14 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
 
         baseSpeed = moveSpeed;
-
-        audioSource = GetComponent<AudioSource>();
-        if (!audioSource)
-            audioSource = gameObject.AddComponent<AudioSource>();
-
-        audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f;
     }
 
-
-    // ---------------- UPDATE ----------------
+    // ----------------------------------------
     void Update()
     {
         if (didDie) return;
         if (!playerTransform) return;
 
-        // TimeSlow verarbeiten
         HandleTimeSlow();
 
         shootTimer -= Time.deltaTime;
@@ -77,11 +65,9 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         Vector3 n = dir.normalized;
         float dist = dir.magnitude;
 
-        // Rotation
         if (n != Vector3.zero)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(n), 0.2f);
 
-        // Bewegung / Angriff
         if (dist > approachDistance)
         {
             float step = moveSpeed * Time.deltaTime;
@@ -123,8 +109,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
-    // ---------------- SHOOTING ----------------
+    // ----------------------------------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -143,12 +128,13 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         if (proj.TryGetComponent(out ProjectileEnemy projectile))
             projectile.Init(dir);
 
+        // 3D SOUND via manager
         if (shootSound != null)
-            audioSource.PlayOneShot(shootSound);
+            EnemyShootManager.Instance?.RegisterShot(transform.position);
+
     }
 
-
-    // ---------------- COLLISION ----------------
+    // ----------------------------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
@@ -161,8 +147,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
-    // ---------------- DEATH ----------------
     protected override void Die()
     {
         if (didDie) return;
@@ -177,7 +161,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         moveSpeed = 0f;
 
         if (deathSound)
-            audioSource.PlayOneShot(deathSound);
+            AudioManager.Instance.PlaySound3D(deathSound, transform.position);
 
         if (!killedByCollision)
             base.Die();
@@ -185,8 +169,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         Destroy(gameObject, 2.5f);
     }
 
-
-    // ---------------- TIME SLOW ----------------
+    // ----------------------------------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         isSlowed = true;

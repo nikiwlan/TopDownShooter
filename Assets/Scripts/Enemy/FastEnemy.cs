@@ -16,8 +16,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     public AudioClip normalDeathSound;
     public AudioClip attackDeathSound;
 
-    private AudioSource audioSrc;
-
     private Transform playerTransform;
     private Animator animator;
 
@@ -45,11 +43,6 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
         if (animator != null)
             animator.Play(RUN_STATE);
-
-        audioSrc = gameObject.AddComponent<AudioSource>();
-        audioSrc.playOnAwake = false;
-        audioSrc.loop = false;
-        audioSrc.spatialBlend = 0f;
 
         baseSpeed = moveSpeed;
         pointsOnKill = 10;
@@ -115,7 +108,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
             hasDealtDamage = true;
 
             if (hitSound != null)
-                audioSrc.PlayOneShot(hitSound, hitVolume);
+                AudioManager.Instance.PlaySound3D(hitSound, transform.position, hitVolume);
 
             player?.TakeDamage(1);
 
@@ -146,15 +139,15 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         if (deathByAttack)
         {
             if (attackDeathSound != null)
-                audioSrc.PlayOneShot(attackDeathSound);
+                AudioManager.Instance.PlaySound3D(attackDeathSound, transform.position);
         }
         else
         {
             if (normalDeathHitSound != null)
-                audioSrc.PlayOneShot(normalDeathHitSound);
+                AudioManager.Instance.PlaySound3D(normalDeathHitSound, transform.position);
 
             if (normalDeathSound != null)
-                audioSrc.PlayOneShot(normalDeathSound);
+                AudioManager.Instance.PlaySound3D(normalDeathSound, transform.position);
         }
 
         Destroy(gameObject, 2f);
@@ -182,7 +175,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
         slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
         moveSpeed = baseSpeed * factor;
 
-        SetColorAll(Color.cyan);  // <--- NEU
+        SetColorAll(Color.cyan);
     }
 
     private void HandleTimeSlow()
@@ -192,7 +185,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
             isSlowed = false;
             moveSpeed = baseSpeed;
 
-            ResetColorAll(); // <--- NEU
+            ResetColorAll();
         }
     }
 }

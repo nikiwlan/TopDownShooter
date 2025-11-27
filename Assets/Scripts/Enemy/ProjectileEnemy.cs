@@ -7,6 +7,9 @@ public class ProjectileEnemy : MonoBehaviour
     public float lifetime = 5f;
     public float hitRadius = 0.5f;
 
+    [Header("Audio (optional)")]
+    public AudioClip impactSound;
+
     private Vector3 moveDir;
     private Transform player;
 
@@ -17,7 +20,6 @@ public class ProjectileEnemy : MonoBehaviour
 
     void Start()
     {
-        // Player finden (einmalig)
         var pObj = GameObject.FindGameObjectWithTag("Player");
         if (pObj) player = pObj.transform;
 
@@ -26,10 +28,8 @@ public class ProjectileEnemy : MonoBehaviour
 
     void Update()
     {
-        // Bewege Projektil
         transform.position += moveDir * speed * Time.deltaTime;
 
-        // Prüfe, ob Player existiert
         if (!player) return;
 
         Vector3 projPos = transform.position;
@@ -41,19 +41,22 @@ public class ProjectileEnemy : MonoBehaviour
 
         if (dist <= hitRadius)
         {
-            Debug.Log($"[ProjectileEnemy] Treffer! Distanz={dist:F2}");
-
             if (player.TryGetComponent<PlayerHealth>(out var ph))
                 ph.TakeDamage(1);
+
+            if (impactSound)
+                AudioManager.Instance.PlaySound3D(impactSound, transform.position);
 
             Destroy(gameObject);
         }
 
-        // Optional: Treffer an Wände (einfach mit Raycast prüfen)
         if (Physics.Raycast(transform.position, moveDir, out RaycastHit hit, speed * Time.deltaTime))
         {
-            if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Wall"))
+            if (LayerMask.NameToLayer("Wall") == hit.collider.gameObject.layer)
             {
+                if (impactSound)
+                    AudioManager.Instance.PlaySound3D(impactSound, transform.position);
+
                 Destroy(gameObject);
             }
         }

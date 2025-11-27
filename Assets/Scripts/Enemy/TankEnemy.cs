@@ -16,11 +16,9 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     [SerializeField] private Animator animator;
 
     [Header("Audio Clips")]
-    public AudioClip attackHitSound;   // Sound wenn Spieler getroffen wird
-    public AudioClip hitSound;         // Sound wenn Monster Schaden bekommt
-    public AudioClip deathSound;       // Sound beim Tod
-
-    private AudioSource audioSource;
+    public AudioClip attackHitSound;
+    public AudioClip hitSound;
+    public AudioClip deathSound;
 
     private Transform playerTransform;
 
@@ -37,7 +35,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
     private float _nextHitTime;
     [SerializeField] private float _contactCooldown = 0.4f;
 
-    // ---------------------------------------------------
     protected override void Start()
     {
         base.Start();
@@ -52,14 +49,8 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         if (_rend) _origColor = _rend.material.color;
 
         if (!animator) animator = GetComponentInChildren<Animator>();
-
-        audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
-        audioSource.loop = false;
-        audioSource.spatialBlend = 0f; // kein 3D Sound
     }
 
-    // ---------------------------------------------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         _isSlowed = true;
@@ -68,7 +59,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         if (_rend) _rend.material.color = Color.cyan;
     }
 
-    // ---------------------------------------------------
     void Update()
     {
         if (_isSlowed && Time.time >= _slowEndTime)
@@ -110,7 +100,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-    // ---------------------------------------------------
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
@@ -118,9 +107,8 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         yield return new WaitForSeconds(attackDuration * 0.5f);
 
-        // Spieler trifft → Attack-Hit-Sound hier!
         if (attackHitSound)
-            audioSource.PlayOneShot(attackHitSound);
+            AudioManager.Instance.PlaySound3D(attackHitSound, transform.position);
 
         if (player != null)
             player.TakeDamage(1);
@@ -133,21 +121,18 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         nextAttackTime = Time.time + attackCooldown;
     }
 
-    // ---------------------------------------------------
     public override void TakeDamage(int amount)
     {
-        // Monster bekommt Schaden → HitSound
         if (hitSound)
-            audioSource.PlayOneShot(hitSound);
+            AudioManager.Instance.PlaySound3D(hitSound, transform.position);
 
         base.TakeDamage(amount);
     }
 
-    // ---------------------------------------------------
     protected override void Die()
     {
         if (deathSound)
-            audioSource.PlayOneShot(deathSound);
+            AudioManager.Instance.PlaySound3D(deathSound, transform.position);
 
         if (animator)
         {
@@ -168,7 +153,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
         Destroy(gameObject, 2.5f);
     }
 
-    // ---------------------------------------------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
@@ -178,8 +162,6 @@ public class TankEnemy : EnemyBase, ITimeSlowable
             if (Time.time >= _nextHitTime)
             {
                 _nextHitTime = Time.time + _contactCooldown;
-
-                // Auch hier könnte ein AttackHitSound hin, aber du hast gesagt NEIN
                 player.TakeDamage(1);
             }
         }

@@ -49,13 +49,13 @@ public class PlayerMovement : MonoBehaviour
         movementSource = gameObject.AddComponent<AudioSource>();
         movementSource.loop = true;
         movementSource.playOnAwake = false;
-        movementSource.spatialBlend = 0f;
+        movementSource.spatialBlend = 0f; // 2D
         movementSource.volume = footstepVolume;
 
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.loop = false;
         sfxSource.playOnAwake = false;
-        sfxSource.spatialBlend = 0f;
+        sfxSource.spatialBlend = 0f; // 2D
     }
 
     void Update()
@@ -79,9 +79,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ------------------------------------------------------------
-    // ⭐ Laufgeräusch
-    // ------------------------------------------------------------
     private void HandleFootstepSound()
     {
         bool isMoving = moveDirection.sqrMagnitude > 0.01f;
@@ -102,9 +99,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ------------------------------------------------------------
-    // Animation
-    // ------------------------------------------------------------
     private void HandleAnimator()
     {
         if (animator != null)
@@ -119,9 +113,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ------------------------------------------------------------
-    // Bewegung + Sliding (unverändert)
-    // ------------------------------------------------------------
     private void TryMove(Vector3 direction)
     {
         if (direction == Vector3.zero) return;
@@ -212,32 +203,24 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // ------------------------------------------------------------
-    // Trigger-Reaktionen
-    // ------------------------------------------------------------
     void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("PowerUp")) return;
 
         string name = other.name.ToLower();
 
-        // ⭐ Heart / Heal
         if (name.Contains("heart") || name.Contains("heal"))
         {
             if (healPowerUpSound != null)
-                sfxSource.PlayOneShot(healPowerUpSound);
+                AudioManager.Instance.PlaySound2D(healPowerUpSound);
         }
         else
         {
-            // ⭐ Alle anderen PowerUps → derselbe Sound
             if (genericPowerUpSound != null)
-                sfxSource.PlayOneShot(genericPowerUpSound);
+                AudioManager.Instance.PlaySound2D(genericPowerUpSound);
         }
     }
 
-    // ------------------------------------------------------------
-    // Speed Boost
-    // ------------------------------------------------------------
     public void ApplySpeedBoost(float duration, float multiplier)
     {
         if (speedBoostRoutine != null)
@@ -259,8 +242,8 @@ public class PlayerMovement : MonoBehaviour
         GameObject fx = null;
         if (speedBoostEffect) fx = Instantiate(speedBoostEffect, transform.position, Quaternion.identity, transform);
 
-        if (boostSound && sfxSource != null)
-            sfxSource.PlayOneShot(boostSound);
+        if (boostSound)
+            AudioManager.Instance.PlaySound2D(boostSound);
 
         yield return new WaitForSeconds(duration);
 

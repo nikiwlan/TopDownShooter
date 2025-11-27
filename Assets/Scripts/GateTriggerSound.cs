@@ -15,16 +15,7 @@ public class GateTriggerSound : MonoBehaviour
     public AudioClip zombieSound;
     public AudioClip bulletSound;
 
-    private AudioSource gateAudioSource;
-
-    private void Awake()
-    {
-        gateAudioSource = gameObject.AddComponent<AudioSource>();
-        gateAudioSource.spatialBlend = 0f;
-        gateAudioSource.playOnAwake = false;
-        gateAudioSource.loop = false;
-        gateAudioSource.volume = baseVolume;
-    }
+    private float currentVolume;
 
     private void Start()
     {
@@ -51,10 +42,10 @@ public class GateTriggerSound : MonoBehaviour
         float dist = Vector3.Distance(player.position, transform.position);
         float t = Mathf.Clamp01(1f - (dist / maxDistance));
 
-        gateAudioSource.volume = baseVolume * t;
+        currentVolume = baseVolume * t;
     }
 
-    // Superrobuste Methode: geht bis zu 10 Ebenen hoch
+    // Superrobust – geht bis 10 Ebenen hoch
     private EnemyBase FindEnemyBase(Transform t)
     {
         for (int i = 0; i < 10 && t != null; i++)
@@ -76,7 +67,9 @@ public class GateTriggerSound : MonoBehaviour
     private void PlaySound(AudioClip clip)
     {
         if (clip == null) return;
-        gateAudioSource.PlayOneShot(clip, gateAudioSource.volume);
+
+        // ⭐ Über AudioManager als 3D Sound abspielen
+        AudioManager.Instance.PlaySound3D(clip, transform.position, currentVolume);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -86,12 +79,10 @@ public class GateTriggerSound : MonoBehaviour
         {
             Debug.Log($"[GateTriggerSound] Enemy erkannt: {other.name}");
 
-            // robust: gehe hoch bis EnemyBase gefunden wird
             EnemyBase enemy = FindEnemyBase(other.transform);
             if (enemy == null)
                 return;
 
-            // Typenabfrage
             string typeName = enemy.GetType().Name;
             Debug.Log($"[GateTriggerSound] Enemy-Typ: {typeName}");
 

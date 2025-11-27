@@ -34,13 +34,10 @@ public class PowerUp : MonoBehaviour
     private Vector3 startPos;
     private Transform visualChild;
 
-    // -------------------- 🔹 NEU: Flag für Spawn-Rotation --------------------
     private bool initializedTilt = false;
-    // -----------------------------------------------------------------------
 
     private void Awake()
     {
-        // auf Bodenhöhe setzen
         Vector3 pos = transform.position;
         pos.y = 1.5f;
         transform.position = pos;
@@ -48,15 +45,12 @@ public class PowerUp : MonoBehaviour
 
     private void Start()
     {
-        // 🔹 visuelles Kind finden
         if (transform.childCount > 0)
             visualChild = transform.GetChild(0);
 
         if (visualChild != null)
         {
             startPos = visualChild.localPosition;
-
-            // 🔹 Drehung für sichtbare Neigung (X-Achse!)
             visualChild.localRotation = Quaternion.Euler(tiltAngle, 0f, 0f);
             initializedTilt = true;
         }
@@ -67,18 +61,15 @@ public class PowerUp : MonoBehaviour
         if (visualChild == null)
             return;
 
-        // 🔹 Nur einmal sicherstellen, dass die Neigung bleibt (z. B. nach Spawner-Reset)
         if (!initializedTilt)
         {
             visualChild.localRotation = Quaternion.Euler(tiltAngle, 0f, 0f);
             initializedTilt = true;
         }
 
-        // 🔹 Rotation um Y-Achse
         if (rotate)
             visualChild.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
 
-        // 🔹 Schweben (Sinusbewegung)
         if (floatUpDown)
         {
             float newY = startPos.y + Mathf.Sin(Time.time * floatFrequency) * floatAmplitude;
@@ -140,8 +131,9 @@ public class PowerUp : MonoBehaviour
         if (pickupEffect)
             Instantiate(pickupEffect, transform.position, Quaternion.identity);
 
+        // ⭐ NEU: PowerUp Sound über AudioManager (3D)
         if (pickupSound)
-            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+            AudioManager.Instance.PlaySound3D(pickupSound, transform.position);
 
         Destroy(gameObject);
     }

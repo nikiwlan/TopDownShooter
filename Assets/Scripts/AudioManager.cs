@@ -1,11 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
 
     [Header("3D Sound Settings")]
-    public int poolSize = 20;
+    public int poolSize = 60;
     public float minDistance = 3f;
     public float maxDistance = 30f;
     public AudioRolloffMode rolloff = AudioRolloffMode.Linear;
@@ -45,6 +45,7 @@ public class AudioManager : MonoBehaviour
     public void PlaySound3D(AudioClip clip, Vector3 position, float volume = 1f)
     {
         if (clip == null) return;
+        if (Instance == null) return;
 
         foreach (AudioSource src in pool)
         {
@@ -53,6 +54,47 @@ public class AudioManager : MonoBehaviour
                 src.transform.position = position;
                 src.clip = clip;
                 src.volume = volume;
+                src.Play();
+                return;
+            }
+        }
+    }
+
+    public void PlaySound3D(AudioClip clip, Vector3 position, float volume, float pitch)
+    {
+        if (clip == null) return;
+        if (Instance == null) return;
+
+        foreach (AudioSource src in pool)
+        {
+            if (!src.isPlaying)
+            {
+                src.transform.position = position;
+                src.spatialBlend = 1f; // 3D Sound
+
+                src.pitch = pitch;     // ⭐️ PITCH wird jetzt unterstützt
+                src.volume = volume;
+
+                src.clip = clip;
+                src.Play();
+
+                return;
+            }
+        }
+    }
+
+
+    public void PlaySound2D(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null) return;
+
+        foreach (AudioSource src in pool)
+        {
+            if (!src.isPlaying)
+            {
+                src.spatialBlend = 0f; // 2D
+                src.volume = volume;
+                src.clip = clip;
                 src.Play();
                 return;
             }

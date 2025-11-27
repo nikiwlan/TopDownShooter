@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -15,13 +14,12 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("Audio")]
     public AudioClip shootSound;
+    [Range(0f, 1f)] public float shootVolume = 0.7f;   // ⭐ Lautstärke einstellbar!
 
     public bool isFrozen = false;
 
-    private AudioSource sfxSource;      // 👉 von PlayerMovement
     private float nextFireTime = 0f;
 
-    // --- FireRate Boost Variablen ---
     private Coroutine fireRateRoutine;
     private float baseFireRate;
     private float boostedFireRate;
@@ -31,26 +29,12 @@ public class PlayerShooting : MonoBehaviour
     {
         baseFireRate = fireRate;
         boostedFireRate = fireRate / 2f;
-
-        // 👉 SFX-Source vom PlayerMovement holen
-        PlayerMovement pm = GetComponent<PlayerMovement>();
-        if (pm != null)
-        {
-            sfxSource = pm.GetSfxSource();
-        }
-
-        // Fallback, falls etwas Unerwartetes passiert
-        if (sfxSource == null)
-        {
-            sfxSource = gameObject.AddComponent<AudioSource>();
-            sfxSource.playOnAwake = false;
-            sfxSource.spatialBlend = 0f;
-        }
     }
 
     void Update()
     {
         if (isFrozen) return;
+
         AimAtMouse3D();
         HandleShooting();
 
@@ -58,9 +42,6 @@ public class PlayerShooting : MonoBehaviour
             boostTimeLeft -= Time.deltaTime;
     }
 
-    // -------------------------------------------------------
-    // 🎯 Visuelles Zielen zur Maus
-    // -------------------------------------------------------
     void AimAtMouse3D()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -84,9 +65,6 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    // -------------------------------------------------------
-    // 🔫 Schießen
-    // -------------------------------------------------------
     void HandleShooting()
     {
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
@@ -107,7 +85,6 @@ public class PlayerShooting : MonoBehaviour
                 else
                     dir.Normalize();
 
-                // --- Bullet spawnen ---
                 GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(dir));
 
                 if (bullet.TryGetComponent<Rigidbody>(out Rigidbody rb))
@@ -118,25 +95,19 @@ public class PlayerShooting : MonoBehaviour
 
                 Destroy(bullet, bulletLifetime);
 
-                // --- Animation ---
                 if (animator != null)
                 {
                     animator.ResetTrigger("Shoot");
                     animator.SetTrigger("Shoot");
                 }
 
-                // --- 🔊 Schuss-Sound ---
-                if (shootSound != null && sfxSource != null)
-                {
-                    sfxSource.PlayOneShot(shootSound);
-                }
+                // ⭐ Schuss über AudioManager, mit einstellbarer Lautstärke
+                if (shootSound != null)
+                    AudioManager.Instance.PlaySound2D(shootSound, shootVolume);
             }
         }
     }
 
-    // -------------------------------------------------------
-    // 🔥 FireRate Boost
-    // -------------------------------------------------------
     public void ApplyFireRateBoost(float duration)
     {
         boostTimeLeft = Mathf.Min(boostTimeLeft + duration, 5f);
@@ -145,7 +116,7 @@ public class PlayerShooting : MonoBehaviour
             fireRateRoutine = StartCoroutine(FireRateBoostRoutine());
     }
 
-    private IEnumerator FireRateBoostRoutine()
+    private System.Collections.IEnumerator FireRateBoostRoutine()
     {
         fireRate = boostedFireRate;
         Debug.Log("[PlayerShooting] FireRate Boost aktiv!");
