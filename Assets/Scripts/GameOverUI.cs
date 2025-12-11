@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 public class GameOverUI : MonoBehaviour
 {
+    [Header("Crosshair")]
+    public GameObject crosshair;
+
     [Header("References")]
     public PlayerHealth playerHealth;
 
@@ -57,6 +60,17 @@ public class GameOverUI : MonoBehaviour
 
     void ShowGameOver()
     {
+        isGameOver = true;
+
+        // Maus einschalten
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        // --- Crosshair deaktivieren ---
+        if (crosshair != null)
+            crosshair.SetActive(false);
+
+
         isGameOver = true;
 
         // Spieler kontrollen einfrieren

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections; // HINZUGEFÜGT: Notwendig für Coroutinen und IEnumerator
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -12,10 +13,16 @@ public class PlayerHealth : MonoBehaviour
     public int maxHealth = 3;
     [HideInInspector] public int currentHealth;
 
+    // HINZUGEFÜGT: Neue Header-Sektion für die Unverwundbarkeit
+    [Header("Invincibility Settings")]
+    public float invincibilityDuration = 0.5f; // Dauer der Unverwundbarkeit in Sekunden
+    private bool isInvincible = false; // Flag, das den Status speichert
+
     [Header("UI References")]
     public HeartUIManager heartUIManager;
     public DamageFlash damageFlash;
 
+    // ... (Audio und VFX Header bleiben unverändert) ...
     // ---------------------- AUDIO ----------------------
     [Header("Damage Sounds (Randomized)")]
     public AudioClip damageSound1;
@@ -57,6 +64,16 @@ public class PlayerHealth : MonoBehaviour
     // ------------------------------------------------------------
     public void TakeDamage(int amount)
     {
+        // HINZUGEFÜGT: Prüfe, ob der Spieler gerade unverwundbar ist
+        if (isInvincible)
+        {
+            Debug.Log("[PlayerHealth] Schaden geblockt dank Grace Period.");
+            return; // Beende die Funktion hier, der Spieler nimmt keinen Schaden
+        }
+
+        // HINZUGEFÜGT: Starte die Coroutine für die Unverwundbarkeitsphase
+        StartCoroutine(BecomeTemporarilyInvincible());
+
         // Screen-Flash
         if (damageFlash != null)
             damageFlash.Flash();
@@ -64,7 +81,7 @@ public class PlayerHealth : MonoBehaviour
         // Blut-Effekt (Range / Melee)
         SpawnBloodVFX();
 
-        if (currentHealth <= 0) return;
+        // if (currentHealth <= 0) return; // Diese Zeile ist jetzt unnötig, da wir oben prüfen
 
         int before = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
@@ -79,9 +96,26 @@ public class PlayerHealth : MonoBehaviour
             Die();
     }
 
+    // HINZUGEFÜGT: Die Coroutine, die die Unverwundbarkeit steuert
+    private IEnumerator BecomeTemporarilyInvincible()
+    {
+        isInvincible = true;
+        // Optional: Hier könnten Sie das SpriteRenderer blinken lassen, um Feedback zu geben
+
+        // Warte für die Dauer, die im Inspector eingestellt ist
+        yield return new WaitForSeconds(invincibilityDuration);
+
+        isInvincible = false;
+        // Optional: Hier das Blinken stoppen
+    }
+
+
     // ------------------------------------------------------------
     // BLOOD VFX (wie beim Tank, nur mit Range/Melee-Auswahl)
     // ------------------------------------------------------------
+    // ... (Rest der Funktionen SpawnBloodVFX, PlayRandomDamageSound, Heal, Die, PlayDeathSequence) ...
+    // Diese Funktionen wurden nicht verändert.
+
     private void SpawnBloodVFX()
     {
         GameObject prefab = null;
@@ -105,7 +139,7 @@ public class PlayerHealth : MonoBehaviour
             transform.position +
             Vector3.up * 1f;
 
-        float randomRot = Random.Range(0f, 360f);
+        // float randomRot = Random.Range(0f, 360f); // Diese Zeile war ungenutzt, kann gelöscht werden
 
         GameObject vfx = Instantiate(
             prefab,
