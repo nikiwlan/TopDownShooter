@@ -1,45 +1,24 @@
-# =============== UNITY GENERATED ===============
+# ================= UNITY GENERATED =================
 [Ll]ibrary/
 [Tt]emp/
+[Oo]bj/
 [Bb]uild/
 [Bb]uilds/
-[Oo]bj/
+[Ll]ogs/
 [Uu]serSettings/
 [Mm]emoryCaptures/
 
-# =============== LOGS & CRASHES ===============
-*.pidb
-*.booproj
-*.svd
-*.log
-*.bak
-*.tmp
-
-# =============== VS / RIDER FILES ===============
+# ================= IDE FILES =================
 .vs/
+*.sln
 *.csproj
 *.unityproj
-*.sln
-*.suo
-*.tmp
 *.user
 *.userprefs
-*.pidb
-*.booproj
-*.svd
 
-# =============== PACKAGE MANAGER ===============
-Packages/com.*
-*.unitypackage
-
-# =============== OS FILES ===============
+# ================= OS FILES =================
 .DS_Store
 Thumbs.db
 
-# =============== GENERATED META FILES ===============
-*.meta
-
-# Ignore Desert Mountains Asset
-Assets/Desert mountains pack/
-
-# Unity gitignore
+# ================= EXTERNAL ASSETS =================
+Assets/ExternalPackages/
