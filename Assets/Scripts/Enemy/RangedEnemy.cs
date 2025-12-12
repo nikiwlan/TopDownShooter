@@ -14,6 +14,12 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     [Header("Weapon Settings")]
     public Transform muzzle;
 
+    [Header("Laser Settings")]
+    public LineRenderer laserRenderer;      // LineRenderer auf dem LaserSight-Objekt
+    public float laserMaxDistance = 25f;    // Reichweite des Lasers
+    public LayerMask laserHitMask;         // z.B. Player + Wall
+    public float targetHeightOffset = 0.5f;// wie hoch am Spieler gezielt wird
+
     [Header("Audio")]
     public AudioClip shootSound;
     public AudioClip deathSound;
@@ -58,6 +64,13 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
+
+        // Laser vorbereiten
+        if (laserRenderer != null)
+        {
+            laserRenderer.positionCount = 2;
+            laserRenderer.enabled = false;
+        }
     }
 
 
@@ -96,6 +109,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
                 animator.SetBool("IsFiring", false);
                 animator.SetFloat("Speed", 1f);
             }
+
+            DisableLaser();
         }
         else
         {
@@ -104,10 +119,14 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             if (animator)
                 animator.SetFloat("Speed", 0f);
 
+            // ab hier "zielt" er (wie vorher, ab 0.25s)
             if (aimTimer >= 0.25f)
             {
                 if (animator)
                     animator.SetBool("IsFiring", true);
+
+                // --- LASER AKTUALISIEREN ---
+                UpdateLaser();
 
                 if (shootTimer <= 0f)
                 {
@@ -119,6 +138,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             {
                 if (animator)
                     animator.SetBool("IsFiring", false);
+
+                DisableLaser();
             }
         }
     }
@@ -129,11 +150,15 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     {
         yield return new WaitForSeconds(delay);
         Shoot(dir);
+        aimTimer = 0f;          // damit der Laser beim nächsten Schuss wieder neu "aufgebaut" wird
     }
 
     private void Shoot(Vector3 dir)
     {
         if (!projectilePrefab) return;
+
+        // Laser aus im Moment des Schusses
+        DisableLaser();
 
         Vector3 spawnPos = muzzle ? muzzle.position : transform.position + Vector3.up;
         Quaternion spawnRot = muzzle ? muzzle.rotation : Quaternion.LookRotation(dir);
@@ -145,6 +170,42 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
         if (shootSound != null)
             audioSource.PlayOneShot(shootSound);
+    }
+
+    // ---------------- LASER ----------------
+    private void UpdateLaser()
+    {
+        if (laserRenderer == null || muzzle == null || playerTransform == null)
+            return;
+
+        Vector3 origin = muzzle.position;
+
+        // Zielpunkt am Spieler (mit Höhe), damit der Raycast NICHT unter dem Collider durchgeht
+        Vector3 target = playerTransform.position + Vector3.up * targetHeightOffset;
+
+        Vector3 d = (target - origin).normalized;
+        if (d.sqrMagnitude < 0.0001f)
+            d = transform.forward;
+
+        float distance = laserMaxDistance;
+        Vector3 end = origin + d * distance;
+
+        if (laserHitMask.value != 0)
+        {
+            if (Physics.Raycast(origin, d, out RaycastHit hit, distance, laserHitMask, QueryTriggerInteraction.Collide))
+                end = hit.point;
+        }
+
+        laserRenderer.enabled = true;
+        laserRenderer.SetPosition(0, origin);
+        laserRenderer.SetPosition(1, end);
+    }
+
+
+    private void DisableLaser()
+    {
+        if (laserRenderer != null && laserRenderer.enabled)
+            laserRenderer.enabled = false;
     }
 
 
@@ -167,6 +228,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     {
         if (didDie) return;
         didDie = true;
+
+        DisableLaser();
 
         if (animator)
         {
