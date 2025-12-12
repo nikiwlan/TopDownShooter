@@ -55,6 +55,28 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
         HandleTimeSlow();
 
+        // Forced Move: währenddessen NICHT angreifen und NICHT normal zum Player laufen.
+        if (HasForcedMove)
+        {
+            Vector3 n = ForcedMoveDirection;
+            n.y = 0f;
+            if (n.sqrMagnitude > 0.0001f)
+                n.Normalize();
+
+            float step = baseSpeed * Time.deltaTime; // baseSpeed, damit Attack(moveSpeed=0) es nicht killt
+            transform.position += n * step;
+
+            ConsumeForcedMove(step);
+
+            if (n.sqrMagnitude > 0.01f)
+            {
+                Quaternion rot = Quaternion.LookRotation(n);
+                transform.rotation = Quaternion.Slerp(transform.rotation, rot, 0.2f);
+            }
+
+            return;
+        }
+
         if (isAttacking)
         {
             HandleAttack();
