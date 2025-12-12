@@ -15,10 +15,10 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     public Transform muzzle;
 
     [Header("Laser Settings")]
-    public LineRenderer laserRenderer;      // LineRenderer auf dem LaserSight-Objekt
-    public float laserMaxDistance = 25f;    // Reichweite des Lasers
-    public LayerMask laserHitMask;         // z.B. Player + Wall
-    public float targetHeightOffset = 0.5f;// wie hoch am Spieler gezielt wird
+    public LineRenderer laserRenderer;       // LineRenderer auf dem LaserSight-Objekt
+    public float laserMaxDistance = 25f;     // Reichweite des Lasers
+    public LayerMask laserHitMask;           // z.B. Player + Wall
+    public float targetHeightOffset = 0.5f;  // wie hoch am Spieler gezielt wird
 
     [Header("Audio")]
     public AudioClip shootSound;
@@ -40,6 +40,9 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     private bool killedByCollision = false;
     private bool didDie = false;
 
+    // Laser color protection (Laser soll NICHT cyan werden)
+    private Color _laserStartColor = Color.red;
+    private bool _laserColorCached = false;
 
     // ---------------- START ----------------
     protected override void Start()
@@ -70,9 +73,10 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         {
             laserRenderer.positionCount = 2;
             laserRenderer.enabled = false;
+            CacheLaserColor();       // Originalfarbe merken (rot)
+            RestoreLaserColor();     // sicherstellen, dass Laserfarbe korrekt gesetzt ist
         }
     }
-
 
     // ---------------- UPDATE ----------------
     void Update()
@@ -144,13 +148,14 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
-
     // ---------------- SHOOTING ----------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
     {
         yield return new WaitForSeconds(delay);
         Shoot(dir);
-        aimTimer = 0f;          // damit der Laser beim nächsten Schuss wieder neu "aufgebaut" wird
+
+        // damit der Laser beim nächsten Schuss wieder neu "aufgebaut" wird
+        aimTimer = 0f;
     }
 
     private void Shoot(Vector3 dir)
@@ -178,6 +183,9 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         if (laserRenderer == null || muzzle == null || playerTransform == null)
             return;
 
+        // Laserfarbe immer erzwingen (damit TimeSlow ihn nicht blau/cyan macht)
+        RestoreLaserColor();
+
         Vector3 origin = muzzle.position;
 
         // Zielpunkt am Spieler (mit Höhe), damit der Raycast NICHT unter dem Collider durchgeht
@@ -190,6 +198,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         float distance = laserMaxDistance;
         Vector3 end = origin + d * distance;
 
+        // Raycast gegen Player + Wände
         if (laserHitMask.value != 0)
         {
             if (Physics.Raycast(origin, d, out RaycastHit hit, distance, laserHitMask, QueryTriggerInteraction.Collide))
@@ -201,13 +210,30 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         laserRenderer.SetPosition(1, end);
     }
 
-
     private void DisableLaser()
     {
         if (laserRenderer != null && laserRenderer.enabled)
             laserRenderer.enabled = false;
     }
 
+    private void CacheLaserColor()
+    {
+        if (laserRenderer == null) return;
+
+        _laserStartColor = laserRenderer.startColor;
+        _laserColorCached = true;
+    }
+
+    private void RestoreLaserColor()
+    {
+        if (laserRenderer == null) return;
+
+        if (!_laserColorCached)
+            CacheLaserColor();
+
+        laserRenderer.startColor = _laserStartColor;
+        laserRenderer.endColor = _laserStartColor;
+    }
 
     // ---------------- COLLISION ----------------
     protected override void OnTriggerEnter(Collider other)
@@ -221,7 +247,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             Die();
         }
     }
-
 
     // ---------------- DEATH ----------------
     protected override void Die()
@@ -248,7 +273,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         Destroy(gameObject, 2.5f);
     }
 
-
     // ---------------- TIME SLOW ----------------
     public void ApplyTimeSlow(float duration, float factor)
     {
@@ -256,7 +280,11 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
         moveSpeed = baseSpeed * factor;
 
+        // Gegner cyan färben (wie vorher)
         SetColorAll(Color.cyan);
+
+        // ABER: Laser soll rot bleiben
+        RestoreLaserColor();
     }
 
     private void HandleTimeSlow()
@@ -266,6 +294,9 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             isSlowed = false;
             moveSpeed = baseSpeed;
             ResetColorAll();
+
+            // Laser wieder sicher auf rot
+            RestoreLaserColor();
         }
     }
 }

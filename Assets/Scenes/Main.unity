@@ -7996,9 +7996,9 @@ MonoBehaviour:
   - {fileID: 1629991534}
   spawnPositions: []
   positionsAreLocal: 0
-  fastEnemyChance: 0
-  tankEnemyChance: 0.5
-  rangedEnemyChance: 0.5
+  fastEnemyChance: 1
+  tankEnemyChance: 0
+  rangedEnemyChance: 0
 --- !u!1 &937566623
 GameObject:
   m_ObjectHideFlags: 0

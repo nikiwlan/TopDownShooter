@@ -20,12 +20,20 @@ public abstract class EnemyBase : MonoBehaviour
     [Tooltip("Tag, den deine Wände haben (z.B. 'Wall')")]
     public string wallTag = "Wall";
 
+    [Header("Color / Tint (sauber)")]
+    [Tooltip("Renderer, die NIE eingefärbt werden sollen (z.B. Laser LineRenderer, VFX, etc.).")]
+    public Renderer[] excludeFromTint;
+
+    [Tooltip("Optional: Alle Renderer mit diesem Tag werden NICHT eingefärbt.")]
+    public string excludeTintTag = "IgnoreTint";
+
     [HideInInspector] public PlayerHealth player;
 
     private Collider[] allColliders;
     private Rigidbody rb;
 
-    protected Renderer[] allRenderers;
+    // Nur die Renderer, die wirklich getintet werden dürfen
+    protected Renderer[] tintRenderers;
     protected Color[] originalColors;
 
     public Transform Root => transform;
@@ -35,18 +43,11 @@ public abstract class EnemyBase : MonoBehaviour
         allColliders = GetComponentsInChildren<Collider>(true);
         rb = GetComponent<Rigidbody>();
 
-        allRenderers = GetComponentsInChildren<Renderer>(true);
-        originalColors = new Color[allRenderers.Length];
-
-        for (int i = 0; i < allRenderers.Length; i++)
-        {
-            if (allRenderers[i].material.HasProperty("_Color"))
-                originalColors[i] = allRenderers[i].material.color;
-        }
+        BuildTintRendererList();
 
         if (debug)
         {
-            Debug.Log($"[{name}] Renderer Count: {allRenderers.Length}");
+            Debug.Log($"[{name}] Tint Renderer Count: {tintRenderers.Length}");
             Debug.Log($"[{name}] Collider Count: {allColliders.Length}");
             Debug.Log($"[{name}] Rigidbody vorhanden: {rb != null}");
         }
@@ -61,22 +62,74 @@ public abstract class EnemyBase : MonoBehaviour
             Debug.Log($"[{name}] Player found: {(player ? "YES" : "NO")}");
     }
 
-    // ---------------- COLOR HANDLING ----------------
+    // ---------------- COLOR HANDLING (SAUBER) ----------------
+    private void BuildTintRendererList()
+    {
+        var all = GetComponentsInChildren<Renderer>(true);
+
+        // Exclude-Set bauen (schnell & sauber)
+        var excludeSet = new System.Collections.Generic.HashSet<Renderer>();
+        if (excludeFromTint != null)
+        {
+            foreach (var r in excludeFromTint)
+                if (r != null) excludeSet.Add(r);
+        }
+
+        var list = new System.Collections.Generic.List<Renderer>(all.Length);
+
+        foreach (var r in all)
+        {
+            if (r == null) continue;
+
+            // 1) Exclude-Array
+            if (excludeSet.Contains(r))
+                continue;
+
+            // 2) Optional: Exclude per Tag
+            if (!string.IsNullOrEmpty(excludeTintTag) && r.CompareTag(excludeTintTag))
+                continue;
+
+            // 3) Nur Renderer, die überhaupt färbbar sind
+            //    (LineRenderer hat Material, aber wir wollen ihn meist nicht - deshalb Exclude nutzen)
+            if (r.sharedMaterial != null && r.sharedMaterial.HasProperty("_Color"))
+                list.Add(r);
+        }
+
+        tintRenderers = list.ToArray();
+
+        // Originalfarben speichern
+        originalColors = new Color[tintRenderers.Length];
+        for (int i = 0; i < tintRenderers.Length; i++)
+        {
+            var mat = tintRenderers[i].material;
+            if (mat != null && mat.HasProperty("_Color"))
+                originalColors[i] = mat.color;
+        }
+    }
+
     public void SetColorAll(Color c)
     {
-        foreach (var r in allRenderers)
+        for (int i = 0; i < tintRenderers.Length; i++)
         {
-            if (r.material.HasProperty("_Color"))
-                r.material.color = c;
+            var r = tintRenderers[i];
+            if (r == null) continue;
+
+            var mat = r.material;
+            if (mat != null && mat.HasProperty("_Color"))
+                mat.color = c;
         }
     }
 
     public void ResetColorAll()
     {
-        for (int i = 0; i < allRenderers.Length; i++)
+        for (int i = 0; i < tintRenderers.Length; i++)
         {
-            if (allRenderers[i].material.HasProperty("_Color"))
-                allRenderers[i].material.color = originalColors[i];
+            var r = tintRenderers[i];
+            if (r == null) continue;
+
+            var mat = r.material;
+            if (mat != null && mat.HasProperty("_Color"))
+                mat.color = originalColors[i];
         }
     }
 
@@ -111,11 +164,8 @@ public abstract class EnemyBase : MonoBehaviour
         Vector3 dir = hitDir.normalized;
 
         float depthSize = 0.5f;
-
         if (TryGetComponent<Collider>(out Collider col))
-        {
             depthSize = col.bounds.extents.z;
-        }
 
         float offsetDistance = depthSize * 0.4f;
 
@@ -182,8 +232,6 @@ public abstract class EnemyBase : MonoBehaviour
     }
 
     // ---------------- WALL BLOCKING ----------------
-
-    // Basis-Trigger-Handling – kann in Child-Klassen überschrieben werden
     protected virtual void OnTriggerEnter(Collider other)
     {
         HandleWallBlocking(other);
@@ -194,7 +242,6 @@ public abstract class EnemyBase : MonoBehaviour
         HandleWallBlocking(other);
     }
 
-    // zentrale Logik: schiebt Enemy aus der Wand raus
     private void HandleWallBlocking(Collider other)
     {
         if (!blockWalls) return;
@@ -210,10 +257,7 @@ public abstract class EnemyBase : MonoBehaviour
                 other, other.transform.position, other.transform.rotation,
                 out Vector3 direction, out float distance))
         {
-            // direction: Richtung, in die wir uns bewegen müssen, um nicht mehr zu überlappen
-            // distance: wie weit
             Vector3 separation = direction * distance;
-
             transform.position += separation;
 
             if (debug)
@@ -221,7 +265,6 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
-    // Child-Klassen können bei Bedarf zusätzliches Trigger-Handling machen
     protected virtual void OnTriggerExit(Collider other)
     {
     }
