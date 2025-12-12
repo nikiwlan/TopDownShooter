@@ -14,31 +14,28 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     [Header("Weapon Settings")]
     public Transform muzzle;
 
-    [Header("Laser Settings")]
-    public LineRenderer laserRenderer;    // Referenz zum LineRenderer
-    public float laserMaxDistance = 8f;  // wie weit der Laser maximal sichtbar ist
-    public LayerMask playerLayer;         // Layer für Spieler (für Laser Raycast)
-
     [Header("Audio")]
     public AudioClip shootSound;
     public AudioClip deathSound;
+    private AudioSource audioSource;
 
     private Transform playerTransform;
     private Animator animator;
 
-    // TimeSlow
+    // Time Slow
     private float baseSpeed;
     private bool isSlowed;
     private float slowEndTime;
 
+    // Attack logic
     private float shootTimer;
     private float aimTimer;
 
     private bool killedByCollision = false;
     private bool didDie = false;
 
-    // ----------------------------------------
 
+    // ---------------- START ----------------
     protected override void Start()
     {
         base.Start();
@@ -55,22 +52,22 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
 
         baseSpeed = moveSpeed;
 
-        // LineRenderer initialisieren
-        if (laserRenderer != null)
-        {
-            laserRenderer.positionCount = 2;
-            laserRenderer.enabled = false;
-        }
+        audioSource = GetComponent<AudioSource>();
+        if (!audioSource)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
     }
 
 
-    // ----------------------------------------
-
+    // ---------------- UPDATE ----------------
     void Update()
     {
         if (didDie) return;
         if (!playerTransform) return;
 
+        // TimeSlow verarbeiten
         HandleTimeSlow();
 
         shootTimer -= Time.deltaTime;
@@ -80,10 +77,11 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         Vector3 n = dir.normalized;
         float dist = dir.magnitude;
 
+        // Rotation
         if (n != Vector3.zero)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(n), 0.2f);
 
-        // Bewegung & Animation
+        // Bewegung / Angriff
         if (dist > approachDistance)
         {
             float step = moveSpeed * Time.deltaTime;
@@ -98,10 +96,6 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
                 animator.SetBool("IsFiring", false);
                 animator.SetFloat("Speed", 1f);
             }
-
-            // Laser aus wenn außerhalb der Reichweite
-            if (laserRenderer != null)
-                laserRenderer.enabled = false;
         }
         else
         {
@@ -115,35 +109,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
                 if (animator)
                     animator.SetBool("IsFiring", true);
 
-                // Laser an, aber nur wenn im Attack Range
-                if (laserRenderer != null)
-                {
-                    laserRenderer.enabled = true;
-
-                    Vector3 origin = muzzle.position;
-                    Vector3 targetPos = origin + n * Mathf.Min(laserMaxDistance, dist);
-
-                    RaycastHit hit;
-
-                    // Raycast auf beide Layer gleichzeitig
-                    LayerMask combinedMask = playerLayer | wallLayer;
-
-                    if (Physics.Raycast(origin, n, out hit, laserMaxDistance, combinedMask))
-                    {
-                        targetPos = hit.point; // Laser stoppt genau dort, wo der Raycast trifft
-                    }
-
-                    laserRenderer.SetPosition(0, origin);
-                    laserRenderer.SetPosition(1, targetPos);
-                }
-
-
                 if (shootTimer <= 0f)
                 {
-                    // Vor dem Schießen Laser aus
-                    if (laserRenderer != null)
-                        laserRenderer.enabled = false;
-
                     StartCoroutine(ShootWithDelay(n, 0.25f));
                     shootTimer = shootCooldown;
                 }
@@ -152,15 +119,12 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
             {
                 if (animator)
                     animator.SetBool("IsFiring", false);
-
-                if (laserRenderer != null)
-                    laserRenderer.enabled = false;
             }
         }
     }
 
 
-    // ----------------------------------------
+    // ---------------- SHOOTING ----------------
     private IEnumerator ShootWithDelay(Vector3 dir, float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -179,12 +143,12 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         if (proj.TryGetComponent(out ProjectileEnemy projectile))
             projectile.Init(dir);
 
-        // 3D SOUND via manager
         if (shootSound != null)
-            EnemyShootManager.Instance?.RegisterShot(transform.position);
+            audioSource.PlayOneShot(shootSound);
     }
 
-    // ----------------------------------------
+
+    // ---------------- COLLISION ----------------
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
@@ -197,6 +161,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         }
     }
 
+
+    // ---------------- DEATH ----------------
     protected override void Die()
     {
         if (didDie) return;
@@ -211,7 +177,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         moveSpeed = 0f;
 
         if (deathSound)
-            AudioManager.Instance.PlaySound3D(deathSound, transform.position);
+            audioSource.PlayOneShot(deathSound);
 
         if (!killedByCollision)
             base.Die();
@@ -219,7 +185,8 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
         Destroy(gameObject, 2.5f);
     }
 
-    // ----------------------------------------
+
+    // ---------------- TIME SLOW ----------------
     public void ApplyTimeSlow(float duration, float factor)
     {
         isSlowed = true;

@@ -11,7 +11,14 @@ public abstract class EnemyBase : MonoBehaviour
     public bool debug = true;
 
     [Header("VFX")]
-    public GameObject bloodHitVFX;   
+    public GameObject bloodHitVFX;
+
+    [Header("Collision")]
+    [Tooltip("Sollen alle Enemies von Wänden blockiert werden?")]
+    public bool blockWalls = true;
+
+    [Tooltip("Tag, den deine Wände haben (z.B. 'Wall')")]
+    public string wallTag = "Wall";
 
     [HideInInspector] public PlayerHealth player;
 
@@ -73,11 +80,11 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
+    // ---------------- DAMAGE / DEATH ----------------
     public virtual void TakeDamage(int amount)
     {
         TakeDamage(amount, Vector3.forward, transform.position);
     }
-
 
     public virtual void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
@@ -96,7 +103,6 @@ public abstract class EnemyBase : MonoBehaviour
             Die();
     }
 
-
     protected void SpawnBloodVFX(Vector3 hitDir, Vector3 hitPoint)
     {
         if (bloodHitVFX == null)
@@ -104,21 +110,19 @@ public abstract class EnemyBase : MonoBehaviour
 
         Vector3 dir = hitDir.normalized;
 
-        float depthSize = 0.5f; 
+        float depthSize = 0.5f;
 
         if (TryGetComponent<Collider>(out Collider col))
         {
             depthSize = col.bounds.extents.z;
         }
 
-
-        float offsetDistance = depthSize * 0.4f; 
+        float offsetDistance = depthSize * 0.4f;
 
         Vector3 spawnPos =
             transform.position
             + Vector3.up * 0.9f
             + dir * offsetDistance;
-
 
         float randomRot = Random.Range(0f, 360f);
 
@@ -130,9 +134,6 @@ public abstract class EnemyBase : MonoBehaviour
 
         Destroy(vfx, 0.4f);
     }
-
-
-
 
     protected virtual void Die()
     {
@@ -180,8 +181,48 @@ public abstract class EnemyBase : MonoBehaviour
         }
     }
 
+    // ---------------- WALL BLOCKING ----------------
+
+    // Basis-Trigger-Handling – kann in Child-Klassen überschrieben werden
     protected virtual void OnTriggerEnter(Collider other)
+    {
+        HandleWallBlocking(other);
+    }
+
+    protected virtual void OnTriggerStay(Collider other)
+    {
+        HandleWallBlocking(other);
+    }
+
+    // zentrale Logik: schiebt Enemy aus der Wand raus
+    private void HandleWallBlocking(Collider other)
+    {
+        if (!blockWalls) return;
+
+        if (!other.CompareTag(wallTag))
+            return;
+
+        if (!TryGetComponent<Collider>(out Collider myCol))
+            return;
+
+        if (Physics.ComputePenetration(
+                myCol, transform.position, transform.rotation,
+                other, other.transform.position, other.transform.rotation,
+                out Vector3 direction, out float distance))
+        {
+            // direction: Richtung, in die wir uns bewegen müssen, um nicht mehr zu überlappen
+            // distance: wie weit
+            Vector3 separation = direction * distance;
+
+            transform.position += separation;
+
+            if (debug)
+                Debug.Log($"[{name}] Hit WALL (Base) → pushed out by {separation.magnitude:0.###}");
+        }
+    }
+
+    // Child-Klassen können bei Bedarf zusätzliches Trigger-Handling machen
+    protected virtual void OnTriggerExit(Collider other)
     {
     }
 }
-
