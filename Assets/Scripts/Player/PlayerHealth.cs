@@ -13,6 +13,14 @@ public class PlayerHealth : MonoBehaviour
     public int maxHealth = 3;
     [HideInInspector] public int currentHealth;
 
+    [Header("Shield Settings")]
+    public int maxShieldCharges = 4;
+    [SerializeField] private int shieldCharges = 0; // 0 = kein Schild
+
+    public bool HasShield => shieldCharges > 0;
+    public int ShieldCharges => shieldCharges;
+
+
     // HINZUGEFÜGT: Neue Header-Sektion für die Unverwundbarkeit
     [Header("Invincibility Settings")]
     public float invincibilityDuration = 0.5f; // Dauer der Unverwundbarkeit in Sekunden
@@ -71,6 +79,20 @@ public class PlayerHealth : MonoBehaviour
             return; // Beende die Funktion hier, der Spieler nimmt keinen Schaden
         }
 
+        // ✅ Schild blockt NUR Range
+        if (lastDamageType == DamageType.Range && shieldCharges > 0)
+        {
+            shieldCharges--;
+            Debug.Log($"[PlayerHealth] Range-Schaden geblockt durch Shield. Rest: {shieldCharges}/{maxShieldCharges}");
+
+            // UI updaten
+            if (heartUIManager != null)
+                heartUIManager.UpdateShield(shieldCharges);
+
+            return; // kein Damage, keine Invincibility starten
+        }
+
+
         // HINZUGEFÜGT: Starte die Coroutine für die Unverwundbarkeitsphase
         StartCoroutine(BecomeTemporarilyInvincible());
 
@@ -87,6 +109,7 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = Mathf.Max(currentHealth - amount, 0);
 
         Debug.Log($"[PlayerHealth] Schaden: {before} → {currentHealth}");
+
 
         heartUIManager?.UpdateHearts(currentHealth);
 
@@ -139,8 +162,6 @@ public class PlayerHealth : MonoBehaviour
             transform.position +
             Vector3.up * 1f;
 
-        // float randomRot = Random.Range(0f, 360f); // Diese Zeile war ungenutzt, kann gelöscht werden
-
         GameObject vfx = Instantiate(
             prefab,
             spawnPos,
@@ -186,6 +207,16 @@ public class PlayerHealth : MonoBehaviour
                 heartUIManager.UpdateHearts(currentHealth);
             });
         }
+    }
+
+    public void GiveShield(int charges)
+    {
+        shieldCharges = Mathf.Clamp(charges, 0, maxShieldCharges);
+        Debug.Log($"[PlayerHealth] Shield gesetzt: {shieldCharges}/{maxShieldCharges}");
+
+        // UI updaten, wenn vorhanden
+        if (heartUIManager != null)
+            heartUIManager.UpdateShield(shieldCharges);
     }
 
     // ------------------------------------------------------------

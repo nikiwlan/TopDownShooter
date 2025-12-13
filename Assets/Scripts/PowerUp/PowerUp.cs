@@ -9,7 +9,8 @@ public class PowerUp : MonoBehaviour
         FireRate,
         ScoreBoost,
         SpeedBoost,
-        TimeSlow
+        TimeSlow,
+        Shield
     }
 
     [Header("General Settings")]
@@ -29,7 +30,7 @@ public class PowerUp : MonoBehaviour
     public float floatAmplitude = 0.25f;
     public float floatFrequency = 2f;
     [Tooltip("Wie stark das PowerUp nach vorne geneigt ist (sichtbarer in TopDown)")]
-    public float tiltAngle = 90f;
+    public float tiltAngle = 30f;
 
     private Vector3 startPos;
     private Transform visualChild;
@@ -93,6 +94,14 @@ public class PowerUp : MonoBehaviour
         {
             case PowerUpType.Health:
                 if (playerHealth) playerHealth.Heal(healthAmount);
+                break;
+
+            case PowerUpType.Shield:
+                if (playerHealth)
+                {
+                    playerHealth.GiveShield(4); // 4 Hits blocken
+                    uiManager?.ShowUI(PowerUpType.Shield, duration); // optional, falls du ein Timer UI willst
+                }
                 break;
 
             case PowerUpType.FireRate:

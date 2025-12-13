@@ -8,19 +8,23 @@ public class HeartUIManager : MonoBehaviour
     public List<Image> hearts;            // Liste der Herz-Icons (0..n)
     public GameObject centerHeartEffect;  // optionaler Effekt beim Heilen
 
+    [Header("Shield UI")]
+    public RectTransform shieldIcon;     // UI-Icon neben den Herzen
+    public CanvasGroup shieldCanvasGroup; // optional fürs Ein-/Ausblenden
+    public int maxShieldCharges = 4;     // UI weiß, wie viele Stufen es gibt
+    public float minShieldScale = 0.45f; // wie klein bei 1 Charge
+    public float maxShieldScale = 1f;    // wie groß bei 4 Charges
+
+
     void Awake()
     {
-        Debug.Log($"[HeartUIManager/Awake] heartsList={(hearts != null ? hearts.Count : 0)}, centerFX={(centerHeartEffect != null)}");
+        UpdateShield(0);
 
         if (centerHeartEffect != null)
             centerHeartEffect.SetActive(false);
 
         ValidateSetup();
     }
-
-    // ❌ Entfernt: automatisches Update beim OnEnable
-    // Der Player ist jetzt verantwortlich für das erste Update.
-    // void OnEnable() { ... }
 
     public void UpdateHearts(int currentHealth)
     {
@@ -48,6 +52,28 @@ public class HeartUIManager : MonoBehaviour
         if (canvas == null)
             Debug.LogError("[HeartUIManager] Kein Canvas gefunden! UI-Objekt muss unter einem Canvas liegen.");
     }
+
+    public void UpdateShield(int charges)
+    {
+        if (shieldIcon == null) return; // Shield UI ist optional
+
+        if (charges <= 0)
+        {
+            // ausblenden
+            if (shieldCanvasGroup != null) shieldCanvasGroup.alpha = 0f;
+            shieldIcon.localScale = Vector3.one * maxShieldScale;
+            return;
+        }
+
+        // einblenden
+        if (shieldCanvasGroup != null) shieldCanvasGroup.alpha = 1f;
+
+        float t = Mathf.Clamp01((float)charges / maxShieldCharges); // 0..1
+        float scale = Mathf.Lerp(minShieldScale, maxShieldScale, t);
+
+        shieldIcon.localScale = new Vector3(scale, scale, 1f);
+    }
+
 
     public void PlayHeartPickupEffect()
     {

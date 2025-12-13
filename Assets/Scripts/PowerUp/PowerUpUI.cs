@@ -17,7 +17,6 @@ public class PowerUpUI : MonoBehaviour
     [SerializeField] private Gradient fillGradient;
     [SerializeField] private float warnThreshold = 0.15f;
     [SerializeField] private float smooth = 10f;
-    [SerializeField] private float shineSpeed = 400f;
     [SerializeField] private float glowAlpha = 0.3f;
     [SerializeField] private float glowPulseSpeed = 8f;
 
