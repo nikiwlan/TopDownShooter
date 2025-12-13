@@ -52,7 +52,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: aded6d73f3d24084f9d0d7c1735ea323, type: 2}
+  - {fileID: 2100000, guid: dc83bbd02e616fa439d9e700a9e3df8e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -96,7 +96,7 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 1, g: 0, b: 0, a: 1}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -940,6 +940,10 @@ MonoBehaviour:
   bloodHitVFX: {fileID: 9071036190686454750, guid: da8d7663570bf6d478f51711720173d5, type: 3}
   blockWalls: 1
   wallTag: Wall
+  runAwayFromSpawnOnWallHit: 1
+  forcedRunDistance: 2.5
+  forcedRunCooldown: 0.25
+  wallSkin: 0.02
   excludeFromTint:
   - {fileID: 2818826180149025854}
   excludeTintTag: 

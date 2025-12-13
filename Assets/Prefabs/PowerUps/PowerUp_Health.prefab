@@ -137,7 +137,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 80844d124bb3cb54893e9d8bf21ba7e2, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: 24a6e42e330a1cf42883ee14e950122d, type: 2}
+      objectReference: {fileID: 2100000, guid: 507f4c2a9b87e5f42b443d1bb3b7780e, type: 2}
     - target: {fileID: 919132149155446097, guid: 80844d124bb3cb54893e9d8bf21ba7e2, type: 3}
       propertyPath: m_Name
       value: Heart
