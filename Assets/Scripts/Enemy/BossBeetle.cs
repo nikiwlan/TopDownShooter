@@ -98,9 +98,10 @@ public class BossBeetle : EnemyBase
 
         if (!isAttacking && !isInAttackRange)
         {
-            MoveTowardsPlayer(moveSpeed);
+            MoveTowardsPlayer(moveSpeed, origin); // <-- origin mitgeben
             animator.SetFloat("Speed", moveSpeed);
         }
+
         else
         {
             animator.SetFloat("Speed", 0f);
@@ -160,11 +161,18 @@ public class BossBeetle : EnemyBase
         };
     }
 
-    private void MoveTowardsPlayer(float speed)
+    private void MoveTowardsPlayer(float speed, Transform origin)
     {
-        Vector3 dir = (playerTransform.position - transform.position).normalized;
-        dir.y = 0;
+        if (!origin) origin = transform;
 
+        // ✅ Richtung vom Origin zum Player
+        Vector3 dir = (playerTransform.position - origin.position);
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f) return;
+        dir.Normalize();
+
+        // Raycast weiterhin vom Root (damit Walls passen)
         if (!Physics.Raycast(transform.position, dir, speed * Time.deltaTime + 0.2f, wallLayer))
             transform.position += dir * speed * Time.deltaTime;
 
@@ -177,6 +185,7 @@ public class BossBeetle : EnemyBase
             );
         }
     }
+
 
     private void UpdatePhaseAndAnimator()
     {
