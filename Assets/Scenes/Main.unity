@@ -8688,7 +8688,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 1978811932}
   gates:
-  - {fileID: 475263388}
+  - {fileID: 1629991534}
   - {fileID: 2083420115}
   - {fileID: 233285528}
   - {fileID: 678773619}
