@@ -10,6 +10,8 @@ TagManager:
   - EnemyProjectile
   - Gate
   - Laser
+  - EnemyBody
+  - EnemyHead
   layers:
   - Default
   - TransparentFX
@@ -24,7 +26,7 @@ TagManager:
   - PowerUp
   - Gate
   - EnemyProjectile
-  - 
+  - EnemyHitbox
   - 
   - 
   - 

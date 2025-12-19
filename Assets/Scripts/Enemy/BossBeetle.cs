@@ -3,20 +3,71 @@ using System.Collections;
 
 public class BossBeetle : EnemyBase
 {
+    // ==========================
+    // BODY HIT (Phase 0)
+    // ==========================
+    [Header("Body Hit (Phase 0)")]
+    public AudioClip bodyHitSound;
+    [Range(0f, 1f)] public float bodyHitVolume = 1f;
+
+    // ==========================
+    // HEALTH / PHASES
+    // ==========================
     [Header("Health / Phases")]
     public int maxHealth = 30;
 
+    // ==========================
+    // MOVEMENT
+    // ==========================
     [Header("Movement Settings")]
     public float walkSpeed = 2f;
     public float runSpeed = 12f;
     [SerializeField] private float runStartRange = 8f;
     public LayerMask wallLayer;
 
-    [Header("Attack Origins (per phase/attack)")]
-    [SerializeField] private Transform attackOrigin1; // Phase 0 (HP > 20) -> Attack 1
-    [SerializeField] private Transform attackOrigin2; // Phase 1 (10 < HP <= 20) -> Attack 2
-    [SerializeField] private Transform attackOrigin3; // Phase 2 (HP <= 10) -> Attack 3
+    // ==========================
+    // RUN (PHASE 1) - PARTIAL STEERING + WALL STUN + COOLDOWN
+    // ==========================
+    [Header("Run (Phase 1)")]
+    [SerializeField] private float runMaxTime = 1.2f;             // how long a charge lasts
+    [SerializeField] private float runStopDistance = 1.2f;        // stop charge when close enough
+    [SerializeField] private float runSteerStrength = 0.7f;       // base steering strength
+    [SerializeField] private float runSteerNearMultiplier = 0.2f; // near player: less correction
+    [SerializeField] private float runSteerFarMultiplier = 1.0f;  // far: more correction
+    [SerializeField] private float runSteerDistanceRange = 8f;    // dist range for far->near blend
+    [SerializeField] private float runWallCheckDistance = 0.9f;   // how far ahead to check for wall
 
+    [Header("Run Cooldown (Phase 1)")]
+    [SerializeField] private float runCooldownAfterRun = 2.0f;    // after a run ends: pause before next run
+    [SerializeField] private float runCooldownAfterStun = 2.0f;   // after stun ends: pause before next run
+    private float nextRunAllowedTime = 0f;
+
+    [Header("Wall Stun (Phase 1)")]
+    [SerializeField] private float wallStunDuration = 3f;
+    [Tooltip("Optional: prefab (e.g. icon) spawned while stunned. It will be parented to this enemy.")]
+    [SerializeField] private GameObject stunIconPrefab;
+    [Tooltip("Optional: where the stun icon should attach. If null, it uses this transform.")]
+    [SerializeField] private Transform stunIconAnchor;
+
+    private bool isRunning;
+    private float runEndTime;
+    private Vector3 runDir;
+
+    private bool isStunned;
+    private float stunEndTime;
+    private GameObject stunIconInstance;
+
+    // ==========================
+    // ATTACK ORIGINS
+    // ==========================
+    [Header("Attack Origins (per phase)")]
+    [SerializeField] private Transform attackOrigin1;
+    [SerializeField] private Transform attackOrigin2;
+    [SerializeField] private Transform attackOrigin3;
+
+    // ==========================
+    // ATTACK SETTINGS
+    // ==========================
     [Header("Attack Settings")]
     [SerializeField] private float attackRange1 = 2f;
     [SerializeField] private float attackRange2 = 2f;
@@ -34,6 +85,9 @@ public class BossBeetle : EnemyBase
     [SerializeField] private float attackCooldown2 = 1.3f;
     [SerializeField] private float attackCooldown3 = 1.1f;
 
+    // ==========================
+    // ANIMATION / FX / AUDIO
+    // ==========================
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
@@ -46,14 +100,26 @@ public class BossBeetle : EnemyBase
     public AudioClip hitSound;
     public AudioClip deathSound;
 
+    // ==========================
+    // INTERNAL
+    // ==========================
     private Transform playerTransform;
-
     private bool isAttacking = false;
     private float nextAttackTime = 0f;
 
     private float _nextHitTime;
     [SerializeField] private float _contactCooldown = 0.4f;
 
+    // Animator parameter names (robust, vermeidet Tippfehler)
+    private const string PARAM_PHASE = "Phase";
+    private const string PARAM_CLOSE = "CloseToPlayer";
+    private const string PARAM_ISRUN = "IsRunning";
+    private const string PARAM_ISDEAD = "isDead";
+    private const string TRIG_ATTACK = "IsAttacking";
+
+    // ==========================
+    // UNITY
+    // ==========================
     protected override void Start()
     {
         base.Start();
@@ -64,44 +130,71 @@ public class BossBeetle : EnemyBase
         playerTransform = player ? player.transform : null;
         if (!animator) animator = GetComponentInChildren<Animator>();
 
-        // Fallbacks (falls du im Inspector nichts zuweist)
         if (!attackOrigin1) attackOrigin1 = transform;
         if (!attackOrigin2) attackOrigin2 = transform;
         if (!attackOrigin3) attackOrigin3 = transform;
 
+        if (!stunIconAnchor) stunIconAnchor = transform;
+
         UpdatePhaseAndAnimator();
+        ApplyAnimatorRunFlag();
     }
 
     void Update()
     {
         if (!playerTransform || !animator) return;
-        if (animator.GetBool("isDead")) return;
+        if (animator.GetBool(PARAM_ISDEAD)) return;
 
         UpdatePhaseAndAnimator();
+        int phase = animator.GetInteger(PARAM_PHASE);
 
-        int phase = animator.GetInteger("Phase");
+        // Nähe-Info darf bleiben (z.B. für andere States / Debug),
+        // aber NICHT mehr als "Run-State-Schalter" missbrauchen.
+        bool closeForRun = Vector3.Distance(transform.position, playerTransform.position) <= runStartRange;
+        animator.SetBool(PARAM_CLOSE, closeForRun);
 
+        // Immer konsistent halten
+        ApplyAnimatorRunFlag();
+
+        // --- Stun ---
+        if (isStunned)
+        {
+            if (Time.time >= stunEndTime)
+                EndStun();
+
+            animator.SetFloat("Speed", 0f);
+            return;
+        }
+
+        // --- Phase 1: Run one-shot + Cooldown ---
+        if (phase == 1 && closeForRun && !isRunning && !isAttacking && Time.time >= nextRunAllowedTime)
+        {
+            StartRun();
+            ApplyAnimatorRunFlag();
+        }
+
+        // --- During run: move, no attacks ---
+        if (isRunning)
+        {
+            RunMove();
+            animator.SetFloat("Speed", isRunning ? runSpeed : 0f);
+            ApplyAnimatorRunFlag();
+            return;
+        }
+
+        // --- Normal movement / attacks ---
         Transform origin = GetOriginForPhase(phase);
         float attackRange = GetAttackRangeForPhase(phase);
 
-        float distanceToOrigin = Vector3.Distance(origin.position, playerTransform.position);
-        bool isInAttackRange = distanceToOrigin <= attackRange;
+        bool isInAttackRange = Vector3.Distance(origin.position, playerTransform.position) <= attackRange;
 
-        // Run nur wenn Phase > 0 UND nah am Player
-        float distanceToRoot = Vector3.Distance(transform.position, playerTransform.position);
-        bool closeForRun = distanceToRoot <= runStartRange;
-        animator.SetBool("CloseToPlayer", closeForRun);
-
-        float moveSpeed =
-            isAttacking ? walkSpeed :
-            (phase > 0 && closeForRun ? runSpeed : walkSpeed);
+        float moveSpeed = isAttacking ? walkSpeed : walkSpeed;
 
         if (!isAttacking && !isInAttackRange)
         {
-            MoveTowardsPlayer(moveSpeed, origin); // <-- origin mitgeben
+            MoveTowardsPlayer(moveSpeed, origin);
             animator.SetFloat("Speed", moveSpeed);
         }
-
         else
         {
             animator.SetFloat("Speed", 0f);
@@ -111,13 +204,166 @@ public class BossBeetle : EnemyBase
             StartCoroutine(AttackRoutine(phase));
     }
 
+    private void ApplyAnimatorRunFlag()
+    {
+        // Dieser Bool ist der “saubere” Run-Schalter für Transitions.
+        animator.SetBool(PARAM_ISRUN, isRunning);
+    }
+
+    // ==========================
+    // RUN (PHASE 1)
+    // ==========================
+    private void StartRun()
+    {
+        isRunning = true;
+        runEndTime = Time.time + runMaxTime;
+
+        Vector3 toPlayer = playerTransform.position - transform.position;
+        toPlayer.y = 0f;
+        runDir = (toPlayer.sqrMagnitude > 0.0001f) ? toPlayer.normalized : transform.forward;
+
+        ApplyAnimatorRunFlag();
+    }
+
+    private void StopRunAndCooldown(float cooldownSeconds)
+    {
+        isRunning = false;
+        ApplyAnimatorRunFlag();
+
+        // 🔧 Robustness: Wenn dein Animator “Run->Walk” fälschlich an CloseToPlayer hängt,
+        // dann bleibt er sonst gern im Run stecken, weil CloseToPlayer ja weiter true ist.
+        // Darum setzen wir CloseToPlayer einmal kurz auf false, damit er garantiert raus-transitioned.
+        StartCoroutine(ForceLeaveRunOneFrame());
+
+        nextRunAllowedTime = Time.time + Mathf.Max(0f, cooldownSeconds);
+    }
+
+    private IEnumerator ForceLeaveRunOneFrame()
+    {
+        // 1 Frame CloseToPlayer false -> Transition kann feuern -> danach wieder normal
+        bool wasClose = animator.GetBool(PARAM_CLOSE);
+        animator.SetBool(PARAM_CLOSE, false);
+        yield return null;
+        animator.SetBool(PARAM_CLOSE, wasClose);
+    }
+
+    private void RunMove()
+    {
+        float dist = Vector3.Distance(transform.position, playerTransform.position);
+
+        // stop conditions
+        if (Time.time >= runEndTime || dist <= runStopDistance)
+        {
+            StopRunAndCooldown(runCooldownAfterRun);
+            return;
+        }
+
+        // wall ahead -> stun
+        if (Physics.Raycast(transform.position + Vector3.up * 0.2f, runDir, runWallCheckDistance, wallLayer))
+        {
+            StopRunAndCooldown(0f); // cooldown nach Stun machen wir im EndStun
+            StartStun();
+            return;
+        }
+
+        // partial steering toward player
+        Vector3 toPlayer = playerTransform.position - transform.position;
+        toPlayer.y = 0f;
+        Vector3 targetDir = (toPlayer.sqrMagnitude > 0.0001f) ? toPlayer.normalized : runDir;
+
+        // far -> steer more, near -> steer less
+        float t = Mathf.Clamp01(dist / runSteerDistanceRange);
+        float steerMul = Mathf.Lerp(runSteerNearMultiplier, runSteerFarMultiplier, t);
+        float steer = runSteerStrength * steerMul;
+
+        runDir = Vector3.Slerp(runDir, targetDir, steer * Time.deltaTime).normalized;
+
+        // move + rotate
+        if (!Physics.Raycast(transform.position, runDir, runSpeed * Time.deltaTime + 0.2f, wallLayer))
+            transform.position += runDir * runSpeed * Time.deltaTime;
+
+        if (runDir.sqrMagnitude > 0.001f)
+        {
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.LookRotation(runDir),
+                0.25f
+            );
+        }
+    }
+
+    private void StartStun()
+    {
+        isStunned = true;
+        stunEndTime = Time.time + wallStunDuration;
+
+        if (stunIconPrefab && !stunIconInstance)
+        {
+            stunIconInstance = Instantiate(stunIconPrefab, stunIconAnchor.position, Quaternion.identity, stunIconAnchor);
+        }
+    }
+
+    private void EndStun()
+    {
+        isStunned = false;
+
+        if (stunIconInstance)
+        {
+            Destroy(stunIconInstance);
+            stunIconInstance = null;
+        }
+
+        // nach Stun: Pause
+        nextRunAllowedTime = Time.time + Mathf.Max(0f, runCooldownAfterStun);
+    }
+
+    // ==========================
+    // HIT HANDLING (CALLED BY BULLET)
+    // ==========================
+    public void OnHeadHit(int damage, Vector3 hitDir, Vector3 hitPoint)
+    {
+        int phase = GetPhase();
+
+        // Phase 0: always damage on head
+        if (phase == 0)
+        {
+            TakeDamage(damage, hitDir, hitPoint);
+            return;
+        }
+
+        // Phase 1: immune unless currently running
+        if (phase == 1)
+        {
+            if (isRunning)
+                TakeDamage(damage, hitDir, hitPoint);
+
+            return;
+        }
+
+        // Phase 2: later
+    }
+
+    public void OnBodyHit(Vector3 hitPoint)
+    {
+        if (bodyHitSound)
+            AudioManager.Instance.PlaySound3D(bodyHitSound, hitPoint, bodyHitVolume);
+    }
+
+    private int GetPhase()
+    {
+        return (health > 20) ? 0 : (health > 10) ? 1 : 2;
+    }
+
+    // ==========================
+    // MOVEMENT / ATTACK LOGIC
+    // ==========================
     private Transform GetOriginForPhase(int phase)
     {
         return phase switch
         {
-            0 => attackOrigin1 ? attackOrigin1 : transform,
-            1 => attackOrigin2 ? attackOrigin2 : transform,
-            _ => attackOrigin3 ? attackOrigin3 : transform,
+            0 => attackOrigin1,
+            1 => attackOrigin2,
+            _ => attackOrigin3
         };
     }
 
@@ -127,7 +373,7 @@ public class BossBeetle : EnemyBase
         {
             0 => attackRange1,
             1 => attackRange2,
-            _ => attackRange3,
+            _ => attackRange3
         };
     }
 
@@ -137,7 +383,7 @@ public class BossBeetle : EnemyBase
         {
             0 => attackDamage1,
             1 => attackDamage2,
-            _ => attackDamage3,
+            _ => attackDamage3
         };
     }
 
@@ -147,7 +393,7 @@ public class BossBeetle : EnemyBase
         {
             0 => attackDuration1,
             1 => attackDuration2,
-            _ => attackDuration3,
+            _ => attackDuration3
         };
     }
 
@@ -157,73 +403,53 @@ public class BossBeetle : EnemyBase
         {
             0 => attackCooldown1,
             1 => attackCooldown2,
-            _ => attackCooldown3,
+            _ => attackCooldown3
         };
     }
 
     private void MoveTowardsPlayer(float speed, Transform origin)
     {
-        if (!origin) origin = transform;
-
-        // ✅ Richtung vom Origin zum Player
         Vector3 dir = (playerTransform.position - origin.position);
         dir.y = 0f;
-
         if (dir.sqrMagnitude < 0.0001f) return;
         dir.Normalize();
 
-        // Raycast weiterhin vom Root (damit Walls passen)
         if (!Physics.Raycast(transform.position, dir, speed * Time.deltaTime + 0.2f, wallLayer))
             transform.position += dir * speed * Time.deltaTime;
 
-        if (dir.sqrMagnitude > 0.001f)
-        {
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                Quaternion.LookRotation(dir),
-                0.2f
-            );
-        }
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            Quaternion.LookRotation(dir),
+            0.2f
+        );
     }
-
 
     private void UpdatePhaseAndAnimator()
     {
-        // Phase 0: HP > 20
-        // Phase 1: 10 < HP <= 20
-        // Phase 2: HP <= 10
-        int phase = (health > 20) ? 0 : (health > 10) ? 1 : 2;
-        animator.SetInteger("Phase", phase);
+        animator.SetInteger(PARAM_PHASE, GetPhase());
     }
 
     private IEnumerator AttackRoutine(int phase)
     {
         isAttacking = true;
+        animator.SetTrigger(TRIG_ATTACK);
 
-        animator.SetTrigger("IsAttacking");
-
-        Debug.Log($"[BossBeetle] ATTACK START | isAttacking={isAttacking} | Phase={phase}");
-
-        float duration = GetAttackDurationForPhase(phase);
-
-        yield return new WaitForSeconds(duration * 0.5f);
+        yield return new WaitForSeconds(GetAttackDurationForPhase(phase) * 0.5f);
 
         if (attackHitSound)
             AudioManager.Instance.PlaySound3D(attackHitSound, transform.position);
 
-        if (player != null)
-            player.TakeDamage(GetAttackDamageForPhase(phase));
+        player?.TakeDamage(GetAttackDamageForPhase(phase));
 
-        yield return new WaitForSeconds(duration * 0.5f);
+        yield return new WaitForSeconds(GetAttackDurationForPhase(phase) * 0.5f);
 
         isAttacking = false;
-
-        Debug.Log($"[BossBeetle] ATTACK END | isAttacking={isAttacking} | Phase={phase}");
-
         nextAttackTime = Time.time + GetAttackCooldownForPhase(phase);
     }
 
-
+    // ==========================
+    // DAMAGE / DEATH
+    // ==========================
     public override void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
         if (health <= 0) return;
@@ -233,34 +459,34 @@ public class BossBeetle : EnemyBase
 
         health -= amount;
 
-        if (debug)
-            Debug.Log($"[BOSS] Schaden: {amount} → verbleibend {health}");
-
-        if (health <= 0)
-        {
-            Die();
-            return;
-        }
-
-        if (tankHitVFX != null)
+        if (tankHitVFX)
         {
             GameObject vfx = Instantiate(
                 tankHitVFX,
-                transform.position + Vector3.up * 1.5f,
-                Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
+                hitPoint == Vector3.zero ? transform.position + Vector3.up * 1.5f : hitPoint,
+                Quaternion.identity
             );
             Destroy(vfx, 0.5f);
         }
+
+        if (health <= 0)
+            Die();
     }
 
     protected override void Die()
     {
-        if (tankDeathVFX != null)
+        // stop states
+        isRunning = false;
+        ApplyAnimatorRunFlag();
+
+        if (isStunned) EndStun();
+
+        if (tankDeathVFX)
         {
             GameObject vfx = Instantiate(
                 tankDeathVFX,
                 transform.position + Vector3.up * 1.5f,
-                Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
+                Quaternion.identity
             );
             Destroy(vfx, 1.2f);
         }
@@ -268,8 +494,7 @@ public class BossBeetle : EnemyBase
         if (deathSound)
             AudioManager.Instance.PlaySound3D(deathSound, transform.position);
 
-        if (animator)
-            animator.SetBool("isDead", true);
+        animator?.SetBool(PARAM_ISDEAD, true);
 
         Collider col = GetComponent<Collider>();
         if (col) col.enabled = false;
@@ -282,6 +507,9 @@ public class BossBeetle : EnemyBase
         Destroy(gameObject, 2.5f);
     }
 
+    // ==========================
+    // PLAYER CONTACT
+    // ==========================
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);

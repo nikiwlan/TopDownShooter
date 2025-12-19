@@ -58,6 +58,28 @@ public class Bullet : MonoBehaviour
         // Debug um zu sehen WAS getroffen wird
         Debug.Log("BULLET hit: " + other.tag);
 
+        if (other.CompareTag("EnemyHead"))
+        {
+            BossBeetle boss = other.GetComponentInParent<BossBeetle>();
+            if (boss != null)
+                boss.OnHeadHit(damage, dir, transform.position);
+
+            Destroy(gameObject);
+            return;
+        }
+
+
+        if (other.CompareTag("EnemyBody"))
+        {
+            BossBeetle boss = other.GetComponentInParent<BossBeetle>();
+            if (boss != null)
+                boss.OnBodyHit(transform.position);
+
+            Destroy(gameObject);
+            return;
+        }
+
+
         if (other.CompareTag("Enemy"))
         {
             EnemyBase enemy = other.GetComponentInParent<EnemyBase>();
