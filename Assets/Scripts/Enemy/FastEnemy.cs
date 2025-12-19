@@ -185,8 +185,13 @@ public class FastEnemy : EnemyBase, ITimeSlowable
     {
         base.OnTriggerEnter(other);
 
+        Debug.Log("before fast enemy");
+        Debug.Log("before fast enemy" + player);
+        Debug.Log("before fast enemy" + other);
+
         if (other.CompareTag("Player") && player != null)
         {
+            Debug.Log("in fast enemy");
             player.TakeDamage(1);
         }
     }

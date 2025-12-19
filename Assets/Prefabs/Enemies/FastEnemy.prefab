@@ -43,12 +43,12 @@ CapsuleCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7353411558994756467}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
-  m_Radius: 0.8
-  m_Height: 2
+  m_Radius: 1
+  m_Height: 1
   m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!54 &7231332852345590285
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -171,25 +171,6 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: e1efdadb20b8fc24fb96b543fc7db3c6, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 655a837a2979acd49b85d1a0401fc0aa, type: 3}
---- !u!1 &7157631294339148 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 100106, guid: 655a837a2979acd49b85d1a0401fc0aa, type: 3}
-  m_PrefabInstance: {fileID: 7157631294308166}
-  m_PrefabAsset: {fileID: 0}
---- !u!136 &8391755087055750144
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7157631294339148}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 1
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &7157631294432684 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400106, guid: 655a837a2979acd49b85d1a0401fc0aa, type: 3}

@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections; // HINZUGEFÜGT: Notwendig für Coroutinen und IEnumerator
+using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -20,17 +20,14 @@ public class PlayerHealth : MonoBehaviour
     public bool HasShield => shieldCharges > 0;
     public int ShieldCharges => shieldCharges;
 
-
-    // HINZUGEFÜGT: Neue Header-Sektion für die Unverwundbarkeit
     [Header("Invincibility Settings")]
-    public float invincibilityDuration = 0.5f; // Dauer der Unverwundbarkeit in Sekunden
-    private bool isInvincible = false; // Flag, das den Status speichert
+    public float invincibilityDuration = 0.5f;
+    private bool isInvincible = false;
 
     [Header("UI References")]
     public HeartUIManager heartUIManager;
     public DamageFlash damageFlash;
 
-    // ... (Audio und VFX Header bleiben unverändert) ...
     // ---------------------- AUDIO ----------------------
     [Header("Damage Sounds (Randomized)")]
     public AudioClip damageSound1;
@@ -43,11 +40,19 @@ public class PlayerHealth : MonoBehaviour
 
     // ---------------------- VFX ----------------------
     [Header("Blood VFX")]
-    public GameObject rangeBloodVFX;   // Blut bei Fernkampfschaden
-    public GameObject meleeBloodVFX;   // Blut bei Nahkampfschaden
+    public GameObject rangeBloodVFX;
+    public GameObject meleeBloodVFX;
 
     [HideInInspector]
-    public DamageType lastDamageType = DamageType.Range; // Default
+    public DamageType lastDamageType = DamageType.Range; // wird jetzt korrekt gesetzt
+
+    // ✅ NEW: Schild soll NUR Enemy-Projectiles blocken
+    [Header("Shield Filters")]
+    [Tooltip("Nur wenn der Schaden von diesem Tag kommt, blockt das Schild Range-Damage.")]
+    public string shieldBlocksOnlyTag = "EnemyProjectile";
+
+    [Tooltip("Optional: wenn du lieber über Layer blocken willst (z.B. EnemyProjectile Layer), trage ihn hier ein. -1 = deaktiviert")]
+    public int shieldBlocksOnlyLayer = -1;
 
     void Awake()
     {
@@ -70,74 +75,79 @@ public class PlayerHealth : MonoBehaviour
     // ------------------------------------------------------------
     // DAMAGE
     // ------------------------------------------------------------
+
+    // ✅ Keep old signature: falls irgendwo noch player.TakeDamage(1) steht
+    // Wichtig: Default ist jetzt MELEE (damit Schild nicht random alles blockt)
     public void TakeDamage(int amount)
     {
-        // HINZUGEFÜGT: Prüfe, ob der Spieler gerade unverwundbar ist
+        TakeDamage(amount, DamageType.Melee, null, -1);
+    }
+
+    // ✅ NEW: klare Damage-API
+    public void TakeDamage(int amount, DamageType type, GameObject source = null)
+    {
+        string srcTag = source != null ? source.tag : null;
+        int srcLayer = source != null ? source.layer : -1;
+        TakeDamage(amount, type, srcTag, srcLayer);
+    }
+
+    // ✅ NEW: wenn du direkt Tag/Layer übergeben willst
+    public void TakeDamage(int amount, DamageType type, string sourceTag, int sourceLayer)
+    {
         if (isInvincible)
         {
             Debug.Log("[PlayerHealth] Schaden geblockt dank Grace Period.");
-            return; // Beende die Funktion hier, der Spieler nimmt keinen Schaden
+            return;
         }
 
-        // ✅ Schild blockt NUR Range
-        if (lastDamageType == DamageType.Range && shieldCharges > 0)
+        lastDamageType = type;
+
+        // ✅ Schild blockt NUR:
+        // - Range-Schaden
+        // - es gibt Charges
+        // - Quelle ist EnemyProjectile (Tag oder optional Layer)
+        if (type == DamageType.Range && shieldCharges > 0)
         {
-            shieldCharges--;
-            Debug.Log($"[PlayerHealth] Range-Schaden geblockt durch Shield. Rest: {shieldCharges}/{maxShieldCharges}");
+            bool tagOk = !string.IsNullOrEmpty(shieldBlocksOnlyTag) && sourceTag == shieldBlocksOnlyTag;
+            bool layerOk = (shieldBlocksOnlyLayer >= 0) && (sourceLayer == shieldBlocksOnlyLayer);
 
-            // UI updaten
-            if (heartUIManager != null)
-                heartUIManager.UpdateShield(shieldCharges);
+            if (tagOk || layerOk)
+            {
+                shieldCharges--;
+                Debug.Log($"[PlayerHealth] Range-Schaden geblockt durch Shield (EnemyProjectile). Rest: {shieldCharges}/{maxShieldCharges}");
 
-            return; // kein Damage, keine Invincibility starten
+                if (heartUIManager != null)
+                    heartUIManager.UpdateShield(shieldCharges);
+
+                return; // kein Damage, keine Invincibility
+            }
         }
 
-
-        // HINZUGEFÜGT: Starte die Coroutine für die Unverwundbarkeitsphase
         StartCoroutine(BecomeTemporarilyInvincible());
 
-        // Screen-Flash
         if (damageFlash != null)
             damageFlash.Flash();
 
-        // Blut-Effekt (Range / Melee)
         SpawnBloodVFX();
-
-        // if (currentHealth <= 0) return; // Diese Zeile ist jetzt unnötig, da wir oben prüfen
 
         int before = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
 
         Debug.Log($"[PlayerHealth] Schaden: {before} → {currentHealth}");
 
-
         heartUIManager?.UpdateHearts(currentHealth);
-
         PlayRandomDamageSound();
 
         if (currentHealth <= 0)
             Die();
     }
 
-    // HINZUGEFÜGT: Die Coroutine, die die Unverwundbarkeit steuert
     private IEnumerator BecomeTemporarilyInvincible()
     {
         isInvincible = true;
-        // Optional: Hier könnten Sie das SpriteRenderer blinken lassen, um Feedback zu geben
-
-        // Warte für die Dauer, die im Inspector eingestellt ist
         yield return new WaitForSeconds(invincibilityDuration);
-
         isInvincible = false;
-        // Optional: Hier das Blinken stoppen
     }
-
-
-    // ------------------------------------------------------------
-    // BLOOD VFX (wie beim Tank, nur mit Range/Melee-Auswahl)
-    // ------------------------------------------------------------
-    // ... (Rest der Funktionen SpawnBloodVFX, PlayRandomDamageSound, Heal, Die, PlayDeathSequence) ...
-    // Diese Funktionen wurden nicht verändert.
 
     private void SpawnBloodVFX()
     {
@@ -148,7 +158,6 @@ public class PlayerHealth : MonoBehaviour
             case DamageType.Melee:
                 prefab = meleeBloodVFX;
                 break;
-
             case DamageType.Range:
             default:
                 prefab = rangeBloodVFX;
@@ -158,9 +167,7 @@ public class PlayerHealth : MonoBehaviour
         if (prefab == null)
             return;
 
-        Vector3 spawnPos =
-            transform.position +
-            Vector3.up * 1f;
+        Vector3 spawnPos = transform.position + Vector3.up * 1f;
 
         GameObject vfx = Instantiate(
             prefab,
@@ -170,9 +177,6 @@ public class PlayerHealth : MonoBehaviour
         Destroy(vfx, 1f);
     }
 
-    // ------------------------------------------------------------
-    // AUDIO
-    // ------------------------------------------------------------
     private void PlayRandomDamageSound()
     {
         AudioClip[] clips = new AudioClip[] { damageSound1, damageSound2, damageSound3 };
@@ -187,9 +191,6 @@ public class PlayerHealth : MonoBehaviour
         AudioManager.Instance.PlaySound2D(valid[index]);
     }
 
-    // ------------------------------------------------------------
-    // HEAL
-    // ------------------------------------------------------------
     public void Heal(int amount)
     {
         if (currentHealth <= 0) return;
@@ -214,21 +215,17 @@ public class PlayerHealth : MonoBehaviour
         shieldCharges = Mathf.Clamp(charges, 0, maxShieldCharges);
         Debug.Log($"[PlayerHealth] Shield gesetzt: {shieldCharges}/{maxShieldCharges}");
 
-        // UI updaten, wenn vorhanden
         if (heartUIManager != null)
             heartUIManager.UpdateShield(shieldCharges);
     }
 
-    // ------------------------------------------------------------
-    // DEATH
-    // ------------------------------------------------------------
     private void Die()
     {
         Debug.Log("[PlayerHealth] Spieler gestorben – Objekt deaktiviert.");
         StartCoroutine(PlayDeathSequence());
     }
 
-    private System.Collections.IEnumerator PlayDeathSequence()
+    private IEnumerator PlayDeathSequence()
     {
         if (deathSound_1 != null)
             AudioManager.Instance.PlaySound2D(deathSound_1);

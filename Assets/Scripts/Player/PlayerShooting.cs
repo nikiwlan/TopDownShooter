@@ -14,7 +14,7 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("Audio")]
     public AudioClip shootSound;
-    [Range(0f, 1f)] public float shootVolume = 0.7f;   // ⭐ Lautstärke einstellbar!
+    [Range(0f, 1f)] public float shootVolume = 0.7f;
 
     public bool isFrozen = false;
 
@@ -85,15 +85,16 @@ public class PlayerShooting : MonoBehaviour
                 else
                     dir.Normalize();
 
-                GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(dir));
-
-                if (bullet.TryGetComponent<Rigidbody>(out Rigidbody rb))
+                GameObject bulletObj = Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(dir));
+                if (bulletObj.TryGetComponent<Bullet>(out var b))
                 {
-                    rb.useGravity = false;
-                    rb.velocity = dir * bulletSpeed;
+                    b.Init(dir, bulletSpeed, bulletLifetime);
+                }
+                else
+                {
+                    Destroy(bulletObj, bulletLifetime);
                 }
 
-                Destroy(bullet, bulletLifetime);
 
                 if (animator != null)
                 {
@@ -101,7 +102,6 @@ public class PlayerShooting : MonoBehaviour
                     animator.SetTrigger("Shoot");
                 }
 
-                // ⭐ Schuss über AudioManager, mit einstellbarer Lautstärke
                 if (shootSound != null)
                     AudioManager.Instance.PlaySound2D(shootSound, shootVolume);
             }
