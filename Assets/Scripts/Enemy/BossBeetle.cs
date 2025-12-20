@@ -166,6 +166,14 @@ public class BossBeetle : EnemyBase
             return;
         }
 
+        // ✅ WICHTIG: Während Attack absolut kein Movement zulassen
+        // (damit er nicht "durchrennt", falls Run gerade erst abgebrochen wurde)
+        if (isAttacking)
+        {
+            animator.SetFloat("Speed", 0f);
+            return;
+        }
+
         // --- Phase 1: Run one-shot + Cooldown ---
         if (phase == 1 && closeForRun && !isRunning && !isAttacking && Time.time >= nextRunAllowedTime)
         {
@@ -208,6 +216,23 @@ public class BossBeetle : EnemyBase
     {
         // Dieser Bool ist der “saubere” Run-Schalter für Transitions.
         animator.SetBool(PARAM_ISRUN, isRunning);
+    }
+
+    // ==========================
+    // ✅ NEW: RUN ABBRECHEN WENN ATTACK STARTET
+    // ==========================
+    private void AbortRunForAttack()
+    {
+        // Wenn wir gerade im Run sind: sofort stoppen + Animation raus
+        if (isRunning)
+        {
+            // StopRunAndCooldown setzt isRunning=false, Animator bool und "unstuck" frame
+            // Cooldown hier 0f, weil du willst: Attack bricht Run sofort ab
+            StopRunAndCooldown(0f);
+        }
+
+        // Movement / Sliding verhindern: Speed auf 0 (rein visuell/animatorisch)
+        animator.SetFloat("Speed", 0f);
     }
 
     // ==========================
@@ -431,6 +456,9 @@ public class BossBeetle : EnemyBase
 
     private IEnumerator AttackRoutine(int phase)
     {
+        // ✅ NEW: sobald Attack startet -> Run + Movement sofort abbrechen
+        AbortRunForAttack();
+
         isAttacking = true;
         animator.SetTrigger(TRIG_ATTACK);
 
