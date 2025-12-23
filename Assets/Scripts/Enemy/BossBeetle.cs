@@ -3,6 +3,10 @@ using System.Collections;
 
 public class BossBeetle : EnemyBase
 {
+    [SerializeField] private Collider bossBodyCollider;   // z.B. Capsule am Boss
+    [SerializeField] private Collider playerBodyCollider; // Player Collider
+    [SerializeField] private float stopPadding = 0.2f;    // extra Abstand
+
     // ==========================
     // BODY HIT (Phase 0)
     // ==========================
@@ -132,6 +136,7 @@ public class BossBeetle : EnemyBase
     // ✅ Rage Trigger im Animator
     private const string TRIG_RAGE = "Rage";
 
+
     // ==========================
     // UNITY
     // ==========================
@@ -144,6 +149,10 @@ public class BossBeetle : EnemyBase
 
         playerTransform = player ? player.transform : null;
         if (!animator) animator = GetComponentInChildren<Animator>();
+
+        if (!bossBodyCollider) bossBodyCollider = GetComponentInChildren<Collider>();
+        if (!playerBodyCollider && playerTransform) playerBodyCollider = playerTransform.GetComponentInChildren<Collider>();
+
 
         if (!attackOrigin1) attackOrigin1 = transform;
         if (!attackOrigin2) attackOrigin2 = transform;
@@ -163,7 +172,7 @@ public class BossBeetle : EnemyBase
         if (!playerTransform || !animator) return;
         if (animator.GetBool(PARAM_ISDEAD)) return;
 
-        UpdatePhaseAndAnimator(); 
+        UpdatePhaseAndAnimator();
         int phase = animator.GetInteger(PARAM_PHASE);
 
         bool closeForRun = Vector3.Distance(transform.position, playerTransform.position) <= runStartRange;
@@ -186,14 +195,6 @@ public class BossBeetle : EnemyBase
             isRaging = false;
         }
 
-        if (phase == 1)
-        {
-            Debug.Log("isRaging1111: " + isRaging);
-            Debug.Log("isRaging1actualTime: " + rageEndTime);
-            Debug.Log("isRaging1Time: " + Time.time);
-        }
-
-
         if (isRaging)
         {
             if (isRunning)
@@ -203,9 +204,6 @@ public class BossBeetle : EnemyBase
             animator.SetFloat("Speed", 0f);
             return;
         }
-
-        if (phase == 1)
-            Debug.Log("isRaging: " + isRaging);
 
         // ✅ Während Attack kein Movement
         if (isAttacking)
@@ -252,6 +250,28 @@ public class BossBeetle : EnemyBase
             StartCoroutine(AttackRoutine(phase));
     }
 
+    // ==========================
+    // ✅ NEU: Run-Abbruch durch Cancel-Hitbox
+    // ==========================
+    public void OnRunningCancelHitboxTriggered(Collider playerCollider)
+    {
+        // nur relevant während Run aktiv ist
+        if (!isRunning) return;
+
+        // wenn gerade Rage/Stun aktiv: ignorieren (optional, aber sicher)
+        if (isRaging || isStunned) return;
+
+        // Safety: wirklich Player?
+        if (playerCollider == null || !playerCollider.CompareTag("Player")) return;
+
+        // Run sofort beenden, damit der Boss nicht "im Spieler landet"
+        StopRunAndCooldown(runCooldownAfterRun);
+
+        // Optional: sofort Speed runter (damit er in diesem Frame nicht weiter schiebt)
+        animator.SetFloat("Speed", 0f);
+        ApplyAnimatorRunFlag();
+    }
+
     private void ApplyAnimatorRunFlag()
     {
         animator.SetBool(PARAM_ISRUN, isRunning);
@@ -294,7 +314,6 @@ public class BossBeetle : EnemyBase
         }
     }
 
-
     // ==========================
     // RUN (PHASE 1)
     // ==========================
@@ -329,14 +348,37 @@ public class BossBeetle : EnemyBase
 
     private void RunMove()
     {
-        float dist = Vector3.Distance(transform.position, playerTransform.position);
+        if (!playerTransform) return;
 
-        if (Time.time >= runEndTime || dist <= runStopDistance)
+        // ✅ Zielpunkt = nächster Punkt auf der Player-Hitbox (nicht Player-Zentrum)
+        Vector3 playerPoint = playerTransform.position;
+        if (playerBodyCollider != null)
+            playerPoint = playerBodyCollider.ClosestPoint(transform.position);
+
+        // Distanz zum Player-Rand (statt Mittelpunkt)
+        Vector3 toTarget = playerPoint - transform.position;
+        toTarget.y = 0f;
+        float dist = toTarget.magnitude;
+
+        // ✅ Stop-Distanz = Kopf/BossHitbox-Radius + Padding (statt fixer runStopDistance)
+        float bossRadius = 0f;
+        if (bossBodyCollider != null)
+        {
+            // bossBodyCollider soll bei dir die Kopf-Hitbox sein
+            Vector3 e = bossBodyCollider.bounds.extents;
+            bossRadius = Mathf.Max(e.x, e.z);
+        }
+
+        float desiredStopDist = Mathf.Max(runStopDistance, bossRadius + stopPadding);
+
+        // Ende des Runs, wenn nah genug oder Zeit vorbei
+        if (Time.time >= runEndTime || dist <= desiredStopDist)
         {
             StopRunAndCooldown(runCooldownAfterRun);
             return;
         }
 
+        // ✅ Wall Check: weiterhin in Laufrichtung
         if (Physics.Raycast(transform.position + Vector3.up * 0.2f, runDir, runWallCheckDistance, wallLayer))
         {
             StopRunAndCooldown(0f);
@@ -344,9 +386,12 @@ public class BossBeetle : EnemyBase
             return;
         }
 
-        Vector3 toPlayer = playerTransform.position - transform.position;
-        toPlayer.y = 0f;
-        Vector3 targetDir = (toPlayer.sqrMagnitude > 0.0001f) ? toPlayer.normalized : runDir;
+        // ✅ Steering: Richtung zum Player-Rand (ClosestPoint), nicht zum Zentrum
+        Vector3 targetDir = toTarget;
+        if (targetDir.sqrMagnitude > 0.0001f)
+            targetDir.Normalize();
+        else
+            targetDir = runDir;
 
         float t = Mathf.Clamp01(dist / runSteerDistanceRange);
         float steerMul = Mathf.Lerp(runSteerNearMultiplier, runSteerFarMultiplier, t);
@@ -354,8 +399,15 @@ public class BossBeetle : EnemyBase
 
         runDir = Vector3.Slerp(runDir, targetDir, steer * Time.deltaTime).normalized;
 
-        if (!Physics.Raycast(transform.position, runDir, runSpeed * Time.deltaTime + 0.2f, wallLayer))
-            transform.position += runDir * runSpeed * Time.deltaTime;
+        // ✅ Move: nicht über das Stop-Ziel hinaus schieben
+        float step = runSpeed * Time.deltaTime;
+        float allowedStep = Mathf.Min(step, dist - desiredStopDist);
+
+        if (allowedStep > 0f)
+        {
+            if (!Physics.Raycast(transform.position, runDir, allowedStep + 0.2f, wallLayer))
+                transform.position += runDir * allowedStep;
+        }
 
         if (runDir.sqrMagnitude > 0.001f)
         {
@@ -366,6 +418,7 @@ public class BossBeetle : EnemyBase
             );
         }
     }
+
 
     private void StartStun()
     {
@@ -481,20 +534,55 @@ public class BossBeetle : EnemyBase
 
     private void MoveTowardsPlayer(float speed, Transform origin)
     {
-        Vector3 dir = (playerTransform.position - origin.position);
+        if (!playerTransform) return;
+
+        // Falls Colliders fehlen, fallback auf Mittelpunkt
+        Vector3 playerPoint = playerTransform.position;
+
+        if (playerBodyCollider != null)
+        {
+            // Punkt auf Player-Hitbox, der am nächsten zum Boss ist
+            playerPoint = playerBodyCollider.ClosestPoint(origin.position);
+        }
+
+        // Richtung zum "Rand" des Players statt zum Zentrum
+        Vector3 dir = (playerPoint - origin.position);
         dir.y = 0f;
-        if (dir.sqrMagnitude < 0.0001f) return;
-        dir.Normalize();
+        float dist = dir.magnitude;
+        if (dist < 0.0001f) return;
+        dir /= dist;
 
-        if (!Physics.Raycast(transform.position, dir, speed * Time.deltaTime + 0.2f, wallLayer))
-            transform.position += dir * speed * Time.deltaTime;
+        // Boss-Radius grob über eigenen Collider abschätzen
+        float bossRadius = 0f;
+        if (bossBodyCollider != null)
+        {
+            // bounds.extents.x/z -> ungefähre horizontale Halbachse
+            Vector3 e = bossBodyCollider.bounds.extents;
+            bossRadius = Mathf.Max(e.x, e.z);
+        }
 
+        // Wie nah dürfen wir ran?
+        float desiredStopDist = bossRadius + stopPadding;
+
+        // Wenn wir schon nah genug sind: nicht weiter bewegen
+        if (dist <= desiredStopDist)
+            return;
+
+        // Schritt berechnen, aber nicht über das Stop-Ziel hinaus
+        float step = speed * Time.deltaTime;
+        float allowedStep = Mathf.Min(step, dist - desiredStopDist);
+
+        if (!Physics.Raycast(transform.position, dir, allowedStep + 0.2f, wallLayer))
+            transform.position += dir * allowedStep;
+
+        // Rotation
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             Quaternion.LookRotation(dir),
             0.2f
         );
     }
+
 
     private IEnumerator AttackRoutine(int phase)
     {
@@ -514,6 +602,8 @@ public class BossBeetle : EnemyBase
 
         isAttacking = false;
         nextAttackTime = Time.time + GetAttackCooldownForPhase(phase);
+
+        Debug.Log($"ATTACK phase={phase} dmg={GetAttackDamageForPhase(phase)} dur={GetAttackDurationForPhase(phase)} cd={GetAttackCooldownForPhase(phase)}");
     }
 
     // ==========================
@@ -590,6 +680,7 @@ public class BossBeetle : EnemyBase
     {
         base.OnTriggerEnter(other);
 
+        // Das bleibt wie gehabt: Kontakt-Schaden am "normalen" Boss-Body
         if (other.CompareTag("Player") && player != null)
         {
             if (Time.time >= _nextHitTime)

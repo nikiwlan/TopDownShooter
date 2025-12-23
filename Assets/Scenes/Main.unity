@@ -11097,6 +11097,9 @@ MonoBehaviour:
   excludeFromTint: []
   excludeTintTag: IgnoreTint
   player: {fileID: 0}
+  bossBodyCollider: {fileID: 0}
+  playerBodyCollider: {fileID: 0}
+  stopPadding: 0.2
   bodyHitSound: {fileID: 0}
   bodyHitVolume: 1
   maxHealth: 30
