@@ -129,7 +129,7 @@ public class BossBeetle : EnemyBase
     private const string PARAM_ISDEAD = "Die";
     private const string TRIG_ATTACK = "IsAttacking";
 
-    // Rage bool in Animator
+    // ✅ Rage Trigger im Animator
     private const string TRIG_RAGE = "Rage";
 
     // ==========================
@@ -156,9 +156,6 @@ public class BossBeetle : EnemyBase
         animator.SetInteger(PARAM_PHASE, lastPhase);
 
         ApplyAnimatorRunFlag();
-
-        // sicherstellen: Rage Bool aus
-        animator.SetBool(TRIG_RAGE, false);
     }
 
     void Update()
@@ -166,7 +163,7 @@ public class BossBeetle : EnemyBase
         if (!playerTransform || !animator) return;
         if (animator.GetBool(PARAM_ISDEAD)) return;
 
-        UpdatePhaseAndAnimator(); // triggert Rage nur bei echtem Phasenwechsel
+        UpdatePhaseAndAnimator(); 
         int phase = animator.GetInteger(PARAM_PHASE);
 
         bool closeForRun = Vector3.Distance(transform.position, playerTransform.position) <= runStartRange;
@@ -184,6 +181,18 @@ public class BossBeetle : EnemyBase
             return;
         }
 
+        if (isRaging && Time.time >= rageEndTime)
+        {
+            isRaging = false;
+        }
+
+        if (phase == 1)
+        {
+            Debug.Log("isRaging1111: " + isRaging);
+            Debug.Log("isRaging1actualTime: " + rageEndTime);
+            Debug.Log("isRaging1Time: " + Time.time);
+        }
+
 
         if (isRaging)
         {
@@ -192,9 +201,11 @@ public class BossBeetle : EnemyBase
 
             isAttacking = false;
             animator.SetFloat("Speed", 0f);
-            ApplyAnimatorRunFlag();
             return;
         }
+
+        if (phase == 1)
+            Debug.Log("isRaging: " + isRaging);
 
         // ✅ Während Attack kein Movement
         if (isAttacking)
@@ -257,28 +268,6 @@ public class BossBeetle : EnemyBase
         animator.SetFloat("Speed", 0f);
     }
 
-    // ==========================
-    // RAGE (TIMER ONLY)
-    // ==========================
-    private void StartRage()
-    {
-        rageEndTime = Time.time + rageDuration;
-
-        // sofort alles stoppen
-        isAttacking = false;
-
-        if (isRunning)
-            StopRunAndCooldown(0f);
-
-        isRunning = false;
-
-        animator.SetBool(TRIG_RAGE, true);
-        animator.SetFloat("Speed", 0f);
-
-        // Run erst nach Rage erlauben
-        nextRunAllowedTime = rageEndTime;
-    }
-
     private void UpdatePhaseAndAnimator()
     {
         int newPhase = GetPhase();
@@ -288,11 +277,20 @@ public class BossBeetle : EnemyBase
         {
             animator.SetInteger(PARAM_PHASE, newPhase);
 
-            // 🔥 Rage NUR EINMAL bei Phasenwechsel
+            // 🔥 RAGE START
             isRaging = true;
+            rageEndTime = Time.time + rageDuration;
 
-            animator.ResetTrigger(TRIG_ATTACK); // Sicherheit
+            // alles stoppen
+            isAttacking = false;
+
+            if (isRunning)
+                StopRunAndCooldown(0f);
+
+            animator.ResetTrigger(TRIG_ATTACK);
             animator.SetTrigger(TRIG_RAGE);
+
+            animator.SetFloat("Speed", 0f);
         }
     }
 
@@ -525,7 +523,6 @@ public class BossBeetle : EnemyBase
     {
         if (health <= 0) return;
 
-        // ✅ FIX: statt isRaging -> IsRaging
         if (isRaging && immuneDuringRage)
             return;
 
@@ -550,8 +547,7 @@ public class BossBeetle : EnemyBase
             return;
         }
 
-        // ❗ Phase/Rage wird NICHT hier getriggert.
-        // Das macht UpdatePhaseAndAnimator() zentral.
+        // Phase/Rage wird NICHT hier getriggert. Das macht UpdatePhaseAndAnimator() zentral.
     }
 
     protected override void Die()

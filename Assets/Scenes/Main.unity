@@ -11118,8 +11118,7 @@ MonoBehaviour:
   wallStunDuration: 3
   stunIconPrefab: {fileID: 0}
   stunIconAnchor: {fileID: 0}
-  rageDuration: 1
-  rageAttackDelayAfter: 2
+  rageDuration: 4
   immuneDuringRage: 1
   attackOrigin1: {fileID: 2025715656}
   attackOrigin2: {fileID: 818570084}
