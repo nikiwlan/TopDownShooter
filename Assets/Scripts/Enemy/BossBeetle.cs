@@ -58,6 +58,18 @@ public class BossBeetle : EnemyBase
     private GameObject stunIconInstance;
 
     // ==========================
+    // RAGE (SUPER SIMPLE TIMER)
+    // ==========================
+    [Header("Rage")]
+    [SerializeField] private float rageDuration = 2f;
+    [SerializeField] private bool immuneDuringRage = true;
+
+    private float rageEndTime = -1f;
+    private bool IsRaging => Time.time < rageEndTime;
+
+    private int lastPhase = -1;
+
+    // ==========================
     // ATTACK ORIGINS
     // ==========================
     [Header("Attack Origins (per phase)")]
@@ -110,12 +122,15 @@ public class BossBeetle : EnemyBase
     private float _nextHitTime;
     [SerializeField] private float _contactCooldown = 0.4f;
 
-    // Animator parameter names (robust, vermeidet Tippfehler)
+    // Animator parameter names
     private const string PARAM_PHASE = "Phase";
     private const string PARAM_CLOSE = "CloseToPlayer";
     private const string PARAM_ISRUN = "IsRunning";
-    private const string PARAM_ISDEAD = "isDead";
+    private const string PARAM_ISDEAD = "Die";
     private const string TRIG_ATTACK = "IsAttacking";
+
+    // Rage bool in Animator
+    private const string PARAM_RAGE_BOOL = "Rage";
 
     // ==========================
     // UNITY
@@ -136,8 +151,14 @@ public class BossBeetle : EnemyBase
 
         if (!stunIconAnchor) stunIconAnchor = transform;
 
-        UpdatePhaseAndAnimator();
+        // Init phase + lastPhase (OHNE Rage beim Start)
+        lastPhase = GetPhase();
+        animator.SetInteger(PARAM_PHASE, lastPhase);
+
         ApplyAnimatorRunFlag();
+
+        // sicherstellen: Rage Bool aus
+        animator.SetBool(PARAM_RAGE_BOOL, false);
     }
 
     void Update()
@@ -145,15 +166,12 @@ public class BossBeetle : EnemyBase
         if (!playerTransform || !animator) return;
         if (animator.GetBool(PARAM_ISDEAD)) return;
 
-        UpdatePhaseAndAnimator();
+        UpdatePhaseAndAnimator(); // triggert Rage nur bei echtem Phasenwechsel
         int phase = animator.GetInteger(PARAM_PHASE);
 
-        // Nähe-Info darf bleiben (z.B. für andere States / Debug),
-        // aber NICHT mehr als "Run-State-Schalter" missbrauchen.
         bool closeForRun = Vector3.Distance(transform.position, playerTransform.position) <= runStartRange;
         animator.SetBool(PARAM_CLOSE, closeForRun);
 
-        // Immer konsistent halten
         ApplyAnimatorRunFlag();
 
         // --- Stun ---
@@ -166,8 +184,31 @@ public class BossBeetle : EnemyBase
             return;
         }
 
-        // ✅ WICHTIG: Während Attack absolut kein Movement zulassen
-        // (damit er nicht "durchrennt", falls Run gerade erst abgebrochen wurde)
+
+        if (IsRaging)
+        {
+            animator.SetBool(PARAM_RAGE_BOOL, true);
+            animator.SetFloat("Speed", 0f);
+
+            // alles stoppen
+            isRunning = false;
+            isAttacking = false;
+
+            // falls Rigidbody vorhanden: stop
+            Rigidbody rb3D = GetComponent<Rigidbody>();
+            if (rb3D) rb3D.velocity = Vector3.zero;
+
+            Rigidbody2D rb2D = GetComponent<Rigidbody2D>();
+            if (rb2D) rb2D.velocity = Vector2.zero;
+
+            return;
+        }
+        else
+        {
+            animator.SetBool(PARAM_RAGE_BOOL, false);
+        }
+
+        // ✅ Während Attack kein Movement
         if (isAttacking)
         {
             animator.SetFloat("Speed", 0f);
@@ -196,9 +237,9 @@ public class BossBeetle : EnemyBase
 
         bool isInAttackRange = Vector3.Distance(origin.position, playerTransform.position) <= attackRange;
 
-        float moveSpeed = isAttacking ? walkSpeed : walkSpeed;
+        float moveSpeed = walkSpeed;
 
-        if (!isAttacking && !isInAttackRange)
+        if (!isInAttackRange)
         {
             MoveTowardsPlayer(moveSpeed, origin);
             animator.SetFloat("Speed", moveSpeed);
@@ -214,25 +255,55 @@ public class BossBeetle : EnemyBase
 
     private void ApplyAnimatorRunFlag()
     {
-        // Dieser Bool ist der “saubere” Run-Schalter für Transitions.
         animator.SetBool(PARAM_ISRUN, isRunning);
     }
 
     // ==========================
-    // ✅ NEW: RUN ABBRECHEN WENN ATTACK STARTET
+    // RUN ABBRECHEN WENN ATTACK STARTET
     // ==========================
     private void AbortRunForAttack()
     {
-        // Wenn wir gerade im Run sind: sofort stoppen + Animation raus
         if (isRunning)
-        {
-            // StopRunAndCooldown setzt isRunning=false, Animator bool und "unstuck" frame
-            // Cooldown hier 0f, weil du willst: Attack bricht Run sofort ab
             StopRunAndCooldown(0f);
-        }
 
-        // Movement / Sliding verhindern: Speed auf 0 (rein visuell/animatorisch)
         animator.SetFloat("Speed", 0f);
+    }
+
+    // ==========================
+    // RAGE (TIMER ONLY)
+    // ==========================
+    private void StartRage()
+    {
+        rageEndTime = Time.time + rageDuration;
+
+        // sofort alles stoppen
+        isAttacking = false;
+
+        if (isRunning)
+            StopRunAndCooldown(0f);
+
+        isRunning = false;
+
+        animator.SetBool(PARAM_RAGE_BOOL, true);
+        animator.SetFloat("Speed", 0f);
+
+        // Run erst nach Rage erlauben
+        nextRunAllowedTime = rageEndTime;
+    }
+
+    // ==========================
+    // PHASE UPDATE (NUR EINE METHODE!)
+    // ==========================
+    private void UpdatePhaseAndAnimator()
+    {
+        int newPhase = GetPhase();
+        if (newPhase == lastPhase) return;
+
+        lastPhase = newPhase;
+        animator.SetInteger(PARAM_PHASE, newPhase);
+
+        // Rage nur bei echtem Wechsel
+        StartRage();
     }
 
     // ==========================
@@ -255,17 +326,12 @@ public class BossBeetle : EnemyBase
         isRunning = false;
         ApplyAnimatorRunFlag();
 
-        // 🔧 Robustness: Wenn dein Animator “Run->Walk” fälschlich an CloseToPlayer hängt,
-        // dann bleibt er sonst gern im Run stecken, weil CloseToPlayer ja weiter true ist.
-        // Darum setzen wir CloseToPlayer einmal kurz auf false, damit er garantiert raus-transitioned.
         StartCoroutine(ForceLeaveRunOneFrame());
-
         nextRunAllowedTime = Time.time + Mathf.Max(0f, cooldownSeconds);
     }
 
     private IEnumerator ForceLeaveRunOneFrame()
     {
-        // 1 Frame CloseToPlayer false -> Transition kann feuern -> danach wieder normal
         bool wasClose = animator.GetBool(PARAM_CLOSE);
         animator.SetBool(PARAM_CLOSE, false);
         yield return null;
@@ -276,34 +342,29 @@ public class BossBeetle : EnemyBase
     {
         float dist = Vector3.Distance(transform.position, playerTransform.position);
 
-        // stop conditions
         if (Time.time >= runEndTime || dist <= runStopDistance)
         {
             StopRunAndCooldown(runCooldownAfterRun);
             return;
         }
 
-        // wall ahead -> stun
         if (Physics.Raycast(transform.position + Vector3.up * 0.2f, runDir, runWallCheckDistance, wallLayer))
         {
-            StopRunAndCooldown(0f); // cooldown nach Stun machen wir im EndStun
+            StopRunAndCooldown(0f);
             StartStun();
             return;
         }
 
-        // partial steering toward player
         Vector3 toPlayer = playerTransform.position - transform.position;
         toPlayer.y = 0f;
         Vector3 targetDir = (toPlayer.sqrMagnitude > 0.0001f) ? toPlayer.normalized : runDir;
 
-        // far -> steer more, near -> steer less
         float t = Mathf.Clamp01(dist / runSteerDistanceRange);
         float steerMul = Mathf.Lerp(runSteerNearMultiplier, runSteerFarMultiplier, t);
         float steer = runSteerStrength * steerMul;
 
         runDir = Vector3.Slerp(runDir, targetDir, steer * Time.deltaTime).normalized;
 
-        // move + rotate
         if (!Physics.Raycast(transform.position, runDir, runSpeed * Time.deltaTime + 0.2f, wallLayer))
             transform.position += runDir * runSpeed * Time.deltaTime;
 
@@ -338,7 +399,6 @@ public class BossBeetle : EnemyBase
             stunIconInstance = null;
         }
 
-        // nach Stun: Pause
         nextRunAllowedTime = Time.time + Mathf.Max(0f, runCooldownAfterStun);
     }
 
@@ -349,14 +409,12 @@ public class BossBeetle : EnemyBase
     {
         int phase = GetPhase();
 
-        // Phase 0: always damage on head
         if (phase == 0)
         {
             TakeDamage(damage, hitDir, hitPoint);
             return;
         }
 
-        // Phase 1: immune unless currently running
         if (phase == 1)
         {
             if (isRunning)
@@ -449,14 +507,8 @@ public class BossBeetle : EnemyBase
         );
     }
 
-    private void UpdatePhaseAndAnimator()
-    {
-        animator.SetInteger(PARAM_PHASE, GetPhase());
-    }
-
     private IEnumerator AttackRoutine(int phase)
     {
-        // ✅ NEW: sobald Attack startet -> Run + Movement sofort abbrechen
         AbortRunForAttack();
 
         isAttacking = true;
@@ -482,6 +534,10 @@ public class BossBeetle : EnemyBase
     {
         if (health <= 0) return;
 
+        // ✅ FIX: statt isRaging -> IsRaging
+        if (IsRaging && immuneDuringRage)
+            return;
+
         if (hitSound)
             AudioManager.Instance.PlaySound3D(hitSound, transform.position);
 
@@ -498,12 +554,17 @@ public class BossBeetle : EnemyBase
         }
 
         if (health <= 0)
+        {
             Die();
+            return;
+        }
+
+        // ❗ Phase/Rage wird NICHT hier getriggert.
+        // Das macht UpdatePhaseAndAnimator() zentral.
     }
 
     protected override void Die()
     {
-        // stop states
         isRunning = false;
         ApplyAnimatorRunFlag();
 
