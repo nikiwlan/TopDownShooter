@@ -146,47 +146,40 @@ public sealed class BossBeetleContext
         Owner.animator.SetBool(BossBeetle.PARAM_CLOSE, wasClose);
     }
 
-    public void RunMove()
+    public void RunMove(Transform pivot)
     {
         if (!PlayerTransform) return;
+        if (pivot == null) pivot = Owner.transform;
 
-        // Zielpunkt = nächster Punkt auf Player-Hitbox (wie bei dir)
+        // Zielpunkt = nächster Punkt auf Player-Hitbox (wie gehabt)
         Vector3 playerPoint = PlayerTransform.position;
         if (Owner.playerBodyCollider != null)
-            playerPoint = Owner.playerBodyCollider.ClosestPoint(Owner.transform.position);
+            playerPoint = Owner.playerBodyCollider.ClosestPoint(pivot.position);
 
-        Vector3 toTarget = playerPoint - Owner.transform.position;
+        // WICHTIG: Distanz vom PIVOT (Kopf) zum Ziel messen, nicht vom Center
+        Vector3 toTarget = playerPoint - pivot.position;
         toTarget.y = 0f;
         float dist = toTarget.magnitude;
 
-        // StopDist = max(runStopDistance, bossRadius + padding)
-        float bossRadius = 0f;
-        if (Owner.bossBodyCollider != null)
-        {
-            Vector3 e = Owner.bossBodyCollider.bounds.extents;
-            bossRadius = Mathf.Max(e.x, e.z);
-        }
+        float desiredStopDist = Mathf.Max(Owner.runStopDistance, 0.05f);
 
-        float desiredStopDist = Mathf.Max(Owner.runStopDistance, bossRadius + Owner.stopPadding);
-
+        // Ende Run, wenn Pivot nah genug ist (nicht Center)
         if (Time.time >= _runEndTime || dist <= desiredStopDist)
         {
             StopRunAndCooldown(Owner.runCooldownAfterRun);
             return;
         }
 
-        // Wall check
-        if (Physics.Raycast(Owner.transform.position + Vector3.up * 0.2f, _runDir, Owner.runWallCheckDistance, Owner.wallLayer))
+        // Wall check: vom Pivot aus (optional) oder vom Center – ich würde Pivot nehmen:
+        if (Physics.Raycast(pivot.position + Vector3.up * 0.2f, _runDir, Owner.runWallCheckDistance, Owner.wallLayer))
         {
             StopRunAndCooldown(0f);
             StartStun();
             return;
         }
 
-        // Steering Richtung zum Player-Rand
-        Vector3 targetDir = toTarget;
-        if (targetDir.sqrMagnitude > 0.0001f) targetDir.Normalize();
-        else targetDir = _runDir;
+        // Steering Richtung zum Player
+        Vector3 targetDir = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : _runDir;
 
         float t = Mathf.Clamp01(dist / Owner.runSteerDistanceRange);
         float steerMul = Mathf.Lerp(Owner.runSteerNearMultiplier, Owner.runSteerFarMultiplier, t);
@@ -199,6 +192,7 @@ public sealed class BossBeetleContext
 
         if (allowedStep > 0f)
         {
+            // Optional: wall check entlang des Schritts vom Center aus
             if (!Physics.Raycast(Owner.transform.position, _runDir, allowedStep + 0.2f, Owner.wallLayer))
                 Owner.transform.position += _runDir * allowedStep;
         }
@@ -212,6 +206,7 @@ public sealed class BossBeetleContext
             );
         }
     }
+
 
     public void ApplyAnimatorRunFlag()
     {

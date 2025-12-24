@@ -26,7 +26,7 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
 
         if (_ctx.IsRunning)
         {
-            _ctx.RunMove();
+            _ctx.RunMove(_ctx.Owner.attackOrigin2); // oder dein Kopf-Transform
             _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
             _ctx.ApplyAnimatorRunFlag();
             return;
@@ -36,7 +36,12 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
         Transform origin = _ctx.GetOriginForPhase(phase);
         float attackRange = _ctx.GetAttackRangeForPhase(phase);
 
-        bool inRange = Vector3.Distance(origin.position, _ctx.PlayerTransform.position) <= attackRange;
+        Vector3 playerPoint = _ctx.PlayerTransform.position;
+        if (_ctx.Owner.playerBodyCollider != null)
+            playerPoint = _ctx.Owner.playerBodyCollider.ClosestPoint(origin.position);
+
+        bool inRange = Vector3.Distance(origin.position, playerPoint) <= attackRange;
+
 
         if (!inRange)
         {
