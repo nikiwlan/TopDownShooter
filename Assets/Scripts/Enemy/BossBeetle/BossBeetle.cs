@@ -52,13 +52,13 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal Transform attackOrigin3;
 
     [Header("Attack Settings (Phase 0/1/2)")]
-    [SerializeField] internal float attackRange1 = 2f;
-    [SerializeField] internal float attackRange2 = 2f;
-    [SerializeField] internal float attackRange3 = 2f;
+    [SerializeField] internal float attackRange1 = 0.2f;
+    [SerializeField] internal float attackRange2 = 0.2f;
+    [SerializeField] internal float attackRange3 = 0.2f;
 
     [SerializeField] internal float attackDuration1 = 1.2f;
     [SerializeField] internal float attackDuration2 = 1.2f;
-    [SerializeField] internal float attackDuration3 = 1.2f;
+    [SerializeField] internal float attackDuration3 = 5f;
 
     [SerializeField] internal float attackCooldown1 = 1.5f;
     [SerializeField] internal float attackCooldown2 = 1.3f;

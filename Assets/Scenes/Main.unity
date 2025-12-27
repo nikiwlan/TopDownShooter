@@ -2854,7 +2854,7 @@ GameObject:
   - component: {fileID: 713963026}
   - component: {fileID: 713963027}
   m_Layer: 13
-  m_Name: AttackOrigin
+  m_Name: AttackOrigin1
   m_TagString: EnemyHead
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11133,7 +11133,7 @@ MonoBehaviour:
   wallTag: Wall
   runAwayFromSpawnOnWallHit: 1
   forcedRunDistance: 2.5
-  forcedRunCooldown: 0.25
+  forcedRunCooldown: 2
   wallSkin: 0.02
   excludeFromTint: []
   excludeTintTag: IgnoreTint
@@ -11162,23 +11162,21 @@ MonoBehaviour:
   wallStunDuration: 3
   stunIconPrefab: {fileID: 0}
   stunIconAnchor: {fileID: 0}
+  walkSpeedPhase2: 4
   rageDuration: 4
   immuneDuringRage: 1
   attackOrigin1: {fileID: 713963026}
-  attackOrigin2: {fileID: 713963026}
-  attackOrigin3: {fileID: 713963026}
-  attackRange1: 1
-  attackRange2: 1
-  attackRange3: 1
-  attackDamage1: 1
-  attackDamage2: 2
-  attackDamage3: 3
+  attackOrigin2: {fileID: 1733531456}
+  attackOrigin3: {fileID: 2063698231}
+  attackRange1: 0.5
+  attackRange2: 0.2
+  attackRange3: 0.2
   attackDuration1: 1.2
-  attackDuration2: 1.2
-  attackDuration3: 1.2
+  attackDuration2: 0
+  attackDuration3: 0.3
   attackCooldown1: 1.5
-  attackCooldown2: 1.3
-  attackCooldown3: 1.1
+  attackCooldown2: 2
+  attackCooldown3: 2
   actionRecovery: 1
   animator: {fileID: 0}
   tankHitVFX: {fileID: 0}
@@ -13802,6 +13800,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1712014977}
   m_CullTransparentMesh: 1
+--- !u!1 &1733531455
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1733531456}
+  - component: {fileID: 1733531457}
+  m_Layer: 13
+  m_Name: AttackOrigin2
+  m_TagString: EnemyHead
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1733531456
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1733531455}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: 1.109}
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1329725631}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1733531457
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1733531455}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.3, y: 1, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1737905843
 GameObject:
   m_ObjectHideFlags: 0
@@ -16126,6 +16169,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16a9d33765a7d3f4881d8f8a9a580e4c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &2063698230
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2063698231}
+  - component: {fileID: 2063698232}
+  m_Layer: 13
+  m_Name: AttackOriginSpecial
+  m_TagString: EnemyHead
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2063698231
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063698230}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: 1.868}
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1329725631}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2063698232
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063698230}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.3, y: 1, z: 1.2}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2083420111
 GameObject:
   m_ObjectHideFlags: 0
