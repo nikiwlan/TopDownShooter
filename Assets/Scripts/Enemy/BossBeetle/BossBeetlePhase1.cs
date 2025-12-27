@@ -21,18 +21,16 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
     {
         int phase = 1;
 
-        // Phase 1: wenn nah und cooldown ok -> Run starten
         _ctx.TryStartRun(closeForRun);
 
         if (_ctx.IsRunning)
         {
-            _ctx.RunMove(_ctx.Owner.attackOrigin2); // oder dein Kopf-Transform
+            _ctx.RunMove(_ctx.Owner.attackOrigin2);
             _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
             _ctx.ApplyAnimatorRunFlag();
             return;
         }
 
-        // Normal walk + attack
         Transform origin = _ctx.GetOriginForPhase(phase);
         float attackRange = _ctx.GetAttackRangeForPhase(phase);
 
@@ -42,7 +40,6 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
 
         bool inRange = Vector3.Distance(origin.position, playerPoint) <= attackRange;
 
-
         if (!inRange)
         {
             _ctx.MoveTowardsPlayer(_ctx.Owner.walkSpeed, origin);
@@ -51,14 +48,13 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
         else
         {
             _ctx.Owner.animator.SetFloat("Speed", 0f);
-            if (_ctx.CanAttackNow())
-                _ctx.TryStartAttack(phase);
+            if (_ctx.CanNormalAttackNow())
+                _ctx.TryStartNormalAttack(phase);
         }
     }
 
     public void OnHeadHit(int damage, Vector3 hitDir, Vector3 hitPoint)
     {
-        // Phase 1: nur während Run verwundbar (wie bei dir)
         if (_ctx.IsRunning)
             _ctx.Owner.TakeDamage(damage, hitDir, hitPoint);
     }

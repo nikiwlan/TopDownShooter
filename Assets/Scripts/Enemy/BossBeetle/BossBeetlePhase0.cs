@@ -19,7 +19,6 @@ public sealed class BossBeetlePhase0 : IBossBeetlePhase
 
     public void Tick(bool closeForRun)
     {
-        // Phase 0: kein Run Start
         int phase = 0;
 
         Transform origin = _ctx.GetOriginForPhase(phase);
@@ -31,7 +30,6 @@ public sealed class BossBeetlePhase0 : IBossBeetlePhase
 
         bool inRange = Vector3.Distance(origin.position, playerPoint) <= attackRange;
 
-
         if (!inRange)
         {
             _ctx.MoveTowardsPlayer(_ctx.Owner.walkSpeed, origin);
@@ -40,14 +38,13 @@ public sealed class BossBeetlePhase0 : IBossBeetlePhase
         else
         {
             _ctx.Owner.animator.SetFloat("Speed", 0f);
-            if (_ctx.CanAttackNow())
-                _ctx.TryStartAttack(phase);
+            if (_ctx.CanNormalAttackNow())
+                _ctx.TryStartNormalAttack(phase);
         }
     }
 
     public void OnHeadHit(int damage, Vector3 hitDir, Vector3 hitPoint)
     {
-        // Phase 0: HeadHit macht immer Schaden (wie bei dir)
         _ctx.Owner.TakeDamage(damage, hitDir, hitPoint);
     }
 }

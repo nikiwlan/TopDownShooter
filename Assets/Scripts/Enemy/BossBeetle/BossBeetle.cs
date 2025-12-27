@@ -3,39 +3,24 @@ using UnityEngine;
 
 public class BossBeetle : EnemyBase
 {
-    // ==========================
-    // COLLIDERS / STOPPING
-    // ==========================
     [Header("Colliders / Stop")]
-    [SerializeField] internal Collider bossBodyCollider;   // z.B. Capsule am Boss
-    [SerializeField] internal Collider playerBodyCollider; // Player Collider
-    [SerializeField] internal float stopPadding = 0.2f;    // extra Abstand
+    [SerializeField] internal Collider bossBodyCollider;
+    [SerializeField] internal Collider playerBodyCollider;
+    [SerializeField] internal float stopPadding = 0.2f;
 
-    // ==========================
-    // BODY HIT (Phase 0)
-    // ==========================
     [Header("Body Hit (Phase 0)")]
     public AudioClip bodyHitSound;
     [Range(0f, 1f)] public float bodyHitVolume = 1f;
 
-    // ==========================
-    // HEALTH / PHASES
-    // ==========================
     [Header("Health / Phases")]
     public int maxHealth = 30;
 
-    // ==========================
-    // MOVEMENT
-    // ==========================
     [Header("Movement Settings")]
     public float walkSpeed = 2f;
     public float runSpeed = 12f;
     [SerializeField] internal float runStartRange = 8f;
     public LayerMask wallLayer;
 
-    // ==========================
-    // RUN (PHASE 1/2)
-    // ==========================
     [Header("Run (Phase 1/2)")]
     [SerializeField] internal float runMaxTime = 1.2f;
     [SerializeField] internal float runStopDistance = 1.2f;
@@ -54,24 +39,15 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal GameObject stunIconPrefab;
     [SerializeField] internal Transform stunIconAnchor;
 
-    // ==========================
-    // RAGE
-    // ==========================
     [Header("Rage")]
     [SerializeField] internal float rageDuration = 2f;
     [SerializeField] internal bool immuneDuringRage = true;
 
-    // ==========================
-    // ATTACK ORIGINS
-    // ==========================
     [Header("Attack Origins (per phase)")]
     [SerializeField] internal Transform attackOrigin1;
     [SerializeField] internal Transform attackOrigin2;
     [SerializeField] internal Transform attackOrigin3;
 
-    // ==========================
-    // ATTACK SETTINGS (Phase 0/1/2)
-    // ==========================
     [Header("Attack Settings (Phase 0/1/2)")]
     [SerializeField] internal float attackRange1 = 2f;
     [SerializeField] internal float attackRange2 = 2f;
@@ -89,19 +65,9 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal float attackCooldown2 = 1.3f;
     [SerializeField] internal float attackCooldown3 = 1.1f;
 
-    // ==========================
-    // PHASE 2 - JUMP ATTACK (neu)
-    // ==========================
-    [Header("Phase 2: Jump Attack (neu)")]
-    [SerializeField] internal float jumpCooldown = 3.0f;
-    [SerializeField] internal float jumpDuration = 0.7f;       // Zeit für den Sprung
-    [SerializeField] internal float jumpHeight = 2.0f;         // Arc Höhe
-    [SerializeField] internal float jumpLandingRadius = 2.2f;  // Schaden bei Landung, wenn Player nah
-    [SerializeField] internal int jumpLandingDamage = 2;
+    [Header("Global Recovery (prevents chaining)")]
+    [SerializeField] internal float actionRecovery = 1.0f;
 
-    // ==========================
-    // ANIMATION / FX / AUDIO
-    // ==========================
     [Header("Animation")]
     [SerializeField] internal Animator animator;
 
@@ -114,16 +80,10 @@ public class BossBeetle : EnemyBase
     public AudioClip hitSound;
     public AudioClip deathSound;
 
-    // ==========================
-    // CONTACT DAMAGE
-    // ==========================
     [Header("Player Contact Damage")]
     [SerializeField] private float _contactCooldown = 0.4f;
     private float _nextHitTime;
 
-    // ==========================
-    // INTERNAL (State Machine)
-    // ==========================
     internal BossBeetleContext Ctx { get; private set; }
 
     private IBossBeetlePhase _phase0;
@@ -131,12 +91,14 @@ public class BossBeetle : EnemyBase
     private IBossBeetlePhase _phase2;
     private IBossBeetlePhase _currentPhase;
 
-    // Animator parameter names (wie bei dir)
+    // Animator parameter names
     internal const string PARAM_PHASE = "Phase";
     internal const string PARAM_CLOSE = "CloseToPlayer";
     internal const string PARAM_ISRUN = "IsRunning";
     internal const string PARAM_ISDEAD = "Die";
-    internal const string TRIG_ATTACK = "IsAttacking";
+
+    internal const string TRIG_ATTACK = "IsAttacking";     // normale Attack (Attack2 etc.)
+    internal const string TRIG_SPECIAL = "SpecialHit";     // NEU: SpecialHit (Attack1 in Phase2 Walk)
     internal const string TRIG_RAGE = "Rage";
 
     protected override void Start()
@@ -159,14 +121,12 @@ public class BossBeetle : EnemyBase
 
         if (!stunIconAnchor) stunIconAnchor = transform;
 
-        // Context + Phasen erstellen
         Ctx = new BossBeetleContext(this, playerTransform);
 
         _phase0 = new BossBeetlePhase0(Ctx);
         _phase1 = new BossBeetlePhase1(Ctx);
         _phase2 = new BossBeetlePhase2(Ctx);
 
-        // Init Phase OHNE Rage
         int startPhase = GetPhase();
         animator.SetInteger(PARAM_PHASE, startPhase);
         SwitchToPhase(startPhase, triggerRage: false);
@@ -178,17 +138,13 @@ public class BossBeetle : EnemyBase
         if (!Ctx.IsValid) return;
         if (animator.GetBool(PARAM_ISDEAD)) return;
 
-        // Phase + Animator zentral updaten (inkl. Rage beim Wechsel)
         UpdatePhaseAndAnimator();
 
-        // CloseToPlayer Flag (wie bei dir)
         bool closeForRun = Vector3.Distance(transform.position, Ctx.PlayerTransform.position) <= runStartRange;
         animator.SetBool(PARAM_CLOSE, closeForRun);
 
-        // Core gating (Stun/Rage/Attack blockiert)
         if (Ctx.TickCoreGates()) return;
 
-        // Phase tickt die Logik
         _currentPhase?.Tick(closeForRun);
     }
 
@@ -210,12 +166,9 @@ public class BossBeetle : EnemyBase
     {
         int newPhase = GetPhase();
         int oldPhase = animator.GetInteger(PARAM_PHASE);
-
         if (newPhase == oldPhase) return;
 
         animator.SetInteger(PARAM_PHASE, newPhase);
-
-        // Rage Start (wie bei dir)
         SwitchToPhase(newPhase, triggerRage: true);
     }
 
@@ -224,12 +177,8 @@ public class BossBeetle : EnemyBase
         return (health > 20) ? 0 : (health > 10) ? 1 : 2;
     }
 
-    // ==========================
-    // EVENTS / HITBOX CALLBACKS
-    // ==========================
     public void OnRunningCancelHitboxTriggered(Collider playerCollider)
     {
-        // identische Safety wie bei dir
         if (!Ctx.IsRunning) return;
         if (Ctx.IsRaging || Ctx.IsStunned) return;
         if (playerCollider == null || !playerCollider.CompareTag("Player")) return;
@@ -239,7 +188,6 @@ public class BossBeetle : EnemyBase
         Ctx.ApplyAnimatorRunFlag();
     }
 
-    // HIT (called by bullet)
     public void OnHeadHit(int damage, Vector3 hitDir, Vector3 hitPoint)
     {
         _currentPhase?.OnHeadHit(damage, hitDir, hitPoint);
@@ -251,9 +199,6 @@ public class BossBeetle : EnemyBase
             AudioManager.Instance.PlaySound3D(bodyHitSound, hitPoint, bodyHitVolume);
     }
 
-    // ==========================
-    // DAMAGE / DEATH (wie bei dir)
-    // ==========================
     public override void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
         if (health <= 0) return;
@@ -310,9 +255,6 @@ public class BossBeetle : EnemyBase
         Destroy(gameObject, 2.5f);
     }
 
-    // ==========================
-    // PLAYER CONTACT (wie bei dir)
-    // ==========================
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);

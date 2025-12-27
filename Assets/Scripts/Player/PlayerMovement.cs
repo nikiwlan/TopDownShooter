@@ -307,9 +307,7 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator SpeedBoostRoutine(float duration, float multiplier)
     {
-        if (isSpeedBoostActive) yield break;
         isSpeedBoostActive = true;
-
         speedBoostMultiplier = multiplier;
 
         GameObject fx = null;
@@ -325,6 +323,7 @@ public class PlayerMovement : MonoBehaviour
         if (fx) Destroy(fx);
         isSpeedBoostActive = false;
     }
+
 
     private IEnumerator RollRoutine(Vector3 dir)
     {

@@ -15,32 +15,35 @@ public sealed class BossBeetleContext
     public readonly BossBeetle Owner;
     public readonly Transform PlayerTransform;
 
-    // Runtime flags
     public bool IsRunning { get; private set; }
     public bool IsStunned { get; private set; }
     public bool IsRaging { get; private set; }
     public bool IsAttacking { get; private set; }
 
-    // Run runtime
     private float _runEndTime;
     private Vector3 _runDir;
     private float _nextRunAllowedTime;
 
-    // Stun runtime
     private float _stunEndTime;
     private GameObject _stunIconInstance;
 
-    // Rage runtime
     private float _rageEndTime = -1f;
 
-    // Attack runtime
-    private float _nextAttackTime = 0f;
+    // Cooldowns
+    private float _nextNormalAttackTime = 0f;
+    private float _nextSpecialAttackTime = 0f;
 
-    // Phase2 Jump runtime
-    private float _nextJumpAllowedTime = 0f;
-    private bool _isJumping = false;
+    // Global lockout (Recovery)
+    private float _nextActionAllowedTime = 0f;
 
     public bool IsValid => (Owner != null && Owner.animator != null && PlayerTransform != null);
+
+    private bool CanStartAnyActionNow() => Time.time >= _nextActionAllowedTime;
+
+    private void ApplyGlobalRecovery()
+    {
+        _nextActionAllowedTime = Time.time + Mathf.Max(0f, Owner.actionRecovery);
+    }
 
     public BossBeetleContext(BossBeetle owner, Transform playerTransform)
     {
@@ -48,12 +51,8 @@ public sealed class BossBeetleContext
         PlayerTransform = playerTransform;
     }
 
-    // ==========================
-    // GLOBAL GATES (wie in Update)
-    // ==========================
     public bool TickCoreGates()
     {
-        // STUN
         if (IsStunned)
         {
             if (Time.time >= _stunEndTime)
@@ -63,11 +62,9 @@ public sealed class BossBeetleContext
             return true;
         }
 
-        // RAGE TIMER
         if (IsRaging && Time.time >= _rageEndTime)
             IsRaging = false;
 
-        // RAGE BLOCK
         if (IsRaging)
         {
             if (IsRunning) StopRunAndCooldown(0f);
@@ -76,7 +73,6 @@ public sealed class BossBeetleContext
             return true;
         }
 
-        // ATTACK BLOCK
         if (IsAttacking)
         {
             Owner.animator.SetFloat("Speed", 0f);
@@ -86,25 +82,24 @@ public sealed class BossBeetleContext
         return false;
     }
 
-    // ==========================
-    // PHASE ENTER HELPERS
-    // ==========================
     public void StartRage()
     {
         IsRaging = true;
         _rageEndTime = Time.time + Owner.rageDuration;
 
-        // alles stoppen (wie bei dir)
         IsAttacking = false;
         if (IsRunning) StopRunAndCooldown(0f);
 
+        // Safety: Trigger resetten
         Owner.animator.ResetTrigger(BossBeetle.TRIG_ATTACK);
+        Owner.animator.ResetTrigger(BossBeetle.TRIG_SPECIAL);
+
         Owner.animator.SetTrigger(BossBeetle.TRIG_RAGE);
         Owner.animator.SetFloat("Speed", 0f);
     }
 
     // ==========================
-    // RUN (shared Phase1/2)
+    // RUN
     // ==========================
     public bool CanStartRunNow() => Time.time >= _nextRunAllowedTime;
 
@@ -113,6 +108,7 @@ public sealed class BossBeetleContext
         if (!closeForRun) return;
         if (IsRunning || IsAttacking) return;
         if (!CanStartRunNow()) return;
+        if (!CanStartAnyActionNow()) return;
 
         StartRun();
     }
@@ -136,6 +132,8 @@ public sealed class BossBeetleContext
 
         Owner.StartCoroutine(ForceLeaveRunOneFrame());
         _nextRunAllowedTime = Time.time + Mathf.Max(0f, cooldownSeconds);
+
+        ApplyGlobalRecovery();
     }
 
     private IEnumerator ForceLeaveRunOneFrame()
@@ -151,26 +149,22 @@ public sealed class BossBeetleContext
         if (!PlayerTransform) return;
         if (pivot == null) pivot = Owner.transform;
 
-        // Zielpunkt = nächster Punkt auf Player-Hitbox (wie gehabt)
         Vector3 playerPoint = PlayerTransform.position;
         if (Owner.playerBodyCollider != null)
             playerPoint = Owner.playerBodyCollider.ClosestPoint(pivot.position);
 
-        // WICHTIG: Distanz vom PIVOT (Kopf) zum Ziel messen, nicht vom Center
         Vector3 toTarget = playerPoint - pivot.position;
         toTarget.y = 0f;
         float dist = toTarget.magnitude;
 
         float desiredStopDist = Mathf.Max(Owner.runStopDistance, 0.05f);
 
-        // Ende Run, wenn Pivot nah genug ist (nicht Center)
         if (Time.time >= _runEndTime || dist <= desiredStopDist)
         {
             StopRunAndCooldown(Owner.runCooldownAfterRun);
             return;
         }
 
-        // Wall check: vom Pivot aus (optional) oder vom Center – ich würde Pivot nehmen:
         if (Physics.Raycast(pivot.position + Vector3.up * 0.2f, _runDir, Owner.runWallCheckDistance, Owner.wallLayer))
         {
             StopRunAndCooldown(0f);
@@ -178,7 +172,6 @@ public sealed class BossBeetleContext
             return;
         }
 
-        // Steering Richtung zum Player
         Vector3 targetDir = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : _runDir;
 
         float t = Mathf.Clamp01(dist / Owner.runSteerDistanceRange);
@@ -192,7 +185,6 @@ public sealed class BossBeetleContext
 
         if (allowedStep > 0f)
         {
-            // Optional: wall check entlang des Schritts vom Center aus
             if (!Physics.Raycast(Owner.transform.position, _runDir, allowedStep + 0.2f, Owner.wallLayer))
                 Owner.transform.position += _runDir * allowedStep;
         }
@@ -206,7 +198,6 @@ public sealed class BossBeetleContext
             );
         }
     }
-
 
     public void ApplyAnimatorRunFlag()
     {
@@ -239,14 +230,13 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // MOVE (walk)
+    // WALK MOVE
     // ==========================
     public void MoveTowardsPlayer(float speed, Transform origin)
     {
         if (!PlayerTransform) return;
 
         Vector3 playerPoint = PlayerTransform.position;
-
         if (Owner.playerBodyCollider != null)
             playerPoint = Owner.playerBodyCollider.ClosestPoint(origin.position);
 
@@ -280,7 +270,7 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // ATTACK (shared)
+    // ATTACK DATA
     // ==========================
     public Transform GetOriginForPhase(int phase)
     {
@@ -332,17 +322,20 @@ public sealed class BossBeetleContext
         };
     }
 
-    public bool CanAttackNow() => Time.time >= _nextAttackTime;
+    // ==========================
+    // NORMAL ATTACK (Trigger: IsAttacking)
+    // ==========================
+    public bool CanNormalAttackNow() => Time.time >= _nextNormalAttackTime && CanStartAnyActionNow();
 
-    public void TryStartAttack(int phase)
+    public void TryStartNormalAttack(int phase)
     {
         if (IsAttacking) return;
-        if (!CanAttackNow()) return;
+        if (!CanNormalAttackNow()) return;
 
-        Owner.StartCoroutine(AttackRoutine(phase));
+        Owner.StartCoroutine(NormalAttackRoutine(phase));
     }
 
-    private IEnumerator AttackRoutine(int phase)
+    private IEnumerator NormalAttackRoutine(int phase)
     {
         AbortRunForAttack();
 
@@ -360,7 +353,48 @@ public sealed class BossBeetleContext
         yield return new WaitForSeconds(dur * 0.5f);
 
         IsAttacking = false;
-        _nextAttackTime = Time.time + GetAttackCooldownForPhase(phase);
+        _nextNormalAttackTime = Time.time + GetAttackCooldownForPhase(phase);
+        ApplyGlobalRecovery();
+    }
+
+    // ==========================
+    // SPECIAL ATTACK (Trigger: SpecialHit)
+    // Nutzt hier einfach Phase2-Werte (Range3/Damage3/Duration3/Cooldown3)
+    // ==========================
+    public bool CanSpecialAttackNow() => Time.time >= _nextSpecialAttackTime && CanStartAnyActionNow();
+
+    public void TryStartSpecialAttack()
+    {
+        if (IsAttacking) return;
+        if (!CanSpecialAttackNow()) return;
+
+        Owner.StartCoroutine(SpecialAttackRoutine());
+    }
+
+    private IEnumerator SpecialAttackRoutine()
+    {
+        // SpecialHit ist für Walk gedacht -> wir stoppen Run, falls gerade noch was läuft
+        AbortRunForAttack();
+
+        IsAttacking = true;
+        Owner.animator.SetTrigger(BossBeetle.TRIG_SPECIAL);
+
+        // Wir verwenden für Timing/Schaden die Phase2(=3) Stats
+        int phase2 = 2;
+        float dur = GetAttackDurationForPhase(phase2);
+
+        yield return new WaitForSeconds(dur * 0.5f);
+
+        if (Owner.attackHitSound)
+            AudioManager.Instance.PlaySound3D(Owner.attackHitSound, Owner.transform.position);
+
+        Owner.player?.TakeDamage(GetAttackDamageForPhase(phase2));
+
+        yield return new WaitForSeconds(dur * 0.5f);
+
+        IsAttacking = false;
+        _nextSpecialAttackTime = Time.time + GetAttackCooldownForPhase(phase2);
+        ApplyGlobalRecovery();
     }
 
     private void AbortRunForAttack()
@@ -372,93 +406,13 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // PHASE 2: JUMP ATTACK
-    // ==========================
-    public bool CanJumpNow() => Time.time >= _nextJumpAllowedTime && !_isJumping;
-
-    public void TryStartJumpAttack()
-    {
-        if (!CanJumpNow()) return;
-        if (IsAttacking || IsStunned || IsRaging) return;
-
-        Owner.StartCoroutine(JumpAttackRoutine());
-    }
-
-    private IEnumerator JumpAttackRoutine()
-    {
-        // Jump blockt Movement/Attack
-        _isJumping = true;
-        IsAttacking = true;
-
-        // optional: Run abbrechen
-        if (IsRunning) StopRunAndCooldown(0f);
-
-        Vector3 start = Owner.transform.position;
-
-        // Zielpunkt: nahe am Player (ClosestPoint)
-        Vector3 target = PlayerTransform.position;
-        if (Owner.playerBodyCollider != null)
-            target = Owner.playerBodyCollider.ClosestPoint(start);
-
-        target.y = start.y; // wir bewegen nur horizontal; y kommt aus Arc
-
-        float duration = Mathf.Max(0.1f, Owner.jumpDuration);
-        float t = 0f;
-
-        while (t < 1f)
-        {
-            t += Time.deltaTime / duration;
-            float eased = Mathf.Clamp01(t);
-
-            // Horizontal Lerp
-            Vector3 pos = Vector3.Lerp(start, target, eased);
-
-            // Parabel-Arc
-            float arc = 4f * Owner.jumpHeight * eased * (1f - eased);
-            pos.y += arc;
-
-            Owner.transform.position = pos;
-
-            // Face Richtung target
-            Vector3 faceDir = (target - Owner.transform.position);
-            faceDir.y = 0f;
-            if (faceDir.sqrMagnitude > 0.001f)
-            {
-                Owner.transform.rotation = Quaternion.Slerp(
-                    Owner.transform.rotation,
-                    Quaternion.LookRotation(faceDir.normalized),
-                    0.35f
-                );
-            }
-
-            yield return null;
-        }
-
-        // Landung: AoE Damage wenn Player in Radius
-        if (Owner.player != null)
-        {
-            float dist = Vector3.Distance(Owner.transform.position, PlayerTransform.position);
-            if (dist <= Owner.jumpLandingRadius)
-                Owner.player.TakeDamage(Owner.jumpLandingDamage);
-        }
-
-        // Cooldown
-        _nextJumpAllowedTime = Time.time + Mathf.Max(0f, Owner.jumpCooldown);
-
-        _isJumping = false;
-        IsAttacking = false;
-    }
-
-    // ==========================
     // FORCE STOP
     // ==========================
     public void ForceStopAll()
     {
-        // Run aus
         IsRunning = false;
         ApplyAnimatorRunFlag();
 
-        // Stun cleanup
         if (IsStunned)
         {
             IsStunned = false;
@@ -469,7 +423,6 @@ public sealed class BossBeetleContext
             }
         }
 
-        // Rage/Attack
         IsRaging = false;
         IsAttacking = false;
     }

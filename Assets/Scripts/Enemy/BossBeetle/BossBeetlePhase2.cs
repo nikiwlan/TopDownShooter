@@ -19,38 +19,33 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
 
     public void Tick(bool closeForRun)
     {
-        int phase = 2;
+        // Phase2:
+        // - Während RUN: normales Verhalten wie Phase1 (Attack2)
+        // - Während WALK: SpecialHit (Trigger) statt normaler Attack
 
-        // Phase2: Priorität 1 = JumpAttack, wenn möglich (neu)
-        // (Du kannst die Priorität easy umdrehen, wenn du lieber erst Run willst)
-        if (_ctx.CanJumpNow())
-        {
-            _ctx.TryStartJumpAttack();
-            _ctx.Owner.animator.SetFloat("Speed", 0f);
-            return;
-        }
-
-        // Phase2: ansonsten Run wie Phase1 (shared Mechanik)
+        // 1) Run wie Phase1
         _ctx.TryStartRun(closeForRun);
 
         if (_ctx.IsRunning)
         {
-            _ctx.RunMove(_ctx.Owner.attackOrigin3); 
+            _ctx.RunMove(_ctx.Owner.attackOrigin3); // Pivot vorne
             _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
             _ctx.ApplyAnimatorRunFlag();
+
+            // Optional: während Run keine Attack triggern (du wolltest "normal angreifen", aber meist ist der Schaden beim Charge separat).
+            // Wenn du während RUN wirklich eine Attack auslösen willst, sag kurz, dann bauen wir das sauber.
             return;
         }
 
-        // Danach walk + (andere) Attack Werte: nutzt deine Phase2 Attack3 Settings
-        Transform origin = _ctx.GetOriginForPhase(phase);
-        float attackRange = _ctx.GetAttackRangeForPhase(phase);
+        // 2) Walk + SpecialHit wenn in Range
+        Transform origin = _ctx.Owner.attackOrigin3;  // Special (Phase2)
+        float attackRange = _ctx.Owner.attackRange3;
 
         Vector3 playerPoint = _ctx.PlayerTransform.position;
         if (_ctx.Owner.playerBodyCollider != null)
             playerPoint = _ctx.Owner.playerBodyCollider.ClosestPoint(origin.position);
 
         bool inRange = Vector3.Distance(origin.position, playerPoint) <= attackRange;
-
 
         if (!inRange)
         {
@@ -60,20 +55,16 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
         else
         {
             _ctx.Owner.animator.SetFloat("Speed", 0f);
-            if (_ctx.CanAttackNow())
-                _ctx.TryStartAttack(phase);
+
+            // SpecialHit (Attack1 Transition bei dir) statt normaler Attack
+            _ctx.TryStartSpecialAttack();
         }
     }
 
     public void OnHeadHit(int damage, Vector3 hitDir, Vector3 hitPoint)
     {
-        // Vorschlag für Phase2:
-        // - verwundbar während Run ODER (wenn du willst) immer verwundbar.
-        // Ich setze hier: wie Phase1 -> nur während Run (kannst du 1 Zeile ändern).
+        // wie vorher: nur während RUN verwundbar
         if (_ctx.IsRunning)
             _ctx.Owner.TakeDamage(damage, hitDir, hitPoint);
-
-        // Alternativ: immer
-        // _ctx.Owner.TakeDamage(damage, hitDir, hitPoint);
     }
 }
