@@ -23,6 +23,8 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
         // - Während RUN: normales Verhalten wie Phase1 (Attack2)
         // - Während WALK: SpecialHit (Trigger) statt normaler Attack
 
+        float phase2WalkSpeed = _ctx.Owner.walkSpeedPhase2; // <-- NEU
+
         // 1) Run wie Phase1
         _ctx.TryStartRun(closeForRun);
 
@@ -31,9 +33,6 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
             _ctx.RunMove(_ctx.Owner.attackOrigin3); // Pivot vorne
             _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
             _ctx.ApplyAnimatorRunFlag();
-
-            // Optional: während Run keine Attack triggern (du wolltest "normal angreifen", aber meist ist der Schaden beim Charge separat).
-            // Wenn du während RUN wirklich eine Attack auslösen willst, sag kurz, dann bauen wir das sauber.
             return;
         }
 
@@ -49,14 +48,12 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
 
         if (!inRange)
         {
-            _ctx.MoveTowardsPlayer(_ctx.Owner.walkSpeed, origin);
-            _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.walkSpeed);
+            _ctx.MoveTowardsPlayer(phase2WalkSpeed, origin); // <-- NEU: schneller
+            _ctx.Owner.animator.SetFloat("Speed", phase2WalkSpeed); // <-- NEU: schneller
         }
         else
         {
             _ctx.Owner.animator.SetFloat("Speed", 0f);
-
-            // SpecialHit (Attack1 Transition bei dir) statt normaler Attack
             _ctx.TryStartSpecialAttack();
         }
     }

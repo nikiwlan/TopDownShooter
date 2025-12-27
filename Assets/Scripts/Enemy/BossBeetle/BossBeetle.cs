@@ -39,6 +39,9 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal GameObject stunIconPrefab;
     [SerializeField] internal Transform stunIconAnchor;
 
+    [Header("Phase 2 Movement")]
+    public float walkSpeedPhase2 = 4f; 
+
     [Header("Rage")]
     [SerializeField] internal float rageDuration = 2f;
     [SerializeField] internal bool immuneDuringRage = true;
@@ -52,10 +55,6 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal float attackRange1 = 2f;
     [SerializeField] internal float attackRange2 = 2f;
     [SerializeField] internal float attackRange3 = 2f;
-
-    [SerializeField] internal int attackDamage1 = 1;
-    [SerializeField] internal int attackDamage2 = 2;
-    [SerializeField] internal int attackDamage3 = 3;
 
     [SerializeField] internal float attackDuration1 = 1.2f;
     [SerializeField] internal float attackDuration2 = 1.2f;

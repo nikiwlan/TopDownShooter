@@ -292,16 +292,6 @@ public sealed class BossBeetleContext
         };
     }
 
-    public int GetAttackDamageForPhase(int phase)
-    {
-        return phase switch
-        {
-            0 => Owner.attackDamage1,
-            1 => Owner.attackDamage2,
-            _ => Owner.attackDamage3
-        };
-    }
-
     public float GetAttackDurationForPhase(int phase)
     {
         return phase switch
@@ -348,7 +338,7 @@ public sealed class BossBeetleContext
         if (Owner.attackHitSound)
             AudioManager.Instance.PlaySound3D(Owner.attackHitSound, Owner.transform.position);
 
-        Owner.player?.TakeDamage(GetAttackDamageForPhase(phase));
+        Owner.player?.TakeDamage(1);
 
         yield return new WaitForSeconds(dur * 0.5f);
 
@@ -388,7 +378,7 @@ public sealed class BossBeetleContext
         if (Owner.attackHitSound)
             AudioManager.Instance.PlaySound3D(Owner.attackHitSound, Owner.transform.position);
 
-        Owner.player?.TakeDamage(GetAttackDamageForPhase(phase2));
+        Owner.player?.TakeDamage(1);
 
         yield return new WaitForSeconds(dur * 0.5f);
 
