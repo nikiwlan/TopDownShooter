@@ -30,14 +30,14 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
 
         if (_ctx.IsRunning)
         {
-            _ctx.RunMove(_ctx.Owner.attackOrigin3); // Pivot vorne
+            _ctx.RunMove(_ctx.Owner.attackOrigin2); 
             _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
             _ctx.ApplyAnimatorRunFlag();
             return;
         }
 
         // 2) Walk + SpecialHit wenn in Range
-        Transform origin = _ctx.Owner.attackOrigin3;  // Special (Phase2)
+        Transform origin = _ctx.Owner.attackOrigin3;  
         float attackRange = _ctx.Owner.attackRange3;
 
         Vector3 playerPoint = _ctx.PlayerTransform.position;
@@ -48,8 +48,8 @@ public sealed class BossBeetlePhase2 : IBossBeetlePhase
 
         if (!inRange)
         {
-            _ctx.MoveTowardsPlayer(phase2WalkSpeed, origin); // <-- NEU: schneller
-            _ctx.Owner.animator.SetFloat("Speed", phase2WalkSpeed); // <-- NEU: schneller
+            _ctx.MoveTowardsPlayer(phase2WalkSpeed, origin); 
+            _ctx.Owner.animator.SetFloat("Speed", phase2WalkSpeed); 
         }
         else
         {
