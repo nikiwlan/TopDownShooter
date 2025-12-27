@@ -11408,8 +11408,8 @@ MonoBehaviour:
   stopPadding: 0
   bodyHitSound: {fileID: 0}
   bodyHitVolume: 1
-  maxHealth: 10
-  walkSpeed: 2
+  maxHealth: 20
+  walkSpeed: 3
   runSpeed: 15
   runStartRange: 12
   wallLayer:
@@ -11433,10 +11433,10 @@ MonoBehaviour:
   attackOrigin1: {fileID: 713963026}
   attackOrigin2: {fileID: 1733531456}
   attackOrigin3: {fileID: 2063698231}
-  attackRange1: 0.5
+  attackRange1: 1
   attackRange2: 0.5
   attackRange3: 1
-  attackDuration1: 1.2
+  attackDuration1: 1
   attackDuration2: 0
   attackDuration3: 0.3
   attackCooldown1: 1.5

@@ -330,7 +330,9 @@ public sealed class BossBeetleContext
         AbortRunForAttack();
 
         IsAttacking = true;
+        Owner.animator.ResetTrigger(BossBeetle.TRIG_ATTACK);
         Owner.animator.SetTrigger(BossBeetle.TRIG_ATTACK);
+
 
         float dur = GetAttackDurationForPhase(phase);
         yield return new WaitForSeconds(dur * 0.5f);
@@ -367,6 +369,7 @@ public sealed class BossBeetleContext
         AbortRunForAttack();
 
         IsAttacking = true;
+        Owner.animator.ResetTrigger(BossBeetle.TRIG_SPECIAL);
         Owner.animator.SetTrigger(BossBeetle.TRIG_SPECIAL);
 
         // Wir verwenden für Timing/Schaden die Phase2(=3) Stats
