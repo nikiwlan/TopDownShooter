@@ -15,7 +15,13 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("Shield Settings")]
     public int maxShieldCharges = 2;                 
-    [SerializeField] private int shieldCharges = 0;  
+    [SerializeField] private int shieldCharges = 0;
+
+    [Header("Shield Sound")]
+    public AudioClip shieldHitSound;   // Sound wenn Shield 1 Charge verliert
+
+    [Header("Shield VFX")]
+    [SerializeField] private GameObject shieldVfx; 
 
     public bool HasShield => shieldCharges > 0;
     public int ShieldCharges => shieldCharges;
@@ -54,6 +60,12 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Optional: wenn du lieber über Layer blocken willst (z.B. EnemyProjectile Layer), trage ihn hier ein. -1 = deaktiviert")]
     public int shieldBlocksOnlyLayer = -1;
 
+    private void UpdateShieldVfx()
+    {
+        if (shieldVfx != null)
+            shieldVfx.SetActive(shieldCharges > 0);
+    }
+
     void Awake()
     {
         currentHealth = maxHealth;
@@ -66,6 +78,8 @@ public class PlayerHealth : MonoBehaviour
             heartUIManager.UpdateHearts(currentHealth);
 
             heartUIManager.UpdateShield(shieldCharges);
+
+            UpdateShieldVfx();
 
             Debug.Log($"[PlayerHealth] Player startet mit {currentHealth}/{maxHealth} HP");
         }
@@ -117,11 +131,16 @@ public class PlayerHealth : MonoBehaviour
             if (tagOk || layerOk)
             {
                 shieldCharges = Mathf.Max(0, shieldCharges - 1);
-                Debug.Log($"[PlayerHealth] Range-Schaden geblockt durch Shield (EnemyProjectile). Rest: {shieldCharges}/{maxShieldCharges}");
+
+                // 🔊 Shield-Hit-Sound
+                if (shieldHitSound != null)
+                    AudioManager.Instance.PlaySound2D(shieldHitSound);
 
                 heartUIManager?.UpdateShield(shieldCharges);
-                return; // kein Damage, keine Invincibility
+                UpdateShieldVfx();
+                return;
             }
+
         }
 
         StartCoroutine(BecomeTemporarilyInvincible());
@@ -218,6 +237,7 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"[PlayerHealth] Shield gesetzt: {shieldCharges}/{maxShieldCharges}");
 
         heartUIManager?.UpdateShield(shieldCharges);
+        UpdateShieldVfx();
     }
 
     private void Die()
