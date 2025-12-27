@@ -40,7 +40,7 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal Transform stunIconAnchor;
 
     [Header("Phase 2 Movement")]
-    public float walkSpeedPhase2 = 4f; 
+    public float walkSpeedPhase2 = 4f;
 
     [Header("Rage")]
     [SerializeField] internal float rageDuration = 2f;
@@ -91,14 +91,24 @@ public class BossBeetle : EnemyBase
     private IBossBeetlePhase _currentPhase;
 
     // Animator parameter names
-    internal const string PARAM_PHASE = "Phase";
-    internal const string PARAM_CLOSE = "CloseToPlayer";
-    internal const string PARAM_ISRUN = "IsRunning";
-    internal const string PARAM_ISDEAD = "Die";
+    internal const string PARAM_PHASE = "Phase";        // int
+    internal const string PARAM_CLOSE = "CloseToPlayer";// (optional) bool
+    internal const string PARAM_ISRUN = "IsRunning";    // bool
+    internal const string PARAM_SPEED = "Speed";        // (optional) float
 
-    internal const string TRIG_ATTACK = "IsAttacking";     // normale Attack (Attack2 etc.)
-    internal const string TRIG_SPECIAL = "SpecialHit";     // NEU: SpecialHit (Attack1 in Phase2 Walk)
+    // Triggers (du hast gesagt: alle außer IsRunning sind Trigger)
+    internal const string TRIG_ATTACK = "IsAttacking";
+    internal const string TRIG_SPECIAL = "SpecialHit";
     internal const string TRIG_RAGE = "Rage";
+    internal const string TRIG_GETHIT = "GetsHit";
+    internal const string TRIG_DIE = "Die";
+
+    // Internal guard, weil Trigger nicht abfragbar sind wie Bool
+    private bool _isDead;
+
+    // Optional parameter existence checks (verhindert Warnings & "es passiert nichts")
+    private bool _hasCloseParam;
+    private bool _hasSpeedParam;
 
     protected override void Start()
     {
@@ -108,6 +118,9 @@ public class BossBeetle : EnemyBase
         health = maxHealth;
 
         if (!animator) animator = GetComponentInChildren<Animator>();
+
+        // Cache: existieren diese Animator-Parameter überhaupt?
+        CacheAnimatorParams();
 
         var playerTransform = player ? player.transform : null;
 
@@ -132,15 +145,34 @@ public class BossBeetle : EnemyBase
         Ctx.ApplyAnimatorRunFlag();
     }
 
+    private void CacheAnimatorParams()
+    {
+        _hasCloseParam = HasAnimatorParam(animator, PARAM_CLOSE, AnimatorControllerParameterType.Bool);
+        _hasSpeedParam = HasAnimatorParam(animator, PARAM_SPEED, AnimatorControllerParameterType.Float);
+    }
+
+    private static bool HasAnimatorParam(Animator anim, string name, AnimatorControllerParameterType type)
+    {
+        if (!anim) return false;
+        foreach (var p in anim.parameters)
+        {
+            if (p.name == name && p.type == type) return true;
+        }
+        return false;
+    }
+
     private void Update()
     {
         if (!Ctx.IsValid) return;
-        if (animator.GetBool(PARAM_ISDEAD)) return;
+        if (_isDead) return;
 
         UpdatePhaseAndAnimator();
 
         bool closeForRun = Vector3.Distance(transform.position, Ctx.PlayerTransform.position) <= runStartRange;
-        animator.SetBool(PARAM_CLOSE, closeForRun);
+
+        // Nur setzen, wenn der Bool-Parameter wirklich existiert
+        if (_hasCloseParam)
+            animator.SetBool(PARAM_CLOSE, closeForRun);
 
         if (Ctx.TickCoreGates()) return;
 
@@ -183,7 +215,11 @@ public class BossBeetle : EnemyBase
         if (playerCollider == null || !playerCollider.CompareTag("Player")) return;
 
         Ctx.StopRunAndCooldown(runCooldownAfterRun);
-        animator.SetFloat("Speed", 0f);
+
+        // Nur setzen, wenn Speed existiert (sonst gibt's Animator-Warnings)
+        if (_hasSpeedParam)
+            animator.SetFloat(PARAM_SPEED, 0f);
+
         Ctx.ApplyAnimatorRunFlag();
     }
 
@@ -200,7 +236,9 @@ public class BossBeetle : EnemyBase
 
     public override void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
+
         if (health <= 0) return;
+        if (_isDead) return;
 
         if (Ctx.IsRaging && immuneDuringRage)
             return;
@@ -220,12 +258,20 @@ public class BossBeetle : EnemyBase
             Destroy(vfx, 0.5f);
         }
 
+
+            //animator.ResetTrigger(TRIG_GETHIT);
+            //animator.SetTrigger(TRIG_GETHIT);
+       
+
         if (health <= 0)
             Die();
     }
 
     protected override void Die()
     {
+        if (_isDead) return;
+        _isDead = true;
+
         Ctx.ForceStopAll();
 
         if (tankDeathVFX)
@@ -241,7 +287,11 @@ public class BossBeetle : EnemyBase
         if (deathSound)
             AudioManager.Instance.PlaySound3D(deathSound, transform.position);
 
-        animator?.SetBool(PARAM_ISDEAD, true);
+        animator?.ResetTrigger(TRIG_GETHIT);
+        animator?.ResetTrigger(TRIG_ATTACK);
+        animator?.ResetTrigger(TRIG_SPECIAL);
+        animator?.ResetTrigger(TRIG_RAGE);
+        animator?.SetTrigger(TRIG_DIE);
 
         Collider col = GetComponent<Collider>();
         if (col) col.enabled = false;
@@ -251,12 +301,14 @@ public class BossBeetle : EnemyBase
 
     protected override void OnDeathDestroyed()
     {
-        Destroy(gameObject, 2.5f);
+        Destroy(gameObject, 4.6f);
     }
 
     protected override void OnTriggerEnter(Collider other)
     {
         base.OnTriggerEnter(other);
+
+        if (_isDead) return;
 
         if (other.CompareTag("Player") && player != null)
         {
