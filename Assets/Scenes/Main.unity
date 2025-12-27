@@ -11507,7 +11507,7 @@ MonoBehaviour:
   stopPadding: 0
   bodyHitSound: {fileID: 0}
   bodyHitVolume: 1
-  maxHealth: 1
+  maxHealth: 12
   walkSpeed: 3
   runSpeed: 15
   runStartRange: 12

@@ -93,6 +93,8 @@ public sealed class BossBeetleContext
         // Safety: Trigger resetten
         Owner.animator.ResetTrigger(BossBeetle.TRIG_ATTACK);
         Owner.animator.ResetTrigger(BossBeetle.TRIG_SPECIAL);
+        Owner.animator.ResetTrigger(BossBeetle.TRIG_GETHIT);
+
 
         Owner.animator.SetTrigger(BossBeetle.TRIG_RAGE);
         Owner.animator.SetFloat("Speed", 0f);

@@ -259,8 +259,8 @@ public class BossBeetle : EnemyBase
         }
 
 
-            //animator.ResetTrigger(TRIG_GETHIT);
-            //animator.SetTrigger(TRIG_GETHIT);
+        animator.ResetTrigger(TRIG_GETHIT);
+        animator.SetTrigger(TRIG_GETHIT);
        
 
         if (health <= 0)
