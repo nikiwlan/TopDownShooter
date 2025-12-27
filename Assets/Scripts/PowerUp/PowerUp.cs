@@ -99,8 +99,11 @@ public class PowerUp : MonoBehaviour
             case PowerUpType.Shield:
                 if (playerHealth)
                 {
-                    playerHealth.GiveShield(4); // 4 Hits blocken
-                    uiManager?.ShowUI(PowerUpType.Shield, duration); // optional, falls du ein Timer UI willst
+                    // ✅ NEU: Schild direkt voll machen (2/2)
+                    playerHealth.GiveShield(playerHealth.maxShieldCharges);
+
+                    // bleibt drin (auch wenn PowerUpUIManager aktuell keinen Shield-Case hat)
+                    uiManager?.ShowUI(PowerUpType.Shield, duration);
                 }
                 break;
 
@@ -140,7 +143,6 @@ public class PowerUp : MonoBehaviour
         if (pickupEffect)
             Instantiate(pickupEffect, transform.position, Quaternion.identity);
 
-        // ⭐ NEU: PowerUp Sound über AudioManager (3D)
         if (pickupSound)
             AudioManager.Instance.PlaySound3D(pickupSound, transform.position);
 

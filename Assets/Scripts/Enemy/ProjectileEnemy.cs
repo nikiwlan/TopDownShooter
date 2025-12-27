@@ -42,7 +42,7 @@ public class ProjectileEnemy : MonoBehaviour
         if (dist <= hitRadius)
         {
             if (player.TryGetComponent<PlayerHealth>(out var ph))
-                ph.TakeDamage(1);
+                ph.TakeDamage(1, PlayerHealth.DamageType.Range, gameObject);
 
             if (impactSound)
                 AudioManager.Instance.PlaySound3D(impactSound, transform.position);

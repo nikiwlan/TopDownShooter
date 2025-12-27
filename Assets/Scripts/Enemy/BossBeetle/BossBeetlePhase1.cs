@@ -48,8 +48,19 @@ public sealed class BossBeetlePhase1 : IBossBeetlePhase
         else
         {
             _ctx.Owner.animator.SetFloat("Speed", 0f);
-            if (_ctx.CanNormalAttackNow())
-                _ctx.TryStartNormalAttack(phase);
+            if (_ctx.IsRunning)
+            {
+                _ctx.RunMove(_ctx.Owner.attackOrigin2);
+
+                // wenn nahe genug -> attack2 (über TRIG_ATTACK)
+                if (_ctx.CanNormalAttackNow())
+                    _ctx.TryStartNormalAttack(1);
+
+                _ctx.Owner.animator.SetFloat("Speed", _ctx.Owner.runSpeed);
+                _ctx.ApplyAnimatorRunFlag();
+                return;
+            }
+
         }
     }
 

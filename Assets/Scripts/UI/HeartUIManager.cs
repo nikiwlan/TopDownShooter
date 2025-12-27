@@ -8,16 +8,18 @@ public class HeartUIManager : MonoBehaviour
     public List<Image> hearts;            // Liste der Herz-Icons (0..n)
     public GameObject centerHeartEffect;  // optionaler Effekt beim Heilen
 
-    [Header("Shield UI")]
-    public RectTransform shieldIcon;     // UI-Icon neben den Herzen
-    public CanvasGroup shieldCanvasGroup; // optional fürs Ein-/Ausblenden
-    public int maxShieldCharges = 4;     // UI weiß, wie viele Stufen es gibt
-    public float minShieldScale = 0.45f; // wie klein bei 1 Charge
-    public float maxShieldScale = 1f;    // wie groß bei 4 Charges
+    [Header("Shield Settings (2 Charges, 2 Sprites)")]
+    public int maxShieldCharges = 2;
 
+    [Tooltip("Voller Schild (CompleteShield)")]
+    [SerializeField] private GameObject completeShieldGO;
+
+    [Tooltip("Gebrochener Schild (ShieldPiece)")]
+    [SerializeField] private GameObject brokenShieldGO;
 
     void Awake()
     {
+        // UI initial sauber aus
         UpdateShield(0);
 
         if (centerHeartEffect != null)
@@ -47,7 +49,6 @@ public class HeartUIManager : MonoBehaviour
             hearts[i].enabled = shouldShow;
         }
 
-        // Canvas-Prüfung (optional)
         var canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
             Debug.LogError("[HeartUIManager] Kein Canvas gefunden! UI-Objekt muss unter einem Canvas liegen.");
@@ -55,25 +56,30 @@ public class HeartUIManager : MonoBehaviour
 
     public void UpdateShield(int charges)
     {
-        if (shieldIcon == null) return; // Shield UI ist optional
+        Debug.Log($"[HeartUIManager] UpdateShield charges={charges}");
+        charges = Mathf.Clamp(charges, 0, maxShieldCharges);
+
+        // Shield UI ist optional
+        if (completeShieldGO == null && brokenShieldGO == null) return;
 
         if (charges <= 0)
         {
-            // ausblenden
-            if (shieldCanvasGroup != null) shieldCanvasGroup.alpha = 0f;
-            shieldIcon.localScale = Vector3.one * maxShieldScale;
+            if (completeShieldGO) completeShieldGO.SetActive(false);
+            if (brokenShieldGO) brokenShieldGO.SetActive(false);
             return;
         }
 
-        // einblenden
-        if (shieldCanvasGroup != null) shieldCanvasGroup.alpha = 1f;
-
-        float t = Mathf.Clamp01((float)charges / maxShieldCharges); // 0..1
-        float scale = Mathf.Lerp(minShieldScale, maxShieldScale, t);
-
-        shieldIcon.localScale = new Vector3(scale, scale, 1f);
+        if (charges >= maxShieldCharges) // bei 2/2
+        {
+            if (completeShieldGO) completeShieldGO.SetActive(true);
+            if (brokenShieldGO) brokenShieldGO.SetActive(false);
+        }
+        else // bei 1/2
+        {
+            if (completeShieldGO) completeShieldGO.SetActive(false);
+            if (brokenShieldGO) brokenShieldGO.SetActive(true);
+        }
     }
-
 
     public void PlayHeartPickupEffect()
     {
@@ -160,5 +166,11 @@ public class HeartUIManager : MonoBehaviour
         {
             Debug.LogWarning("[HeartUIManager/Validate] CenterHeartEffect nicht zugewiesen (optional).");
         }
+
+        // Shield optional, aber wenn gesetzt, warnen bei fehlenden References
+        if (completeShieldGO == null)
+            Debug.LogWarning("[HeartUIManager/Validate] completeShieldGO ist nicht gesetzt (optional).");
+        if (brokenShieldGO == null)
+            Debug.LogWarning("[HeartUIManager/Validate] brokenShieldGO ist nicht gesetzt (optional).");
     }
 }

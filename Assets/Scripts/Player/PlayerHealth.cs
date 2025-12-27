@@ -14,8 +14,8 @@ public class PlayerHealth : MonoBehaviour
     [HideInInspector] public int currentHealth;
 
     [Header("Shield Settings")]
-    public int maxShieldCharges = 4;
-    [SerializeField] private int shieldCharges = 0; // 0 = kein Schild
+    public int maxShieldCharges = 2;                 
+    [SerializeField] private int shieldCharges = 0;  
 
     public bool HasShield => shieldCharges > 0;
     public int ShieldCharges => shieldCharges;
@@ -44,9 +44,9 @@ public class PlayerHealth : MonoBehaviour
     public GameObject meleeBloodVFX;
 
     [HideInInspector]
-    public DamageType lastDamageType = DamageType.Range; // wird jetzt korrekt gesetzt
+    public DamageType lastDamageType = DamageType.Range;
 
-    // ✅ NEW: Schild soll NUR Enemy-Projectiles blocken
+    // ✅ Schild soll NUR Enemy-Projectiles blocken
     [Header("Shield Filters")]
     [Tooltip("Nur wenn der Schaden von diesem Tag kommt, blockt das Schild Range-Damage.")]
     public string shieldBlocksOnlyTag = "EnemyProjectile";
@@ -64,6 +64,9 @@ public class PlayerHealth : MonoBehaviour
         if (heartUIManager != null)
         {
             heartUIManager.UpdateHearts(currentHealth);
+
+            heartUIManager.UpdateShield(shieldCharges);
+
             Debug.Log($"[PlayerHealth] Player startet mit {currentHealth}/{maxHealth} HP");
         }
         else
@@ -76,14 +79,14 @@ public class PlayerHealth : MonoBehaviour
     // DAMAGE
     // ------------------------------------------------------------
 
-    // ✅ Keep old signature: falls irgendwo noch player.TakeDamage(1) steht
-    // Wichtig: Default ist jetzt MELEE (damit Schild nicht random alles blockt)
+    // Keep old signature: falls irgendwo noch player.TakeDamage(1) steht
+    // Default ist MELEE (damit Shield nicht random alles blockt)
     public void TakeDamage(int amount)
     {
         TakeDamage(amount, DamageType.Melee, null, -1);
     }
 
-    // ✅ NEW: klare Damage-API
+    // klare Damage-API
     public void TakeDamage(int amount, DamageType type, GameObject source = null)
     {
         string srcTag = source != null ? source.tag : null;
@@ -91,7 +94,7 @@ public class PlayerHealth : MonoBehaviour
         TakeDamage(amount, type, srcTag, srcLayer);
     }
 
-    // ✅ NEW: wenn du direkt Tag/Layer übergeben willst
+    // wenn du direkt Tag/Layer übergeben willst
     public void TakeDamage(int amount, DamageType type, string sourceTag, int sourceLayer)
     {
         if (isInvincible)
@@ -102,7 +105,7 @@ public class PlayerHealth : MonoBehaviour
 
         lastDamageType = type;
 
-        // ✅ Schild blockt NUR:
+        // Schild blockt NUR:
         // - Range-Schaden
         // - es gibt Charges
         // - Quelle ist EnemyProjectile (Tag oder optional Layer)
@@ -113,12 +116,10 @@ public class PlayerHealth : MonoBehaviour
 
             if (tagOk || layerOk)
             {
-                shieldCharges--;
+                shieldCharges = Mathf.Max(0, shieldCharges - 1);
                 Debug.Log($"[PlayerHealth] Range-Schaden geblockt durch Shield (EnemyProjectile). Rest: {shieldCharges}/{maxShieldCharges}");
 
-                if (heartUIManager != null)
-                    heartUIManager.UpdateShield(shieldCharges);
-
+                heartUIManager?.UpdateShield(shieldCharges);
                 return; // kein Damage, keine Invincibility
             }
         }
@@ -210,13 +211,13 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    // ✅ Gibt Shield auf einen definierten Wert (0..max)
     public void GiveShield(int charges)
     {
         shieldCharges = Mathf.Clamp(charges, 0, maxShieldCharges);
         Debug.Log($"[PlayerHealth] Shield gesetzt: {shieldCharges}/{maxShieldCharges}");
 
-        if (heartUIManager != null)
-            heartUIManager.UpdateShield(shieldCharges);
+        heartUIManager?.UpdateShield(shieldCharges);
     }
 
     private void Die()
