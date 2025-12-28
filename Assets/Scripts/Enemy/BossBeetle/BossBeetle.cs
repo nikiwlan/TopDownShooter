@@ -71,8 +71,8 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal Animator animator;
 
     [Header("VFX")]
-    public GameObject tankHitVFX;
-    public GameObject tankDeathVFX;
+    public GameObject headHitVFX;
+    public GameObject beetleDeathVFX;
 
     [Header("Audio Clips")]
     public AudioClip attackHitSound;
@@ -248,15 +248,29 @@ public class BossBeetle : EnemyBase
 
         health -= amount;
 
-        if (tankHitVFX)
+        if (headHitVFX)
         {
-            GameObject vfx = Instantiate(
-                tankHitVFX,
-                hitPoint == Vector3.zero ? transform.position + Vector3.up * 1.5f : hitPoint,
-                Quaternion.identity
-            );
-            Destroy(vfx, 0.5f);
+            // 1. Spawnposition
+            Vector3 spawnPos = (hitPoint == Vector3.zero)
+                ? transform.position + Vector3.up * 1.5f
+                : hitPoint;
+
+            // 2. Minimal anheben (gegen Z-Fighting / im Mesh verschwinden)
+            spawnPos += Vector3.up * 0.01f;
+
+            // 3. Minimal Richtung Kamera ziehen (damit es nicht "hinten" liegt)
+            if (Camera.main)
+                spawnPos += -Camera.main.transform.forward * 0.02f;
+
+            // 4. ROTATION ERZWINGEN:
+            // - 90° auf X → liegt flach auf dem Boden (XZ-Ebene)
+            // - zufällige Y-Rotation → natürlicher Look
+            Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
+
+            GameObject vfx = Instantiate(headHitVFX, spawnPos, rot);
+            Destroy(vfx, 1.5f);
         }
+
 
 
         animator.ResetTrigger(TRIG_GETHIT);
@@ -274,15 +288,21 @@ public class BossBeetle : EnemyBase
 
         Ctx.ForceStopAll();
 
-        if (tankDeathVFX)
+        if (beetleDeathVFX)
         {
-            GameObject vfx = Instantiate(
-                tankDeathVFX,
-                transform.position + Vector3.up * 1.5f,
-                Quaternion.identity
-            );
-            Destroy(vfx, 1.2f);
+            // 1. Position: genau unter dem Beetle
+            Vector3 spawnPos = transform.position;
+
+            // 2. leicht über Boden anheben (gegen Z-Fighting)
+            spawnPos += Vector3.up * 0.02f;
+
+            // 3. flach auf Boden legen + zufällige Rotation
+            Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
+
+            GameObject vfx = Instantiate(beetleDeathVFX, spawnPos, rot);
+            Destroy(vfx, 5f);
         }
+
 
         if (deathSound)
             AudioManager.Instance.PlaySound3D(deathSound, transform.position);

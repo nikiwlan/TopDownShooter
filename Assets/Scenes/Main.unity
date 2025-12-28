@@ -11507,7 +11507,7 @@ MonoBehaviour:
   stopPadding: 0
   bodyHitSound: {fileID: 0}
   bodyHitVolume: 1
-  maxHealth: 12
+  maxHealth: 1
   walkSpeed: 3
   runSpeed: 15
   runStartRange: 12
@@ -11543,8 +11543,8 @@ MonoBehaviour:
   attackCooldown3: 2
   actionRecovery: 1
   animator: {fileID: 0}
-  tankHitVFX: {fileID: 0}
-  tankDeathVFX: {fileID: 0}
+  headHitVFX: {fileID: 9071036190686454750, guid: de8b8cfaf75a866468f24cb2539afcbc, type: 3}
+  beetleDeathVFX: {fileID: 9071036190686454750, guid: 3000d2e2da85b344780ccc3775ccd9cc, type: 3}
   attackHitSound: {fileID: 0}
   hitSound: {fileID: 0}
   deathSound: {fileID: 0}
