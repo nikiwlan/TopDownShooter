@@ -2988,9 +2988,9 @@ GameObject:
   m_Component:
   - component: {fileID: 713963026}
   - component: {fileID: 713963027}
-  m_Layer: 13
+  m_Layer: 0
   m_Name: AttackOrigin1
-  m_TagString: EnemyHead
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10643,7 +10643,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1022451523618440, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1035799059508338, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_Layer
@@ -10783,7 +10783,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1185333777601318, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1187230802311282, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_Layer
@@ -11375,7 +11375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1987720806421918, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_Layer
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1987720806421918, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_IsActive
@@ -11383,7 +11383,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1987720806421918, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_TagString
-      value: Enemy
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 4782747046613586, guid: a2dfe588a42016e40892b72d31fd1cf6, type: 3}
       propertyPath: m_RootOrder
@@ -11505,7 +11505,7 @@ MonoBehaviour:
   bossBodyCollider: {fileID: 1055584660}
   playerBodyCollider: {fileID: 1978811933}
   stopPadding: 0
-  maxHealth: 12
+  maxHealth: 30
   walkSpeed: 3
   runSpeed: 15
   runStartRange: 12
@@ -11533,7 +11533,7 @@ MonoBehaviour:
   attackRange1: 1
   attackRange2: 0.5
   attackRange3: 1
-  attackDuration1: 1
+  attackDuration1: 3
   attackDuration2: 0
   attackDuration3: 0.3
   attackCooldown1: 1.5
@@ -11546,11 +11546,11 @@ MonoBehaviour:
   normalAttackSound: {fileID: 8300000, guid: ed0049b3e6089f94cb538fe5a5dd489f, type: 3}
   normalAttackVolume: 0.4
   specialAttackSound: {fileID: 8300000, guid: 1480015567d96ff41a5e6c5fc36a6519, type: 3}
-  specialAttackVolume: 0.4
+  specialAttackVolume: 0.5
   runSound: {fileID: 8300000, guid: e379565104e084e469287d06fda001fc, type: 3}
-  runVolume: 0.4
+  runVolume: 0.2
   walkLoopSound: {fileID: 8300000, guid: 431aec2db54d2ac41b934f6348b059bc, type: 3}
-  walkLoopVolume: 0.4
+  walkLoopVolume: 0.1
   wallCollisionSound: {fileID: 8300000, guid: eeb1c0ceb5c8b154080c164ab4728395, type: 3}
   wallCollisionVolume: 0.4
   deathSound: {fileID: 8300000, guid: ffd69b7a20e229b4aaf8a37c26d61e42, type: 3}
@@ -11561,7 +11561,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d0cc074e3eeb4454c9046aa2daf33204, type: 3}
   - {fileID: 8300000, guid: 681968694a8e6f54a9c2dd735c33e77e, type: 3}
   headHitVolume: 0.4
-  bodyHit: {fileID: 0}
+  bodyHit: {fileID: 8300000, guid: 82c8368decead6e4a89354b54339f5bb, type: 3}
   bodyHitVolume: 0.4
   rageSound: {fileID: 8300000, guid: 8f1a962f17e4aa749b4b268789aefd99, type: 3}
   rageVolume: 0.5
@@ -14278,9 +14278,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1733531456}
   - component: {fileID: 1733531457}
-  m_Layer: 13
+  m_Layer: 0
   m_Name: AttackOrigin2
-  m_TagString: EnemyHead
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -16748,9 +16748,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2063698231}
   - component: {fileID: 2063698232}
-  m_Layer: 13
+  m_Layer: 0
   m_Name: AttackOriginSpecial
-  m_TagString: EnemyHead
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
