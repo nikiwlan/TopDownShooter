@@ -9364,6 +9364,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1055584659}
   - component: {fileID: 1055584660}
+  - component: {fileID: 1055584661}
   m_Layer: 13
   m_Name: Hitbox_Head
   m_TagString: EnemyHead
@@ -9400,6 +9401,21 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0.7, z: 0}
+--- !u!114 &1055584661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1055584658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58fc5fc45da410447aa722ae2f0ca75b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boss: {fileID: 1329725629}
+  damage: 1
+  cooldown: 0.6
 --- !u!1 &1080920580
 GameObject:
   m_ObjectHideFlags: 0
@@ -11505,7 +11521,7 @@ MonoBehaviour:
   bossBodyCollider: {fileID: 1055584660}
   playerBodyCollider: {fileID: 1978811933}
   stopPadding: 0
-  maxHealth: 30
+  maxHealth: 12
   walkSpeed: 3
   runSpeed: 15
   runStartRange: 12
@@ -11533,12 +11549,12 @@ MonoBehaviour:
   attackRange1: 1
   attackRange2: 0.5
   attackRange3: 1
-  attackDuration1: 3
+  attackDuration1: 1.5
   attackDuration2: 0
   attackDuration3: 0.3
   attackCooldown1: 1.5
-  attackCooldown2: 2
-  attackCooldown3: 2
+  attackCooldown2: 3
+  attackCooldown3: 3
   actionRecovery: 1
   animator: {fileID: 0}
   headHitVFX: {fileID: 9071036190686454750, guid: de8b8cfaf75a866468f24cb2539afcbc, type: 3}

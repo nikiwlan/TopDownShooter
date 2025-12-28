@@ -382,6 +382,21 @@ public class BossBeetle : EnemyBase
             Die();
     }
 
+    public void ForceStartAttack2()
+    {
+        // Sicherheitschecks
+        if (Ctx == null) return;
+        if (Ctx.IsAttacking) return;
+
+        // Phase prüfen (optional, aber sicher)
+        int phase = animator.GetInteger("Phase");
+        if (phase < 1) return;
+
+        // Attacke 2 = Index 1 (0-basiert)
+        Ctx.TryStartNormalAttack(1);
+    }
+
+
     protected override void Die()
     {
         if (_isDead) return;
@@ -419,21 +434,5 @@ public class BossBeetle : EnemyBase
     protected override void OnDeathDestroyed()
     {
         Destroy(gameObject, 4.6f);
-    }
-
-    protected override void OnTriggerEnter(Collider other)
-    {
-        base.OnTriggerEnter(other);
-
-        if (_isDead) return;
-
-        if (other.CompareTag("Player") && player != null)
-        {
-            if (Time.time >= _nextHitTime)
-            {
-                _nextHitTime = Time.time + _contactCooldown;
-                player.TakeDamage(1);
-            }
-        }
     }
 }
