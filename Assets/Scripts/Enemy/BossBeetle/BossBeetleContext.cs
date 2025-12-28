@@ -1,4 +1,4 @@
-// BossBeetleContext.cs
+﻿// BossBeetleContext.cs
 using UnityEngine;
 using System.Collections;
 
@@ -238,7 +238,16 @@ public sealed class BossBeetleContext
         Owner.StopWalkLoop();
 
         if (Owner.stunIconPrefab && _stunIconInstance == null)
-            _stunIconInstance = Object.Instantiate(Owner.stunIconPrefab, Owner.stunIconAnchor.position, Quaternion.identity, Owner.stunIconAnchor);
+        {
+            _stunIconInstance = Object.Instantiate(
+                Owner.stunIconPrefab,
+                Owner.stunIconAnchor
+            );
+
+            // 🔥 WICHTIG: flach auf den Boden drehen
+            _stunIconInstance.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        }
+
     }
 
     private void EndStun()

@@ -1724,6 +1724,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 424571388}
   m_CullTransparentMesh: 1
+--- !u!1 &445701963
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 445701964}
+  m_Layer: 0
+  m_Name: StunIconAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &445701964
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 445701963}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.76, z: 1.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1329725631}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &472494546
 GameObject:
   m_ObjectHideFlags: 0
@@ -11538,8 +11569,8 @@ MonoBehaviour:
   runCooldownAfterRun: 2
   runCooldownAfterStun: 2
   wallStunDuration: 3
-  stunIconPrefab: {fileID: 0}
-  stunIconAnchor: {fileID: 0}
+  stunIconPrefab: {fileID: 8225542500453442854, guid: 1f1ade0c4dfd5b14bbe3fdaab533b39d, type: 3}
+  stunIconAnchor: {fileID: 445701964}
   walkSpeedPhase2: 4
   rageDuration: 4
   immuneDuringRage: 1
