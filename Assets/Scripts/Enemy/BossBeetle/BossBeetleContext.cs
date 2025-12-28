@@ -58,6 +58,7 @@ public sealed class BossBeetleContext
             if (Time.time >= _stunEndTime)
                 EndStun();
 
+            Owner.StopWalkLoop();
             Owner.animator.SetFloat("Speed", 0f);
             return true;
         }
@@ -69,12 +70,15 @@ public sealed class BossBeetleContext
         {
             if (IsRunning) StopRunAndCooldown(0f);
             IsAttacking = false;
+
+            Owner.StopWalkLoop();
             Owner.animator.SetFloat("Speed", 0f);
             return true;
         }
 
         if (IsAttacking)
         {
+            Owner.StopWalkLoop();
             Owner.animator.SetFloat("Speed", 0f);
             return true;
         }
@@ -87,14 +91,22 @@ public sealed class BossBeetleContext
         IsRaging = true;
         _rageEndTime = Time.time + Owner.rageDuration;
 
+        if (Owner.rageSound)
+            AudioManager.Instance.PlaySound3D(
+                Owner.rageSound,
+                Owner.transform.position,
+                Owner.rageVolume
+            );
+
         IsAttacking = false;
         if (IsRunning) StopRunAndCooldown(0f);
+
+        Owner.StopWalkLoop();
 
         // Safety: Trigger resetten
         Owner.animator.ResetTrigger(BossBeetle.TRIG_ATTACK);
         Owner.animator.ResetTrigger(BossBeetle.TRIG_SPECIAL);
         Owner.animator.ResetTrigger(BossBeetle.TRIG_GETHIT);
-
 
         Owner.animator.SetTrigger(BossBeetle.TRIG_RAGE);
         Owner.animator.SetFloat("Speed", 0f);
@@ -124,6 +136,10 @@ public sealed class BossBeetleContext
         toPlayer.y = 0f;
         _runDir = (toPlayer.sqrMagnitude > 0.0001f) ? toPlayer.normalized : Owner.transform.forward;
 
+        // Running: kein Loop -> OneShot beim Start
+        Owner.StopWalkLoop();
+        Owner.PlayRunOneShot();
+
         ApplyAnimatorRunFlag();
     }
 
@@ -151,6 +167,8 @@ public sealed class BossBeetleContext
         if (!PlayerTransform) return;
         if (pivot == null) pivot = Owner.transform;
 
+        Owner.StopWalkLoop();
+
         Vector3 playerPoint = PlayerTransform.position;
         if (Owner.playerBodyCollider != null)
             playerPoint = Owner.playerBodyCollider.ClosestPoint(pivot.position);
@@ -169,6 +187,9 @@ public sealed class BossBeetleContext
 
         if (Physics.Raycast(pivot.position + Vector3.up * 0.2f, _runDir, Owner.runWallCheckDistance, Owner.wallLayer))
         {
+            // NEW: Wall collision one-shot
+            Owner.PlayWallCollisionOneShot();
+
             StopRunAndCooldown(0f);
             StartStun();
             return;
@@ -214,6 +235,8 @@ public sealed class BossBeetleContext
         IsStunned = true;
         _stunEndTime = Time.time + Owner.wallStunDuration;
 
+        Owner.StopWalkLoop();
+
         if (Owner.stunIconPrefab && _stunIconInstance == null)
             _stunIconInstance = Object.Instantiate(Owner.stunIconPrefab, Owner.stunIconAnchor.position, Quaternion.identity, Owner.stunIconAnchor);
     }
@@ -232,7 +255,7 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // WALK MOVE
+    // WALK MOVE (+ walk loop)
     // ==========================
     public void MoveTowardsPlayer(float speed, Transform origin)
     {
@@ -245,7 +268,11 @@ public sealed class BossBeetleContext
         Vector3 dir = (playerPoint - origin.position);
         dir.y = 0f;
         float dist = dir.magnitude;
-        if (dist < 0.0001f) return;
+        if (dist < 0.0001f)
+        {
+            Owner.StopWalkLoop();
+            return;
+        }
         dir /= dist;
 
         float bossRadius = 0f;
@@ -256,19 +283,34 @@ public sealed class BossBeetleContext
         }
 
         float desiredStopDist = bossRadius + Owner.stopPadding;
-        if (dist <= desiredStopDist) return;
+        if (dist <= desiredStopDist)
+        {
+            Owner.StopWalkLoop();
+            return;
+        }
 
         float step = speed * Time.deltaTime;
         float allowedStep = Mathf.Min(step, dist - desiredStopDist);
 
-        if (!Physics.Raycast(Owner.transform.position, dir, allowedStep + 0.2f, Owner.wallLayer))
+        bool moved = false;
+
+        if (allowedStep > 0f && !Physics.Raycast(Owner.transform.position, dir, allowedStep + 0.2f, Owner.wallLayer))
+        {
             Owner.transform.position += dir * allowedStep;
+            moved = true;
+        }
 
         Owner.transform.rotation = Quaternion.Slerp(
             Owner.transform.rotation,
             Quaternion.LookRotation(dir),
             0.2f
         );
+
+        // NEW: Walk loop nur wenn wirklich Bewegung stattfindet
+        if (moved && !IsRunning && !IsAttacking && !IsStunned && !IsRaging)
+            Owner.StartWalkLoop();
+        else
+            Owner.StopWalkLoop();
     }
 
     // ==========================
@@ -315,7 +357,7 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // NORMAL ATTACK (Trigger: IsAttacking)
+    // NORMAL ATTACK
     // ==========================
     public bool CanNormalAttackNow() => Time.time >= _nextNormalAttackTime && CanStartAnyActionNow();
 
@@ -335,12 +377,11 @@ public sealed class BossBeetleContext
         Owner.animator.ResetTrigger(BossBeetle.TRIG_ATTACK);
         Owner.animator.SetTrigger(BossBeetle.TRIG_ATTACK);
 
-
         float dur = GetAttackDurationForPhase(phase);
         yield return new WaitForSeconds(dur * 0.5f);
 
-        if (Owner.attackHitSound)
-            AudioManager.Instance.PlaySound3D(Owner.attackHitSound, Owner.transform.position);
+        if (Owner.normalAttackSound)
+            AudioManager.Instance.PlaySound3D(Owner.normalAttackSound, Owner.transform.position, Owner.normalAttackVolume);
 
         Owner.player?.TakeDamage(1);
 
@@ -352,8 +393,7 @@ public sealed class BossBeetleContext
     }
 
     // ==========================
-    // SPECIAL ATTACK (Trigger: SpecialHit)
-    // Nutzt hier einfach Phase2-Werte (Range3/Damage3/Duration3/Cooldown3)
+    // SPECIAL ATTACK
     // ==========================
     public bool CanSpecialAttackNow() => Time.time >= _nextSpecialAttackTime && CanStartAnyActionNow();
 
@@ -367,21 +407,19 @@ public sealed class BossBeetleContext
 
     private IEnumerator SpecialAttackRoutine()
     {
-        // SpecialHit ist für Walk gedacht -> wir stoppen Run, falls gerade noch was läuft
         AbortRunForAttack();
 
         IsAttacking = true;
         Owner.animator.ResetTrigger(BossBeetle.TRIG_SPECIAL);
         Owner.animator.SetTrigger(BossBeetle.TRIG_SPECIAL);
 
-        // Wir verwenden für Timing/Schaden die Phase2(=3) Stats
         int phase2 = 2;
         float dur = GetAttackDurationForPhase(phase2);
 
         yield return new WaitForSeconds(dur * 0.5f);
 
-        if (Owner.attackHitSound)
-            AudioManager.Instance.PlaySound3D(Owner.attackHitSound, Owner.transform.position);
+        if (Owner.specialAttackSound)
+            AudioManager.Instance.PlaySound3D(Owner.specialAttackSound, Owner.transform.position, Owner.specialAttackVolume);
 
         Owner.player?.TakeDamage(1);
 
@@ -397,6 +435,7 @@ public sealed class BossBeetleContext
         if (IsRunning)
             StopRunAndCooldown(0f);
 
+        Owner.StopWalkLoop();
         Owner.animator.SetFloat("Speed", 0f);
     }
 
@@ -407,6 +446,8 @@ public sealed class BossBeetleContext
     {
         IsRunning = false;
         ApplyAnimatorRunFlag();
+
+        Owner.StopWalkLoop();
 
         if (IsStunned)
         {

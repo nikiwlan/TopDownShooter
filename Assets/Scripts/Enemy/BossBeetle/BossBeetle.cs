@@ -8,10 +8,6 @@ public class BossBeetle : EnemyBase
     [SerializeField] internal Collider playerBodyCollider;
     [SerializeField] internal float stopPadding = 0.2f;
 
-    [Header("Body Hit (Phase 0)")]
-    public AudioClip bodyHitSound;
-    [Range(0f, 1f)] public float bodyHitVolume = 1f;
-
     [Header("Health / Phases")]
     public int maxHealth = 30;
 
@@ -74,10 +70,40 @@ public class BossBeetle : EnemyBase
     public GameObject headHitVFX;
     public GameObject beetleDeathVFX;
 
-    [Header("Audio Clips")]
-    public AudioClip attackHitSound;
-    public AudioClip hitSound;
+    [Header("Attack Audio")]
+    [SerializeField] internal AudioClip normalAttackSound;
+    [Range(0f, 1f)][SerializeField] internal float normalAttackVolume = 1f;
+
+    [SerializeField] internal AudioClip specialAttackSound;
+    [Range(0f, 1f)][SerializeField] internal float specialAttackVolume = 1f;
+
+    // ==========================
+    // NEW: Movement Audio
+    // ==========================
+    [Header("Movement Audio")]
+    [SerializeField] internal AudioClip runSound;                 // one-shot on run start
+    [Range(0f, 1f)][SerializeField] internal float runVolume = 1f;
+
+    [SerializeField] internal AudioClip walkLoopSound;            // loop while walking
+    [Range(0f, 1f)][SerializeField] internal float walkLoopVolume = 1f;
+
+    [SerializeField] internal AudioClip wallCollisionSound;       // one-shot on wall crash
+    [Range(0f, 1f)][SerializeField] internal float wallCollisionVolume = 1f;
+
+    [Header("Other Audio")]
     public AudioClip deathSound;
+
+    [Header("Hit Audio")]
+    [SerializeField] private AudioClip[] headHitSounds = new AudioClip[4];
+    [Range(0f, 1f)][SerializeField] private float headHitVolume = 1f;
+
+    [Header("Body Hit (Phase 0)")]
+    public AudioClip bodyHit; // renamed from bodyHitSound
+    [Range(0f, 1f)] public float bodyHitVolume = 1f;
+
+    [Header("Rage Audio")]
+    public AudioClip rageSound;
+    [Range(0f, 1f)] public float rageVolume = 1f;
 
     [Header("Player Contact Damage")]
     [SerializeField] private float _contactCooldown = 0.4f;
@@ -110,6 +136,11 @@ public class BossBeetle : EnemyBase
     private bool _hasCloseParam;
     private bool _hasSpeedParam;
 
+    // ==========================
+    // NEW: Walk loop source
+    // ==========================
+    private AudioSource _walkLoopSource;
+
     protected override void Start()
     {
         base.Start();
@@ -133,6 +164,8 @@ public class BossBeetle : EnemyBase
 
         if (!stunIconAnchor) stunIconAnchor = transform;
 
+        EnsureWalkLoopSource();
+
         Ctx = new BossBeetleContext(this, playerTransform);
 
         _phase0 = new BossBeetlePhase0(Ctx);
@@ -145,10 +178,87 @@ public class BossBeetle : EnemyBase
         Ctx.ApplyAnimatorRunFlag();
     }
 
+    private void EnsureWalkLoopSource()
+    {
+        if (_walkLoopSource != null) return;
+
+        _walkLoopSource = gameObject.AddComponent<AudioSource>();
+        _walkLoopSource.playOnAwake = false;
+        _walkLoopSource.loop = true;
+
+        // 3D Sound (damit es zur Position passt)
+        _walkLoopSource.spatialBlend = 1f;
+        _walkLoopSource.rolloffMode = AudioRolloffMode.Linear;
+        _walkLoopSource.minDistance = 1.5f;
+        _walkLoopSource.maxDistance = 25f;
+    }
+
+    internal void StartWalkLoop()
+    {
+        if (!walkLoopSound) return;
+
+        EnsureWalkLoopSource();
+
+        // Clip setzen (falls gewechselt) + Volume updaten
+        if (_walkLoopSource.clip != walkLoopSound)
+            _walkLoopSource.clip = walkLoopSound;
+
+        _walkLoopSource.volume = Mathf.Clamp01(walkLoopVolume);
+
+        if (!_walkLoopSource.isPlaying)
+            _walkLoopSource.Play();
+    }
+
+    internal void StopWalkLoop()
+    {
+        if (_walkLoopSource != null && _walkLoopSource.isPlaying)
+            _walkLoopSource.Stop();
+    }
+
+    internal void PlayRunOneShot()
+    {
+        if (runSound)
+            AudioManager.Instance.PlaySound3D(runSound, transform.position, runVolume);
+    }
+
+    internal void PlayWallCollisionOneShot()
+    {
+        if (wallCollisionSound)
+            AudioManager.Instance.PlaySound3D(wallCollisionSound, transform.position, wallCollisionVolume);
+    }
+
     private void CacheAnimatorParams()
     {
         _hasCloseParam = HasAnimatorParam(animator, PARAM_CLOSE, AnimatorControllerParameterType.Bool);
         _hasSpeedParam = HasAnimatorParam(animator, PARAM_SPEED, AnimatorControllerParameterType.Float);
+    }
+
+    private void PlayRandomHeadHitSound(Vector3 position)
+    {
+        if (headHitSounds == null || headHitSounds.Length == 0) return;
+
+        // Zähle nur gültige Clips (falls du weniger als 4 befüllt hast)
+        int count = 0;
+        for (int i = 0; i < headHitSounds.Length; i++)
+            if (headHitSounds[i] != null) count++;
+
+        if (count == 0) return;
+
+        // Wähle zufällig aus den nicht-null Clips
+        int pick = Random.Range(0, count);
+        AudioClip chosen = null;
+
+        for (int i = 0; i < headHitSounds.Length; i++)
+        {
+            var clip = headHitSounds[i];
+            if (clip == null) continue;
+
+            if (pick == 0) { chosen = clip; break; }
+            pick--;
+        }
+
+        if (chosen)
+            AudioManager.Instance.PlaySound3D(chosen, position, headHitVolume);
     }
 
     private static bool HasAnimatorParam(Animator anim, string name, AnimatorControllerParameterType type)
@@ -230,52 +340,43 @@ public class BossBeetle : EnemyBase
 
     public void OnBodyHit(Vector3 hitPoint)
     {
-        if (bodyHitSound)
-            AudioManager.Instance.PlaySound3D(bodyHitSound, hitPoint, bodyHitVolume);
+        if (bodyHit)
+            AudioManager.Instance.PlaySound3D(bodyHit, hitPoint, bodyHitVolume);
     }
 
     public override void TakeDamage(int amount, Vector3 hitDir, Vector3 hitPoint = default)
     {
-
         if (health <= 0) return;
         if (_isDead) return;
 
         if (Ctx.IsRaging && immuneDuringRage)
             return;
 
-        if (hitSound)
-            AudioManager.Instance.PlaySound3D(hitSound, transform.position);
+        // Headshot/Hit: random Sound am Trefferpunkt (oder Boss-Position fallback)
+        Vector3 soundPos = (hitPoint == Vector3.zero) ? transform.position : hitPoint;
+        PlayRandomHeadHitSound(soundPos);
 
         health -= amount;
 
         if (headHitVFX)
         {
-            // 1. Spawnposition
             Vector3 spawnPos = (hitPoint == Vector3.zero)
                 ? transform.position + Vector3.up * 1.5f
                 : hitPoint;
 
-            // 2. Minimal anheben (gegen Z-Fighting / im Mesh verschwinden)
             spawnPos += Vector3.up * 0.01f;
 
-            // 3. Minimal Richtung Kamera ziehen (damit es nicht "hinten" liegt)
             if (Camera.main)
                 spawnPos += -Camera.main.transform.forward * 0.02f;
 
-            // 4. ROTATION ERZWINGEN:
-            // - 90° auf X → liegt flach auf dem Boden (XZ-Ebene)
-            // - zufällige Y-Rotation → natürlicher Look
             Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
 
             GameObject vfx = Instantiate(headHitVFX, spawnPos, rot);
             Destroy(vfx, 1.5f);
         }
 
-
-
         animator.ResetTrigger(TRIG_GETHIT);
         animator.SetTrigger(TRIG_GETHIT);
-       
 
         if (health <= 0)
             Die();
@@ -287,22 +388,18 @@ public class BossBeetle : EnemyBase
         _isDead = true;
 
         Ctx.ForceStopAll();
+        StopWalkLoop();
 
         if (beetleDeathVFX)
         {
-            // 1. Position: genau unter dem Beetle
             Vector3 spawnPos = transform.position;
-
-            // 2. leicht über Boden anheben (gegen Z-Fighting)
             spawnPos += Vector3.up * 0.02f;
 
-            // 3. flach auf Boden legen + zufällige Rotation
             Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
 
             GameObject vfx = Instantiate(beetleDeathVFX, spawnPos, rot);
             Destroy(vfx, 5f);
         }
-
 
         if (deathSound)
             AudioManager.Instance.PlaySound3D(deathSound, transform.position);
