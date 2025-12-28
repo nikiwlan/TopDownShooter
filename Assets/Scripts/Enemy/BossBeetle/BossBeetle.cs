@@ -233,6 +233,13 @@ public class BossBeetle : EnemyBase
         _hasSpeedParam = HasAnimatorParam(animator, PARAM_SPEED, AnimatorControllerParameterType.Float);
     }
 
+    private void PlayInvincibleBodyHit(Vector3 hitPoint)
+    {
+        Vector3 pos = (hitPoint == Vector3.zero) ? transform.position : hitPoint;
+        if (bodyHit)
+            AudioManager.Instance.PlaySound3D(bodyHit, pos, bodyHitVolume);
+    }
+
     private void PlayRandomHeadHitSound(Vector3 position)
     {
         if (headHitSounds == null || headHitSounds.Length == 0) return;
@@ -349,8 +356,20 @@ public class BossBeetle : EnemyBase
         if (health <= 0) return;
         if (_isDead) return;
 
-        if (Ctx.IsRaging && immuneDuringRage)
+        bool canTakeDamageNow = (Ctx != null && Ctx.IsRunning);
+
+        if (!canTakeDamageNow)
+        {
+            PlayInvincibleBodyHit(hitPoint);
             return;
+        }
+
+        if (Ctx.IsRaging && immuneDuringRage)
+        {
+            PlayInvincibleBodyHit(hitPoint);
+            return;
+        }
+
 
         // Headshot/Hit: random Sound am Trefferpunkt (oder Boss-Position fallback)
         Vector3 soundPos = (hitPoint == Vector3.zero) ? transform.position : hitPoint;
