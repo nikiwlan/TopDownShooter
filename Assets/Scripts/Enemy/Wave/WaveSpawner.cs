@@ -1,19 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
-using TMPro; // WICHTIG: Für TextMeshPro
+using TMPro;
 
 public class WaveSpawner : MonoBehaviour
 {
     [Header("References")]
     public PlayerHealth playerHealth;
-    public ScoreManager scoreManager; // ZIEH DEINEN SCORE MANAGER HIER REIN!
+    public ScoreManager scoreManager;
+    public SkillManager skillManager; // HIER DEN NEUEN SKILL MANAGER REINZIEHEN!
 
     [Header("UI Elements")]
-    public TextMeshProUGUI centerText;  // Dein Text in der Mitte
-    public GameObject skillMenuUI;      // Dein Skill-Auswahl Panel
+    public TextMeshProUGUI centerText;
 
     [Header("Gates (Spawn Points)")]
     public Transform[] gates;
+    public Transform bossSpawnPoint;
 
     [Header("Enemy Prefabs")]
     public GameObject fastEnemyPrefab;
@@ -29,16 +30,13 @@ public class WaveSpawner : MonoBehaviour
 
     [Header("Runtime")]
     public bool autoStart = true;
-    public float fastKillTimeLimit = 5.0f; // 5 Sekunden Zeitfenster für Bonus
+    public float fastKillTimeLimit = 5.0f;
 
     private int currentWaveIndex = 0;
-    private bool skillMenuOpen = false; // Check ob wir warten müssen
-    private float lastSpawnTime; // Hier speichern wir den Zeitpunkt des letzten Spawns
+    private float lastSpawnTime;
 
     void Start()
     {
-        // Sicherstellen, dass UI am Anfang richtig ist
-        if (skillMenuUI) skillMenuUI.SetActive(false);
         if (centerText) centerText.text = "";
 
         if (autoStart)
@@ -47,7 +45,7 @@ public class WaveSpawner : MonoBehaviour
 
     IEnumerator WaveLoop()
     {
-        // --- 1. START COOLDOWN (5 Sekunden ganz am Anfang) ---
+        // Start Cooldown
         yield return StartCoroutine(StartCountdown(5));
 
         while (currentWaveIndex < waves.Length)
@@ -57,16 +55,13 @@ public class WaveSpawner : MonoBehaviour
 
             WaveDefinition wave = waves[currentWaveIndex];
 
-            // --- 2. WAVE NAME ANZEIGEN ---
+            // --- WAVE NAME ---
             centerText.text = wave.waveName;
             centerText.gameObject.SetActive(true);
             yield return new WaitForSeconds(2f);
             centerText.text = "";
 
-            Debug.Log($"[WaveSpawner] START {wave.waveName}");
-
-            // --- 3. SPAWNING ---
-            // Wir aktualisieren lastSpawnTime bei JEDEM Spawn
+            // --- SPAWNING ---
 
             // A) Intro
             if (wave.intro != null)
@@ -103,22 +98,29 @@ public class WaveSpawner : MonoBehaviour
                 SpawnBoss(wave.bossVariant, wave.bossGateIndex);
             }
 
-            // --- 4. WARTEN BIS ALLE TOT SIND ---
+            // --- WARTEN BIS ALLE TOT SIND ---
             yield return new WaitUntil(() => CountAliveEnemies() == 0);
 
-            Debug.Log($"[WaveSpawner] END {wave.waveName}");
-
-            // --- NEU: SCORE BERECHNUNG & ANZEIGE ---
-            // Wir warten hier kurz, um die Score-Animation abzuspielen, bevor Skills kommen
+            // --- SCORE BERECHNEN ---
             yield return StartCoroutine(HandleWaveScore(currentWaveIndex));
 
-            // --- 5. SKILL CHECK (Nach Wave 4 und 9) ---
-            if (currentWaveIndex == 3 || currentWaveIndex == 8)
+            // --- SKILL SELECTION TRIGGER ---
+            // "Nach Ende Wave 9" bedeutet: currentWaveIndex ist 8 (da 0-basiert).
+            // "Nach Ende Wave 19" bedeutet: currentWaveIndex ist 18.
+            if (currentWaveIndex == 0 || currentWaveIndex == 18)
             {
-                yield return StartCoroutine(HandleSkillSelection());
+                if (skillManager != null)
+                {
+                    // Wir geben die Kontrolle kurz an den SkillManager ab
+                    yield return StartCoroutine(skillManager.StartSkillSelectionRoutine());
+                }
+                else
+                {
+                    Debug.LogWarning("[WaveSpawner] SkillManager nicht zugewiesen!");
+                }
             }
 
-            // --- 6. COOLDOWN ZUR NÄCHSTEN WAVE (5 Sekunden) ---
+            // --- COOLDOWN ZUR NÄCHSTEN WAVE ---
             if (currentWaveIndex < waves.Length - 1)
             {
                 yield return StartCoroutine(StartCountdown(5));
@@ -126,61 +128,40 @@ public class WaveSpawner : MonoBehaviour
 
             currentWaveIndex++;
         }
-
     }
 
-    // ---------- NEU: SCORE METHODE ----------
+    // ... (Rest bleibt identisch) ...
 
     IEnumerator HandleWaveScore(int index)
     {
-        // 1. Basis Score berechnen: Wave 1 = 100, Wave 2 = 200...
         int baseReward = (index + 1) * 100;
         int finalReward = baseReward;
 
-        // 2. Zeit prüfen: Wann wurde der letzte Gegner getötet (jetzt) vs. wann ist er gespawnt?
         float timeDiff = Time.time - lastSpawnTime;
         bool isFastKill = timeDiff <= fastKillTimeLimit;
 
         centerText.gameObject.SetActive(true);
-
-        // SCHRITT A: Basis Punkte anzeigen (Gelb)
-        // <size=80> macht es größer
         centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>";
 
-        yield return new WaitForSeconds(1.5f); // 1.5 Sekunden warten
+        yield return new WaitForSeconds(1.5f);
 
-        // SCHRITT B: Bonus Check
         if (isFastKill)
         {
-            // Zeige den Multiplikator Text (Rot blinkend Vorstellung)
             centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>\n<size=60><color=red>FAST KILL! x2</color></size>";
-
-            yield return new WaitForSeconds(1.0f); // Spannung...
-
-            // Verdoppeln
+            yield return new WaitForSeconds(1.0f);
             finalReward *= 2;
-
-            // Endergebnis anzeigen (Grün und Groß)
             centerText.text = $"<size=60><color=green>+{finalReward}</color></size>";
         }
         else
         {
-            // Kein Bonus, einfach Score nochmal bestätigen
             centerText.text = $"<size=60><color=white>+{finalReward}</color></size>";
         }
 
-        // SCHRITT C: Score dem Manager geben
-        if (scoreManager != null)
-        {
-            // Passen den Namen 'AddScore' an, falls deine Methode anders heißt!
-            scoreManager.AddScore(finalReward);
-        }
+        if (scoreManager != null) scoreManager.AddScore(finalReward);
 
-        yield return new WaitForSeconds(1.5f); // Ergebnis kurz stehen lassen
-        centerText.text = ""; // Text weg
+        yield return new WaitForSeconds(1.5f);
+        centerText.text = "";
     }
-
-    // ---------- HELPER ROUTINES ----------
 
     IEnumerator StartCountdown(int seconds)
     {
@@ -192,32 +173,6 @@ public class WaveSpawner : MonoBehaviour
         }
         centerText.text = "";
     }
-
-    IEnumerator HandleSkillSelection()
-    {
-        Debug.Log("Skill Selection Started");
-
-        if (skillMenuUI != null)
-        {
-            skillMenuUI.SetActive(true);
-            skillMenuOpen = true;
-            Time.timeScale = 0f;
-            yield return new WaitUntil(() => skillMenuOpen == false);
-            Time.timeScale = 1f;
-            skillMenuUI.SetActive(false);
-        }
-        else
-        {
-            Debug.LogWarning("Kein SkillMenuUI zugewiesen!");
-        }
-    }
-
-    public void OnSkillSelected()
-    {
-        skillMenuOpen = false;
-    }
-
-    // ---------- SPAWN LOGIC (Mit lastSpawnTime Update) ----------
 
     void SpawnEnemy(EnemyType type, int gateIndex)
     {
@@ -231,25 +186,31 @@ public class WaveSpawner : MonoBehaviour
         Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
         Instantiate(prefab, pos, rot);
 
-        // WICHTIG: Zeit merken!
         lastSpawnTime = Time.time;
     }
 
     void SpawnBoss(BossVariant variant, int gateIndex)
     {
-        if (gates == null || gates.Length == 0) return;
-        if (gateIndex < 0 || gateIndex >= gates.Length) return;
-
         GameObject prefab = (variant == BossVariant.Boss2) ? boss2Prefab : boss1Prefab;
         if (!prefab) return;
 
-        Vector3 pos = gates[gateIndex].position;
-        Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+        Vector3 pos;
+        Quaternion rot;
+
+        if (bossSpawnPoint != null)
+        {
+            pos = bossSpawnPoint.position;
+            rot = bossSpawnPoint.rotation;
+        }
+        else
+        {
+            if (gates == null || gates.Length == 0) return;
+            if (gateIndex < 0 || gateIndex >= gates.Length) gateIndex = 0;
+            pos = gates[gateIndex].position;
+            rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+        }
+
         Instantiate(prefab, pos, rot);
-
-        Debug.Log($"[WaveSpawner] Spawned BOSS: {variant} at Gate {gateIndex}");
-
-        // WICHTIG: Zeit merken!
         lastSpawnTime = Time.time;
     }
 
@@ -268,7 +229,6 @@ public class WaveSpawner : MonoBehaviour
     {
         float total = 0f;
         for (int i = 0; i < pool.Length; i++) total += pool[i].weight;
-
         float r = Random.value * Mathf.Max(total, 0.0001f);
         for (int i = 0; i < pool.Length; i++)
         {
