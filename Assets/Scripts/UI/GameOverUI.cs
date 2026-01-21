@@ -5,11 +5,9 @@ using UnityEngine.SceneManagement;
 
 public class GameOverUI : MonoBehaviour
 {
-    [Header("Crosshair")]
-    public GameObject crosshair;
-
     [Header("References")]
     public PlayerHealth playerHealth;
+    public GameStateManager gameStateManager; // ZIEH DEN MANAGER HIER REIN!
 
     public GameObject gameOverOverlay;
     public TextMeshProUGUI gameOverText;
@@ -17,16 +15,18 @@ public class GameOverUI : MonoBehaviour
     public TextMeshProUGUI gameOverScoreText;
 
     public Button restartButton;
-    public Button mainMenuButton; // optional
+    public Button mainMenuButton;
 
     private bool isGameOver = false;
     private float survivedTime = 0f;
 
     [Header("UI Elements to Hide On Game Over")]
-    public GameObject[] uiToHide;     // <— NEU für deine Boosts & Score UI
+    public GameObject[] uiToHide;
 
     void Start()
     {
+        if (gameStateManager == null) gameStateManager = GameStateManager.Instance;
+
         // Game Over UI verstecken
         gameOverOverlay.SetActive(false);
         gameOverText.gameObject.SetActive(false);
@@ -57,28 +57,16 @@ public class GameOverUI : MonoBehaviour
         }
     }
 
-
     void ShowGameOver()
     {
         isGameOver = true;
 
-        // Maus einschalten
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        // --- ZENTRALE LOGIK AUFRUFEN ---
+        // Spiel stopp, Maus an, KEIN PauseMenu mehr erlaubt (false)
+        if (gameStateManager != null)
+            gameStateManager.SetGameState(true, false);
 
-        // --- Crosshair deaktivieren ---
-        if (crosshair != null)
-            crosshair.SetActive(false);
-
-
-        isGameOver = true;
-
-        // Spieler kontrollen einfrieren
-        var pm = FindObjectOfType<PlayerMovement>();
-        if (pm != null) pm.isFrozen = true;
-
-        var ps = FindObjectOfType<PlayerShooting>();
-        if (ps != null) ps.isFrozen = true;
+        // --- UI SPEZIFISCHES ZEUG ---
 
         // HUD verstecken
         foreach (GameObject ui in uiToHide)
@@ -97,23 +85,21 @@ public class GameOverUI : MonoBehaviour
         if (mainMenuButton != null)
             mainMenuButton.gameObject.SetActive(true);
 
-        // Zeit berechnen
+        // Zeit & Score anzeigen
         int minutes = Mathf.FloorToInt(survivedTime / 60f);
         int seconds = Mathf.FloorToInt(survivedTime % 60f);
         survivedText.text = $"You survived: {minutes:00}:{seconds:00}";
 
-        // Score anzeigen
-        int finalScore = ScoreManager.Instance.GetScore();
+        int finalScore = 0;
+        if (ScoreManager.Instance != null)
+            finalScore = ScoreManager.Instance.GetScore();
+
         gameOverScoreText.text = $"Score: {finalScore}";
 
-        // ⭐⭐⭐ HIER SPEICHERN WIR DEN SCORE ⭐⭐⭐
-        HighscoreManager.SaveScore(finalScore);
-
-        // Spiel einfrieren
-        Time.timeScale = 0f;
+        // Highscore speichern
+        // (Kommentiere das ein, wenn deine Highscore Klasse existiert)
+        // HighscoreManager.SaveScore(finalScore);
     }
-
-
 
     void RestartGame()
     {

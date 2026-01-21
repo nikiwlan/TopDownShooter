@@ -6,23 +6,16 @@ public class SkillManager : MonoBehaviour
     [Header("UI References")]
     public GameObject skillMenuUI;
 
-    [Header("Game Control References")]
-    [Tooltip("Zieh hier dein Crosshair-GameObject rein")]
-    public GameObject crosshairUI;
-
-    [Tooltip("Zieh hier das Skript rein, das den Spieler bewegt/dreht (z.B. PlayerController)")]
-    public MonoBehaviour playerMovementScript;
-
-    [Tooltip("Zieh hier das Skript rein, das schießt (z.B. ShootingController)")]
-    public MonoBehaviour playerShootingScript;
-
-    [Tooltip("Zieh hier dein PauseMenu-Skript rein")]
-    public MonoBehaviour pauseMenuScript;
+    [Header("Game State Manager")]
+    public GameStateManager gameStateManager; // ZIEH DEN MANAGER HIER REIN!
 
     private bool isSelecting = false;
 
     void Start()
     {
+        // Falls vergessen, suchen wir ihn selbst
+        if (gameStateManager == null) gameStateManager = GameStateManager.Instance;
+
         if (skillMenuUI) skillMenuUI.SetActive(false);
     }
 
@@ -34,43 +27,27 @@ public class SkillManager : MonoBehaviour
             yield break;
         }
 
-        // 1. Alles DEAKTIVIEREN
-        SetGameControlsActive(false);
+        // 1. Spiel einfrieren (ESC Taste deaktivieren = false)
+        if (gameStateManager != null)
+            gameStateManager.SetGameState(true, false);
 
-        // 2. Menü anzeigen & Zeit stopp
+        // 2. Menü anzeigen
         skillMenuUI.SetActive(true);
         isSelecting = true;
-        Time.timeScale = 0f;
 
         // 3. Warten auf Wahl
         yield return new WaitUntil(() => isSelecting == false);
 
-        // 4. Aufräumen & Zeit weiter
-        Time.timeScale = 1f;
+        // 4. Menü ausblenden
         skillMenuUI.SetActive(false);
 
-        // 5. Alles wieder AKTIVIEREN
-        SetGameControlsActive(true);
+        // 5. Spiel weiterlaufen lassen (ESC Taste wieder erlauben = true)
+        if (gameStateManager != null)
+            gameStateManager.SetGameState(false, true);
     }
 
     public void ConfirmSkillSelection()
     {
         isSelecting = false;
-    }
-
-    // Hilfsfunktion zum An/Ausschalten
-    void SetGameControlsActive(bool isActive)
-    {
-        // Crosshair ausblenden/einblenden
-        if (crosshairUI) crosshairUI.SetActive(isActive);
-
-        // Bewegung/Drehung sperren/entsperren
-        if (playerMovementScript) playerMovementScript.enabled = isActive;
-
-        // Schießen sperren/entsperren
-        if (playerShootingScript) playerShootingScript.enabled = isActive;
-
-        // Pause-Taste (ESC) sperren/entsperren
-        if (pauseMenuScript) pauseMenuScript.enabled = isActive;
     }
 }
