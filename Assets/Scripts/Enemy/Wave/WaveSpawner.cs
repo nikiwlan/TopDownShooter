@@ -7,7 +7,7 @@ public class WaveSpawner : MonoBehaviour
     [Header("References")]
     public PlayerHealth playerHealth;
     public ScoreManager scoreManager;
-    public SkillManager skillManager; // HIER DEN NEUEN SKILL MANAGER REINZIEHEN!
+    public SkillManager skillManager;
 
     [Header("UI Elements")]
     public TextMeshProUGUI centerText;
@@ -22,8 +22,8 @@ public class WaveSpawner : MonoBehaviour
     public GameObject rangedEnemyPrefab;
 
     [Header("Boss Prefabs")]
-    public GameObject boss1Prefab;
-    public GameObject boss2Prefab;
+    public GameObject boss1Prefab; // Zieh hier dein Boss-Prefab rein
+    public GameObject boss2Prefab; // Hier auch (oder leer lassen, Code regelt das)
 
     [Header("Waves")]
     public WaveDefinition[] waves;
@@ -105,13 +105,10 @@ public class WaveSpawner : MonoBehaviour
             yield return StartCoroutine(HandleWaveScore(currentWaveIndex));
 
             // --- SKILL SELECTION TRIGGER ---
-            // "Nach Ende Wave 9" bedeutet: currentWaveIndex ist 8 (da 0-basiert).
-            // "Nach Ende Wave 19" bedeutet: currentWaveIndex ist 18.
-            if (currentWaveIndex == 0 || currentWaveIndex == 18)
+            if (currentWaveIndex == 0 || currentWaveIndex == 1) // Nach Wave 1 (Index 0) und Wave 19
             {
                 if (skillManager != null)
                 {
-                    // Wir geben die Kontrolle kurz an den SkillManager ab
                     yield return StartCoroutine(skillManager.StartSkillSelectionRoutine());
                 }
                 else
@@ -129,8 +126,6 @@ public class WaveSpawner : MonoBehaviour
             currentWaveIndex++;
         }
     }
-
-    // ... (Rest bleibt identisch) ...
 
     IEnumerator HandleWaveScore(int index)
     {
@@ -189,11 +184,21 @@ public class WaveSpawner : MonoBehaviour
         lastSpawnTime = Time.time;
     }
 
+    // ---------------------------------------------------------
+    // WICHTIG: Das hier ist die aktualisierte Methode!
+    // ---------------------------------------------------------
     void SpawnBoss(BossVariant variant, int gateIndex)
     {
-        GameObject prefab = (variant == BossVariant.Boss2) ? boss2Prefab : boss1Prefab;
+        // 1. Prefab wählen (Standard Boss1, außer Boss2 ist explizit gewünscht & zugewiesen)
+        GameObject prefab = boss1Prefab;
+        if (variant == BossVariant.Boss2 && boss2Prefab != null)
+        {
+            prefab = boss2Prefab;
+        }
+
         if (!prefab) return;
 
+        // 2. Position bestimmen
         Vector3 pos;
         Quaternion rot;
 
@@ -210,8 +215,25 @@ public class WaveSpawner : MonoBehaviour
             rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
         }
 
-        Instantiate(prefab, pos, rot);
+        // 3. Spawnen UND Referenz speichern
+        GameObject bossObj = Instantiate(prefab, pos, rot);
         lastSpawnTime = Time.time;
+
+        // 4. Konfigurieren (Das hat gefehlt!)
+        BossBeetle beetle = bossObj.GetComponent<BossBeetle>();
+        if (beetle != null)
+        {
+            if (variant == BossVariant.Boss1)
+            {
+                // Wave 5: Schwach (20 HP, kein Phase 2)
+                beetle.ConfigureStats(20, true);
+            }
+            else
+            {
+                // Wave 10: Stark (30 HP, alle Phasen)
+                beetle.ConfigureStats(30, false);
+            }
+        }
     }
 
     GameObject GetPrefab(EnemyType type)

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 038ca28836ff3674d996154ea333a214, type: 3}
-  m_Name: Wave1
+  m_Name: Wave1 1
   m_EditorClassIdentifier: 
-  waveName: Wave 1
+  waveName: Wave 2
   spawnInterval: 2
   intro: []
   segments: []
   spawnBoss: 1
-  bossVariant: 0
+  bossVariant: 1
   bossGateIndex: 0

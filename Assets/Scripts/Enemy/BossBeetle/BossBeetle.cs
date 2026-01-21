@@ -136,6 +136,9 @@ public class BossBeetle : EnemyBase
     private bool _hasCloseParam;
     private bool _hasSpeedParam;
 
+    // Phases for weak Boss
+    private bool _isWeakVariant = false;
+
     // ==========================
     // NEW: Walk loop source
     // ==========================
@@ -176,6 +179,33 @@ public class BossBeetle : EnemyBase
         animator.SetInteger(PARAM_PHASE, startPhase);
         SwitchToPhase(startPhase, triggerRage: false);
         Ctx.ApplyAnimatorRunFlag();
+    }
+
+    /// <summary>
+    /// Wird vom WaveSpawner aufgerufen.
+    /// startingHealth: 20 für schwachen Boss, 30 für starken.
+    /// weakVariant: true = keine Phase 2, false = alle Phasen.
+    /// </summary>
+    public void ConfigureStats(int startingHealth, bool weakVariant)
+    {
+        // 1. Werte setzen
+        maxHealth = startingHealth;
+        health = startingHealth;
+        _isWeakVariant = weakVariant;
+
+        // 2. Status sofort aktualisieren
+        // Damit der Animator und die Logik sofort wissen, in welcher Phase wir starten
+        if (animator != null)
+        {
+            int phase = GetPhase();
+            animator.SetInteger(PARAM_PHASE, phase);
+
+            // Phase starten (ohne Rage-Schrei am Anfang, false)
+            SwitchToPhase(phase, triggerRage: false);
+
+            // Lauf-Animation Status updaten
+            Ctx.ApplyAnimatorRunFlag();
+        }
     }
 
     private void EnsureWalkLoopSource()
@@ -322,7 +352,24 @@ public class BossBeetle : EnemyBase
 
     private int GetPhase()
     {
-        return (health > 20) ? 0 : (health > 10) ? 1 : 2;
+        if (_isWeakVariant)
+        {
+            // --- SCHWACHER BOSS (Max 20 HP) ---
+            // HP 20 bis 11: Phase 0 (Laufen + Attacke 1)
+            // HP 10 bis 0:  Phase 1 (Rennen + Attacke 2)
+            // Er erreicht NIE Phase 2 (Special).
+
+            return (health > 10) ? 0 : 1;
+        }
+        else
+        {
+            // --- NORMALER BOSS (Max 30 HP) ---
+            // HP 30 bis 21: Phase 0
+            // HP 20 bis 11: Phase 1
+            // HP 10 bis 0:  Phase 2
+
+            return (health > 20) ? 0 : (health > 10) ? 1 : 2;
+        }
     }
 
     public void OnRunningCancelHitboxTriggered(Collider playerCollider)
@@ -356,16 +403,9 @@ public class BossBeetle : EnemyBase
         if (health <= 0) return;
         if (_isDead) return;
 
-        bool canTakeDamageNow = (Ctx != null && Ctx.IsRunning);
-
-        if (!canTakeDamageNow)
-        {
-            PlayInvincibleBodyHit(hitPoint);
-            return;
-        }
-
         if (Ctx.IsRaging && immuneDuringRage)
         {
+            Debug.Log("wtf");
             PlayInvincibleBodyHit(hitPoint);
             return;
         }

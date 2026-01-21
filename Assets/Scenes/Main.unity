@@ -9066,8 +9066,8 @@ MonoBehaviour:
   boss1Prefab: {fileID: 2177642443341610193, guid: d3bfe820b31e4eb40a9e5c93368570c5, type: 3}
   boss2Prefab: {fileID: 0}
   waves:
-  - {fileID: 11400000, guid: f1bc73d8e02037143a8f827ce221a6b7, type: 2}
-  - {fileID: 11400000, guid: f8c86e4bae19d614b9890a0c4c09bcae, type: 2}
+  - {fileID: 11400000, guid: f65769a4929249440bc23ed520fbff2e, type: 2}
+  - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
   - {fileID: 11400000, guid: 15014e47284d79b488bea380d4de2c58, type: 2}
   - {fileID: 11400000, guid: 37bff173ed8d4c2448249e29d3a2ca60, type: 2}
   - {fileID: 11400000, guid: 649648018b776494ebb7027f4f71a3af, type: 2}
