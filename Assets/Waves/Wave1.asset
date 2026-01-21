@@ -12,21 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 038ca28836ff3674d996154ea333a214, type: 3}
   m_Name: Wave1
   m_EditorClassIdentifier: 
-  waveName: Wave1
+  waveName: Wave 1
   spawnInterval: 2
-  intro:
-  - type: 1
-    gateIndex: 0
-  - type: 2
-    gateIndex: 0
-  - type: 0
-    gateIndex: 0
-  - type: 0
-    gateIndex: 0
-  - type: 0
-    gateIndex: 0
+  intro: []
   segments:
-  - count: 20
+  - count: 10
     activeGates: 00000000
     pool:
     - type: 0

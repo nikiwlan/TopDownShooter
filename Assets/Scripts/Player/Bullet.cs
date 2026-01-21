@@ -77,6 +77,25 @@ public class Bullet : MonoBehaviour
             return;
         }
 
+        if (other.CompareTag("Enemy"))
+        {
+            EnemyBase enemy = other.GetComponent<EnemyBase>();
+            if (enemy == null)
+                enemy = other.GetComponentInParent<EnemyBase>();
+
+            if (enemy != null)
+            {
+                enemy.TakeDamage(
+                    damage,
+                    transform.forward,        // Richtung
+                    transform.position        // Einschlagspunkt
+                );
+            }
+
+            Destroy(gameObject);
+            return;
+        }
+
         if (other.CompareTag("Gate"))
         {
             if (gateHitSound != null)
