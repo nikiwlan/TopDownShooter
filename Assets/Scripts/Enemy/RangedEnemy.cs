@@ -49,6 +49,7 @@ public class RangedEnemy : EnemyBase, ITimeSlowable
     {
         base.Start();
         pointsOnKill = 15;
+        spawnPowerUpCredits = 2;
 
         playerTransform = player ? player.transform : null;
 

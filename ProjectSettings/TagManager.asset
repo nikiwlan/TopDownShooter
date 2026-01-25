@@ -12,6 +12,7 @@ TagManager:
   - Laser
   - EnemyBody
   - EnemyHead
+  - IgnoreTint
   layers:
   - Default
   - TransparentFX

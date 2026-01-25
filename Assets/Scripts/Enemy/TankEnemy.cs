@@ -45,6 +45,7 @@ public class TankEnemy : EnemyBase, ITimeSlowable
 
         pointsOnKill = 25;
         health = 5;
+        spawnPowerUpCredits = 3;
 
         playerTransform = player ? player.transform : null;
         _baseSpeed = moveSpeed;

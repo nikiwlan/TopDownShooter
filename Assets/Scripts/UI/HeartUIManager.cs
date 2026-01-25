@@ -127,6 +127,60 @@ public class HeartUIManager : MonoBehaviour
         });
     }
 
+    public void PlayBossHeartEffect(Vector3 bossWorldPos)
+    {
+        if (centerHeartEffect == null) return;
+
+        // 1. Aktivieren
+        centerHeartEffect.SetActive(true);
+        RectTransform rect = centerHeartEffect.GetComponent<RectTransform>();
+        CanvasGroup cg = centerHeartEffect.GetComponent<CanvasGroup>();
+        if (cg != null) cg.alpha = 1f;
+
+        // 2. Startposition berechnen (Boss 3D -> UI 2D)
+        Vector2 screenPoint = Camera.main.WorldToScreenPoint(bossWorldPos);
+
+        // Umrechnen in den lokalen Koordinatenraum des Canvas (Wichtig!)
+        RectTransform canvasRect = GetComponentInParent<Canvas>().GetComponent<RectTransform>();
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, Camera.main, out localPoint);
+
+        // HIER ist der Unterschied: Wir setzen den Startpunkt auf den Boss
+        rect.anchoredPosition = localPoint;
+        rect.localScale = Vector3.one * 0.8f;
+
+        // 3. Deine Animation abspielen (Copy-Paste von deiner Logik, nur Startpunkt ist jetzt anders)
+        Vector2 midPoint = new Vector2(-150f, 150f);
+        Vector2 endPoint = new Vector2(-450f, 365f); // Ziel oben links
+        float duration = 1.2f;
+
+        // Flugbahn
+        LeanTween.move(rect, midPoint, duration * 0.5f).setEaseOutQuad().setOnComplete(() =>
+        {
+            LeanTween.move(rect, endPoint, duration * 0.5f).setEaseInCubic();
+        });
+
+        // Pulsieren
+        LeanTween.scale(rect, Vector3.one * 1.1f, duration * 0.5f).setEaseOutBack().setLoopPingPong(1);
+
+        // Ausblenden am Ende
+        LeanTween.delayedCall(duration, () =>
+        {
+            if (cg != null)
+            {
+                LeanTween.alphaCanvas(cg, 0f, 0.4f).setOnComplete(() =>
+                {
+                    cg.alpha = 1f;
+                    centerHeartEffect.SetActive(false);
+                });
+            }
+            else
+            {
+                centerHeartEffect.SetActive(false);
+            }
+        });
+    }
+
     // Setup-Prüfungen
     void ValidateSetup()
     {

@@ -2470,7 +2470,9 @@ MonoBehaviour:
   - {fileID: 3568326025226569032, guid: 5b65641f2bf282e4db49a6554fac5dc5, type: 3}
   - {fileID: 8860364449981237179, guid: 0b5f5378cfa5ba44ab3f03060f28ce4d, type: 3}
   - {fileID: 8475833574052523601, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-  spawnInterval: 0.5
+  heartPrefab: {fileID: 5392736660384503951, guid: 5bd0a69a0305cd448b60ae45af6528bf, type: 3}
+  creditsRequired: 5
+  currentCredits: 0
   spawnRadius: 50
   spawnMinDistance: 2
   spawnHeight: 2
@@ -9061,7 +9063,7 @@ MonoBehaviour:
   boss1Prefab: {fileID: 2177642443341610193, guid: d3bfe820b31e4eb40a9e5c93368570c5, type: 3}
   boss2Prefab: {fileID: 0}
   waves:
-  - {fileID: 11400000, guid: f65769a4929249440bc23ed520fbff2e, type: 2}
+  - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
   - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
   - {fileID: 11400000, guid: 15014e47284d79b488bea380d4de2c58, type: 2}
   - {fileID: 11400000, guid: 37bff173ed8d4c2448249e29d3a2ca60, type: 2}
@@ -11477,6 +11479,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 10
   pointsOnKill: 10
+  spawnPowerUpCredits: 1
   debug: 1
   bloodHitVFX: {fileID: 0}
   blockWalls: 1

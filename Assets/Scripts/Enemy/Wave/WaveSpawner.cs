@@ -204,10 +204,10 @@ public class WaveSpawner : MonoBehaviour
             // Wir prüfen die 4 extremen Ecken der Arena
             Vector3[] corners = new Vector3[]
             {
-                new Vector3(minX + padding, 2f, minZ + padding), // Unten Links
-                new Vector3(maxX - padding, 2f, minZ + padding), // Unten Rechts
-                new Vector3(minX + padding, 2f, maxZ - padding), // Oben Links
-                new Vector3(maxX - padding, 2f, maxZ - padding)  // Oben Rechts
+                new Vector3(minX + padding, 0.3f, minZ + padding), // Unten Links
+                new Vector3(maxX - padding, 0.3f, minZ + padding), // Unten Rechts
+                new Vector3(minX + padding, 0.3f, maxZ - padding), // Oben Links
+                new Vector3(maxX - padding, 0.3f, maxZ - padding)  // Oben Rechts
             };
 
             // Finde die Ecke, die am weitesten vom Spieler weg ist
@@ -227,7 +227,7 @@ public class WaveSpawner : MonoBehaviour
         else
         {
             // Fallback, falls Spieler nicht existiert: Eine feste Ecke
-            spawnPos = new Vector3(maxX - padding, 2f, maxZ - padding);
+            spawnPos = new Vector3(maxX - padding, 0.3f, maxZ - padding);
         }
 
         // Finales Instanziieren

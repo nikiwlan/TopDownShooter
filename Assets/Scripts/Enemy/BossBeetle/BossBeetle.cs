@@ -1,5 +1,4 @@
-﻿// BossBeetle.cs
-using UnityEngine;
+﻿using UnityEngine;
 
 public class BossBeetle : EnemyBase
 {
@@ -10,6 +9,9 @@ public class BossBeetle : EnemyBase
 
     [Header("Health / Phases")]
     public int maxHealth = 30;
+    // HIER WURDE currentHealth ENTFERNT (wir nutzen 'health' aus EnemyBase)
+
+    public PowerUpSpawner powerUpSpawner; 
 
     [Header("Movement Settings")]
     public float walkSpeed = 2f;
@@ -122,17 +124,21 @@ public class BossBeetle : EnemyBase
     internal const string PARAM_ISRUN = "IsRunning";    // bool
     internal const string PARAM_SPEED = "Speed";        // (optional) float
 
-    // Triggers (du hast gesagt: alle außer IsRunning sind Trigger)
+    // Triggers
     internal const string TRIG_ATTACK = "IsAttacking";
     internal const string TRIG_SPECIAL = "SpecialHit";
     internal const string TRIG_RAGE = "Rage";
     internal const string TRIG_GETHIT = "GetsHit";
     internal const string TRIG_DIE = "Die";
 
-    // Internal guard, weil Trigger nicht abfragbar sind wie Bool
+    // Automatische Referenzen
+    private HeartUIManager heartUIManager;
+    private PlayerHealth playerHealth;
+
+    // Internal guard
     private bool _isDead;
 
-    // Optional parameter existence checks (verhindert Warnings & "es passiert nichts")
+    // Optional parameter existence checks
     private bool _hasCloseParam;
     private bool _hasSpeedParam;
 
@@ -144,12 +150,35 @@ public class BossBeetle : EnemyBase
     // ==========================
     private AudioSource _walkLoopSource;
 
+
     protected override void Start()
     {
         base.Start();
 
         pointsOnKill = 500;
+
+        // Initial Health setzen (nutzt Variable aus EnemyBase)
         health = maxHealth;
+
+        // Referenzen suchen
+        heartUIManager = FindObjectOfType<HeartUIManager>();
+        if (player != null)
+        {
+            playerHealth = player.GetComponent<PlayerHealth>();
+        }
+
+        if (powerUpSpawner == null)
+        {
+            powerUpSpawner = FindObjectOfType<PowerUpSpawner>();
+            if (powerUpSpawner == null) Debug.LogWarning("ACHTUNG: Kein PowerUpSpawner in der Szene gefunden!");
+        }
+
+        else
+        {
+            // Fallback Suche über Tag
+            GameObject pObj = GameObject.FindGameObjectWithTag("Player");
+            if (pObj != null) playerHealth = pObj.GetComponent<PlayerHealth>();
+        }
 
         if (!animator) animator = GetComponentInChildren<Animator>();
 
@@ -194,7 +223,6 @@ public class BossBeetle : EnemyBase
         _isWeakVariant = weakVariant;
 
         // 2. Status sofort aktualisieren
-        // Damit der Animator und die Logik sofort wissen, in welcher Phase wir starten
         if (animator != null)
         {
             int phase = GetPhase();
@@ -216,7 +244,7 @@ public class BossBeetle : EnemyBase
         _walkLoopSource.playOnAwake = false;
         _walkLoopSource.loop = true;
 
-        // 3D Sound (damit es zur Position passt)
+        // 3D Sound
         _walkLoopSource.spatialBlend = 1f;
         _walkLoopSource.rolloffMode = AudioRolloffMode.Linear;
         _walkLoopSource.minDistance = 1.5f;
@@ -229,7 +257,6 @@ public class BossBeetle : EnemyBase
 
         EnsureWalkLoopSource();
 
-        // Clip setzen (falls gewechselt) + Volume updaten
         if (_walkLoopSource.clip != walkLoopSound)
             _walkLoopSource.clip = walkLoopSound;
 
@@ -274,14 +301,12 @@ public class BossBeetle : EnemyBase
     {
         if (headHitSounds == null || headHitSounds.Length == 0) return;
 
-        // Zähle nur gültige Clips (falls du weniger als 4 befüllt hast)
         int count = 0;
         for (int i = 0; i < headHitSounds.Length; i++)
             if (headHitSounds[i] != null) count++;
 
         if (count == 0) return;
 
-        // Wähle zufällig aus den nicht-null Clips
         int pick = Random.Range(0, count);
         AudioClip chosen = null;
 
@@ -317,7 +342,6 @@ public class BossBeetle : EnemyBase
 
         bool closeForRun = Vector3.Distance(transform.position, Ctx.PlayerTransform.position) <= runStartRange;
 
-        // Nur setzen, wenn der Bool-Parameter wirklich existiert
         if (_hasCloseParam)
             animator.SetBool(PARAM_CLOSE, closeForRun);
 
@@ -354,20 +378,12 @@ public class BossBeetle : EnemyBase
     {
         if (_isWeakVariant)
         {
-            // --- SCHWACHER BOSS (Max 20 HP) ---
-            // HP 20 bis 11: Phase 0 (Laufen + Attacke 1)
-            // HP 10 bis 0:  Phase 1 (Rennen + Attacke 2)
-            // Er erreicht NIE Phase 2 (Special).
-
+            // Weak: 20-11 (P0), 10-0 (P1)
             return (health > 10) ? 0 : 1;
         }
         else
         {
-            // --- NORMALER BOSS (Max 30 HP) ---
-            // HP 30 bis 21: Phase 0
-            // HP 20 bis 11: Phase 1
-            // HP 10 bis 0:  Phase 2
-
+            // Normal: 30-21 (P0), 20-11 (P1), 10-0 (P2)
             return (health > 20) ? 0 : (health > 10) ? 1 : 2;
         }
     }
@@ -380,7 +396,6 @@ public class BossBeetle : EnemyBase
 
         Ctx.StopRunAndCooldown(runCooldownAfterRun);
 
-        // Nur setzen, wenn Speed existiert (sonst gibt's Animator-Warnings)
         if (_hasSpeedParam)
             animator.SetFloat(PARAM_SPEED, 0f);
 
@@ -405,18 +420,52 @@ public class BossBeetle : EnemyBase
 
         if (Ctx.IsRaging && immuneDuringRage)
         {
-            Debug.Log("wtf");
             PlayInvincibleBodyHit(hitPoint);
             return;
         }
 
+        // 1. Schaden verrechnen
+        health -= amount;
 
-        // Headshot/Hit: random Sound am Trefferpunkt (oder Boss-Position fallback)
+        // Headshot Sound
         Vector3 soundPos = (hitPoint == Vector3.zero) ? transform.position : hitPoint;
         PlayRandomHeadHitSound(soundPos);
 
-        health -= amount;
+        // -------------------------------------------------------------
+        // LOGIK: Herz (bei 10) vs PowerUp (bei 5)
+        // -------------------------------------------------------------
+        if (health > 0) // Nichts spawnen wenn er stirbt
+        {
+            // Alle 10 Schaden (z.B. 20, 10): Herz + Heilung
+            if (health % 10 == 0)
+            {
+                // UI Effekt von Boss Position aus
+                if (heartUIManager != null)
+                {
+                    // HINWEIS: Stelle sicher, dass PlayBossHeartEffect im HeartUIManager existiert!
+                    heartUIManager.PlayBossHeartEffect(transform.position);
+                }
 
+                // Spieler heilen
+                if (playerHealth != null)
+                {
+                    playerHealth.Heal(1);
+                }
+            }
+            // Ansonsten: Alle 5 Schaden (z.B. 25, 15): PowerUp
+            else if (health % 5 == 0)
+            {
+                Debug.Log(powerUpSpawner + "HIIII");
+                if (powerUpSpawner != null)
+                {
+                    Debug.Log("HIIII");
+                    powerUpSpawner.SpawnPowerUp();
+                }
+            }
+        }
+        // -------------------------------------------------------------
+
+        // Headshot VFX
         if (headHitVFX)
         {
             Vector3 spawnPos = (hitPoint == Vector3.zero)
@@ -424,16 +473,15 @@ public class BossBeetle : EnemyBase
                 : hitPoint;
 
             spawnPos += Vector3.up * 0.01f;
-
             if (Camera.main)
                 spawnPos += -Camera.main.transform.forward * 0.02f;
 
             Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
-
             GameObject vfx = Instantiate(headHitVFX, spawnPos, rot);
             Destroy(vfx, 1.5f);
         }
 
+        // Animator Hit Trigger
         animator.ResetTrigger(TRIG_GETHIT);
         animator.SetTrigger(TRIG_GETHIT);
 
@@ -443,18 +491,14 @@ public class BossBeetle : EnemyBase
 
     public void ForceStartAttack2()
     {
-        // Sicherheitschecks
         if (Ctx == null) return;
         if (Ctx.IsAttacking) return;
 
-        // Phase prüfen (optional, aber sicher)
         int phase = animator.GetInteger("Phase");
         if (phase < 1) return;
 
-        // Attacke 2 = Index 1 (0-basiert)
         Ctx.TryStartNormalAttack(1);
     }
-
 
     protected override void Die()
     {
@@ -468,9 +512,7 @@ public class BossBeetle : EnemyBase
         {
             Vector3 spawnPos = transform.position;
             spawnPos += Vector3.up * 0.02f;
-
             Quaternion rot = Quaternion.Euler(90f, Random.Range(0f, 360f), 0f);
-
             GameObject vfx = Instantiate(beetleDeathVFX, spawnPos, rot);
             Destroy(vfx, 5f);
         }

@@ -46,6 +46,7 @@ public class FastEnemy : EnemyBase, ITimeSlowable
 
         baseSpeed = moveSpeed;
         pointsOnKill = 10;
+        spawnPowerUpCredits = 1;
     }
 
     void Update()

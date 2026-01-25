@@ -2,9 +2,16 @@
 
 public class PowerUpSpawner : MonoBehaviour
 {
+    // NEU: Singleton, damit die Gegner (EnemyBase) darauf zugreifen können
+    public static PowerUpSpawner Instance;
+
     [Header("Power-Up Einstellungen")]
     public GameObject[] powerUps;
-    public float spawnInterval = 5f;
+
+    // Timer Variable entfernt -> Ersetzt durch Credit System
+    [Header("Intelligent Spawn Settings")]
+    public int creditsRequired = 5; // Alle 5 Credits ein Spawn
+    [SerializeField] private int currentCredits = 0; // Zur Ansicht im Inspector
 
     [Tooltip("Wie weit maximal vom Spieler entfernt spawnen?")]
     public float spawnRadius = 6f;
@@ -17,22 +24,40 @@ public class PowerUpSpawner : MonoBehaviour
 
     public Transform player;
 
-    private float timer;
+    void Awake()
+    {
+        // Singleton initialisieren
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
+    // Update wurde geleert, da wir keinen Timer mehr brauchen
     void Update()
     {
         if (player == null || powerUps.Length == 0)
             return;
 
-        timer -= Time.deltaTime;
-        if (timer <= 0f)
+        // Timer Logik entfernt
+    }
+
+    // --- NEU: Diese Methode wird von den Gegnern aufgerufen ---
+    public void AddCredits(int amount)
+    {
+        currentCredits += amount;
+
+        // Optionaler Log, falls du sehen willst, wann Credits reinkommen:
+        // Debug.Log($"[PowerUpSpawner] +{amount} Credits. Total: {currentCredits}/{creditsRequired}");
+
+        // Prüfen ob wir genug für einen oder mehrere Spawns haben
+        while (currentCredits >= creditsRequired)
         {
-            SpawnPowerUp();
-            timer = spawnInterval;
+            currentCredits -= creditsRequired;
+            SpawnPowerUp(); // Ruft deine bestehende Methode mit den Logs auf
         }
     }
 
-    void SpawnPowerUp()
+    // --- Deine bestehende Methode (UNVERÄNDERT mit allen Logs) ---
+    public void SpawnPowerUp()
     {
         int maxAttempts = 20;
 
@@ -63,12 +88,8 @@ public class PowerUpSpawner : MonoBehaviour
             }
 
             // 2) Innerhalb Arena?
-            // HIER GEÄNDERT: Nutzung der statischen Methode aus ArenaSettings (falls du sie dort eingebaut hast)
-            // Oder wir prüfen es direkt hier mit den statischen Werten:
             if (!IsInsideArena(spawnPos))
             {
-                // FEHLER KORRIGIERT: Hier stand vorher minX/maxX, das gibt es nicht mehr.
-                // Jetzt nutzen wir ArenaSettings.MinX etc. für den Log.
                 Debug.Log($"   ✖ Abgelehnt: Außerhalb Arena! → SpawnPos: {spawnPos}, " +
                           $"ArenaBounds X({ArenaSettings.MinX}–{ArenaSettings.MaxX}), Z({ArenaSettings.MinZ}–{ArenaSettings.MaxZ})");
                 continue;

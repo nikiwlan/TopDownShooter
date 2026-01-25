@@ -6,6 +6,7 @@ public abstract class EnemyBase : MonoBehaviour
     [Header("Stats")]
     public int health = 3;
     public int pointsOnKill = 10;
+    public int spawnPowerUpCredits = 1;
 
     [Header("Debug")]
     public bool debug = true;
@@ -240,6 +241,15 @@ public abstract class EnemyBase : MonoBehaviour
             finalPoints,
             transform.position + Vector3.up * 1f
         );
+
+        // ---------------------------------------------------------
+        // 2. NEU: Credits an den PowerUpSpawner senden
+        // ---------------------------------------------------------
+        if (PowerUpSpawner.Instance != null)
+        {
+            PowerUpSpawner.Instance.AddCredits(spawnPowerUpCredits);
+        }
+        // ---------------------------------------------------------
 
         if (debug)
             Debug.Log($"[{name}] gestorben → Base {pointsOnKill}, Final {finalPoints}");
