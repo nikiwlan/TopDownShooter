@@ -63,10 +63,14 @@ public class PowerUpSpawner : MonoBehaviour
             }
 
             // 2) Innerhalb Arena?
+            // HIER GEÄNDERT: Nutzung der statischen Methode aus ArenaSettings (falls du sie dort eingebaut hast)
+            // Oder wir prüfen es direkt hier mit den statischen Werten:
             if (!IsInsideArena(spawnPos))
             {
+                // FEHLER KORRIGIERT: Hier stand vorher minX/maxX, das gibt es nicht mehr.
+                // Jetzt nutzen wir ArenaSettings.MinX etc. für den Log.
                 Debug.Log($"   ✖ Abgelehnt: Außerhalb Arena! → SpawnPos: {spawnPos}, " +
-                          $"ArenaBounds X({minX}–{maxX}), Z({minZ}–{maxZ})");
+                          $"ArenaBounds X({ArenaSettings.MinX}–{ArenaSettings.MaxX}), Z({ArenaSettings.MinZ}–{ArenaSettings.MaxZ})");
                 continue;
             }
 

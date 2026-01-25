@@ -14,14 +14,14 @@ public class PlayerHealth : MonoBehaviour
     [HideInInspector] public int currentHealth;
 
     [Header("Shield Settings")]
-    public int maxShieldCharges = 2;                 
+    public int maxShieldCharges = 2;
     [SerializeField] private int shieldCharges = 0;
 
     [Header("Shield Sound")]
     public AudioClip shieldHitSound;   // Sound wenn Shield 1 Charge verliert
 
     [Header("Shield VFX")]
-    [SerializeField] private GameObject shieldVfx; 
+    [SerializeField] private GameObject shieldVfx;
 
     public bool HasShield => shieldCharges > 0;
     public int ShieldCharges => shieldCharges;
@@ -33,6 +33,9 @@ public class PlayerHealth : MonoBehaviour
     [Header("UI References")]
     public HeartUIManager heartUIManager;
     public DamageFlash damageFlash;
+
+    [Header("Animation")]
+    public Animator animator; 
 
     // ---------------------- AUDIO ----------------------
     [Header("Damage Sounds (Randomized)")]
@@ -60,6 +63,8 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Optional: wenn du lieber über Layer blocken willst (z.B. EnemyProjectile Layer), trage ihn hier ein. -1 = deaktiviert")]
     public int shieldBlocksOnlyLayer = -1;
 
+    private bool isDead = false; // Verhindert Doppeltod
+
     private void UpdateShieldVfx()
     {
         if (shieldVfx != null)
@@ -76,11 +81,8 @@ public class PlayerHealth : MonoBehaviour
         if (heartUIManager != null)
         {
             heartUIManager.UpdateHearts(currentHealth);
-
             heartUIManager.UpdateShield(shieldCharges);
-
             UpdateShieldVfx();
-
             Debug.Log($"[PlayerHealth] Player startet mit {currentHealth}/{maxHealth} HP");
         }
         else
@@ -93,14 +95,11 @@ public class PlayerHealth : MonoBehaviour
     // DAMAGE
     // ------------------------------------------------------------
 
-    // Keep old signature: falls irgendwo noch player.TakeDamage(1) steht
-    // Default ist MELEE (damit Shield nicht random alles blockt)
     public void TakeDamage(int amount)
     {
         TakeDamage(amount, DamageType.Melee, null, -1);
     }
 
-    // klare Damage-API
     public void TakeDamage(int amount, DamageType type, GameObject source = null)
     {
         string srcTag = source != null ? source.tag : null;
@@ -108,21 +107,14 @@ public class PlayerHealth : MonoBehaviour
         TakeDamage(amount, type, srcTag, srcLayer);
     }
 
-    // wenn du direkt Tag/Layer übergeben willst
     public void TakeDamage(int amount, DamageType type, string sourceTag, int sourceLayer)
     {
-        if (isInvincible)
-        {
-            Debug.Log("[PlayerHealth] Schaden geblockt dank Grace Period.");
-            return;
-        }
+        // Wenn tot oder unverwundbar -> Abbruch
+        if (isInvincible || isDead) return;
 
         lastDamageType = type;
 
-        // Schild blockt NUR:
-        // - Range-Schaden
-        // - es gibt Charges
-        // - Quelle ist EnemyProjectile (Tag oder optional Layer)
+        // Schild-Logik
         if (type == DamageType.Range && shieldCharges > 0)
         {
             bool tagOk = !string.IsNullOrEmpty(shieldBlocksOnlyTag) && sourceTag == shieldBlocksOnlyTag;
@@ -132,7 +124,6 @@ public class PlayerHealth : MonoBehaviour
             {
                 shieldCharges = Mathf.Max(0, shieldCharges - 1);
 
-                // 🔊 Shield-Hit-Sound
                 if (shieldHitSound != null)
                     AudioManager.Instance.PlaySound2D(shieldHitSound);
 
@@ -140,7 +131,6 @@ public class PlayerHealth : MonoBehaviour
                 UpdateShieldVfx();
                 return;
             }
-
         }
 
         StartCoroutine(BecomeTemporarilyInvincible());
@@ -184,29 +174,20 @@ public class PlayerHealth : MonoBehaviour
                 break;
         }
 
-        if (prefab == null)
-            return;
+        if (prefab == null) return;
 
         Vector3 spawnPos = transform.position + Vector3.up * 1f;
-
-        GameObject vfx = Instantiate(
-            prefab,
-            spawnPos,
-            Quaternion.Euler(90f, Random.Range(0f, 360f), 0f)
-        );
+        GameObject vfx = Instantiate(prefab, spawnPos, Quaternion.Euler(90f, Random.Range(0f, 360f), 0f));
         Destroy(vfx, 1f);
     }
 
     private void PlayRandomDamageSound()
     {
         AudioClip[] clips = new AudioClip[] { damageSound1, damageSound2, damageSound3 };
-
         var valid = new System.Collections.Generic.List<AudioClip>();
-        foreach (var c in clips)
-            if (c != null) valid.Add(c);
+        foreach (var c in clips) if (c != null) valid.Add(c);
 
         if (valid.Count == 0) return;
-
         int index = Random.Range(0, valid.Count);
         AudioManager.Instance.PlaySound2D(valid[index]);
     }
@@ -218,8 +199,6 @@ public class PlayerHealth : MonoBehaviour
         int before = currentHealth;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
 
-        Debug.Log($"[PlayerHealth] Heilung: {before} → {currentHealth}");
-
         if (heartUIManager != null)
         {
             heartUIManager.PlayHeartPickupEffect();
@@ -230,34 +209,50 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // ✅ Gibt Shield auf einen definierten Wert (0..max)
     public void GiveShield(int charges)
     {
         shieldCharges = Mathf.Clamp(charges, 0, maxShieldCharges);
-        Debug.Log($"[PlayerHealth] Shield gesetzt: {shieldCharges}/{maxShieldCharges}");
-
         heartUIManager?.UpdateShield(shieldCharges);
         UpdateShieldVfx();
     }
 
+    // ---------------------- NEUE TODES LOGIK ----------------------
     private void Die()
     {
-        Debug.Log("[PlayerHealth] Spieler gestorben – Objekt deaktiviert.");
+        if (isDead) return;
+        isDead = true;
+
+        // 1. Animator Trigger setzen
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+
+        // 2. Bewegung ausschalten (Referenz holen und deaktivieren)
+        PlayerMovement movement = GetComponent<PlayerMovement>();
+        if (movement != null) movement.enabled = false;
+
+        // (Optional: Auch Schießen deaktivieren)
+        PlayerShooting shooting = GetComponent<PlayerShooting>();
+        if (shooting != null) shooting.enabled = false;
+
+        // 3. Audio & Logik starten
         StartCoroutine(PlayDeathSequence());
     }
 
     private IEnumerator PlayDeathSequence()
     {
+        // Erster Sound (Stöhnen)
         if (deathSound_1 != null)
             AudioManager.Instance.PlaySound2D(deathSound_1);
 
-        yield return new WaitForSeconds(0.1f);
+        // Warte kurz auf den Aufprall in der Animation
+        yield return new WaitForSeconds(0.6f);
 
+        // Zweiter Sound (Körper fällt)
         if (deathSound_2 != null)
             AudioManager.Instance.PlaySound2D(deathSound_2);
 
-        yield return new WaitForSeconds(0.5f);
-
-        gameObject.SetActive(false);
+        // HIER WICHTIG: Kein SetActive(false)! Wir lassen die Leiche liegen.
     }
 }

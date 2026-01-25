@@ -2,12 +2,13 @@
 using TMPro;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections; // WICHTIG für Coroutines
 
 public class GameOverUI : MonoBehaviour
 {
     [Header("References")]
     public PlayerHealth playerHealth;
-    public GameStateManager gameStateManager; // ZIEH DEN MANAGER HIER REIN!
+    public GameStateManager gameStateManager;
 
     public GameObject gameOverOverlay;
     public TextMeshProUGUI gameOverText;
@@ -51,15 +52,29 @@ public class GameOverUI : MonoBehaviour
             survivedTime += Time.deltaTime;
         }
 
-        if (!isGameOver && playerHealth.currentHealth <= 0)
+        // ÄNDERUNG: Statt direkt ShowGameOver() zu rufen, starten wir die Verzögerung
+        if (!isGameOver && playerHealth != null && playerHealth.currentHealth <= 0)
         {
-            ShowGameOver();
+            StartCoroutine(DelayedGameOver());
         }
+    }
+
+    // --- NEU: Die Verzögerung für Sound & Animation ---
+    IEnumerator DelayedGameOver()
+    {
+        isGameOver = true; // Setzt Flag sofort, damit Update nicht nochmal feuert
+
+        // Warte 2 Sekunden (passend zur Länge deiner Todes-Animation/Sounds)
+        // Während dieser Zeit läuft das Spiel weiter (Animation ist sichtbar)
+        yield return new WaitForSeconds(2.0f);
+
+        // Erst JETZT das Menü anzeigen und Zeit stoppen
+        ShowGameOver();
     }
 
     void ShowGameOver()
     {
-        isGameOver = true;
+        // isGameOver = true; // Das haben wir oben schon gesetzt, schadet aber nicht.
 
         // --- ZENTRALE LOGIK AUFRUFEN ---
         // Spiel stopp, Maus an, KEIN PauseMenu mehr erlaubt (false)
@@ -97,7 +112,6 @@ public class GameOverUI : MonoBehaviour
         gameOverScoreText.text = $"Score: {finalScore}";
 
         // Highscore speichern
-        // (Kommentiere das ein, wenn deine Highscore Klasse existiert)
         // HighscoreManager.SaveScore(finalScore);
     }
 

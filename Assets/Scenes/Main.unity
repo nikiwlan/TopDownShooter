@@ -2475,10 +2475,6 @@ MonoBehaviour:
   spawnMinDistance: 2
   spawnHeight: 2
   player: {fileID: 1978811930}
-  minX: 1
-  maxX: 24
-  minZ: -10
-  maxZ: 12
 --- !u!4 &608432043
 Transform:
   m_ObjectHideFlags: 0
@@ -9059,7 +9055,6 @@ MonoBehaviour:
   - {fileID: 1940246205}
   - {fileID: 1630866013}
   - {fileID: 937339476}
-  bossSpawnPoint: {fileID: 1718535254}
   fastEnemyPrefab: {fileID: 7353411558994756467, guid: 360fcd1687521b949bc55b76225893dc, type: 3}
   tankEnemyPrefab: {fileID: 6692134043831163636, guid: 5f25857daccb82f4cbc9abbe70da6bf0, type: 3}
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
@@ -16665,6 +16660,7 @@ MonoBehaviour:
   invincibilityDuration: 1
   heartUIManager: {fileID: 1579441200}
   damageFlash: {fileID: 1640107750}
+  animator: {fileID: 1875319476}
   damageSound1: {fileID: 8300000, guid: 3e4bf8dcc760d374d9d175bf7951a5cf, type: 3}
   damageSound2: {fileID: 8300000, guid: 32fd57c150358fe49befca8494742b9c, type: 3}
   damageSound3: {fileID: 8300000, guid: 5b04df7e10127f044b0d54f95c4f3f66, type: 3}
