@@ -17,12 +17,6 @@ public class PowerUpSpawner : MonoBehaviour
 
     public Transform player;
 
-    [Header("Arena Grenzen")]
-    public float minX = -12f;
-    public float maxX = 16f;
-    public float minZ = -15f;
-    public float maxZ = 15f;
-
     private float timer;
 
     void Update()
@@ -98,14 +92,9 @@ public class PowerUpSpawner : MonoBehaviour
 
     bool IsInsideArena(Vector3 pos)
     {
-        bool inside = pos.x > minX && pos.x < maxX && pos.z > minZ && pos.z < maxZ;
-
-        if (!inside)
-        {
-            Debug.Log($"   • Arena Check FAILED → Position {pos} ist außerhalb der Grenzen " +
-                      $"(X:{minX}–{maxX}, Z:{minZ}–{maxZ})");
-        }
-
+        // Zugriff erfolgt direkt über den Klassennamen
+        bool inside = pos.x > ArenaSettings.MinX && pos.x < ArenaSettings.MaxX &&
+                      pos.z > ArenaSettings.MinZ && pos.z < ArenaSettings.MaxZ;
         return inside;
     }
 

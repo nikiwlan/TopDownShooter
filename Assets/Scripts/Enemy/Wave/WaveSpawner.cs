@@ -14,7 +14,6 @@ public class WaveSpawner : MonoBehaviour
 
     [Header("Gates (Spawn Points)")]
     public Transform[] gates;
-    public Transform bossSpawnPoint;
 
     [Header("Enemy Prefabs")]
     public GameObject fastEnemyPrefab;
@@ -95,7 +94,7 @@ public class WaveSpawner : MonoBehaviour
             // C) Boss
             if (wave.spawnBoss)
             {
-                SpawnBoss(wave.bossVariant, wave.bossGateIndex);
+                SpawnBoss(wave.bossVariant);
             }
 
             // --- WARTEN BIS ALLE TOT SIND ---
@@ -184,55 +183,63 @@ public class WaveSpawner : MonoBehaviour
         lastSpawnTime = Time.time;
     }
 
-    // ---------------------------------------------------------
-    // WICHTIG: Das hier ist die aktualisierte Methode!
-    // ---------------------------------------------------------
-    void SpawnBoss(BossVariant variant, int gateIndex)
+    void SpawnBoss(BossVariant variant)
     {
-        // 1. Prefab wählen (Standard Boss1, außer Boss2 ist explizit gewünscht & zugewiesen)
-        GameObject prefab = boss1Prefab;
-        if (variant == BossVariant.Boss2 && boss2Prefab != null)
-        {
-            prefab = boss2Prefab;
-        }
-
+        GameObject prefab = (variant == BossVariant.Boss2 && boss2Prefab != null) ? boss2Prefab : boss1Prefab;
         if (!prefab) return;
 
-        // 2. Position bestimmen
-        Vector3 pos;
-        Quaternion rot;
+        // Wir definieren die Grenzen fest (basierend auf deinem Bild)
+        float minX = 1f;
+        float maxX = 24f;
+        float minZ = -10f;
+        float maxZ = 12f;
+        float padding = 2.0f; // Abstand zur Wand
 
-        if (bossSpawnPoint != null)
+        Vector3 spawnPos;
+
+        if (playerHealth != null)
         {
-            pos = bossSpawnPoint.position;
-            rot = bossSpawnPoint.rotation;
+            Vector3 playerPos = playerHealth.transform.position;
+
+            // Wir prüfen die 4 extremen Ecken der Arena
+            Vector3[] corners = new Vector3[]
+            {
+                new Vector3(minX + padding, 2f, minZ + padding), // Unten Links
+                new Vector3(maxX - padding, 2f, minZ + padding), // Unten Rechts
+                new Vector3(minX + padding, 2f, maxZ - padding), // Oben Links
+                new Vector3(maxX - padding, 2f, maxZ - padding)  // Oben Rechts
+            };
+
+            // Finde die Ecke, die am weitesten vom Spieler weg ist
+            spawnPos = corners[0];
+            float maxDistance = Vector3.Distance(playerPos, corners[0]);
+
+            for (int i = 1; i < corners.Length; i++)
+            {
+                float dist = Vector3.Distance(playerPos, corners[i]);
+                if (dist > maxDistance)
+                {
+                    maxDistance = dist;
+                    spawnPos = corners[i];
+                }
+            }
         }
         else
         {
-            if (gates == null || gates.Length == 0) return;
-            if (gateIndex < 0 || gateIndex >= gates.Length) gateIndex = 0;
-            pos = gates[gateIndex].position;
-            rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            // Fallback, falls Spieler nicht existiert: Eine feste Ecke
+            spawnPos = new Vector3(maxX - padding, 2f, maxZ - padding);
         }
 
-        // 3. Spawnen UND Referenz speichern
-        GameObject bossObj = Instantiate(prefab, pos, rot);
+        // Finales Instanziieren
+        GameObject bossObj = Instantiate(prefab, spawnPos, Quaternion.identity);
         lastSpawnTime = Time.time;
 
-        // 4. Konfigurieren (Das hat gefehlt!)
+        // Boss Konfiguration
         BossBeetle beetle = bossObj.GetComponent<BossBeetle>();
         if (beetle != null)
         {
-            if (variant == BossVariant.Boss1)
-            {
-                // Wave 5: Schwach (20 HP, kein Phase 2)
-                beetle.ConfigureStats(20, true);
-            }
-            else
-            {
-                // Wave 10: Stark (30 HP, alle Phasen)
-                beetle.ConfigureStats(30, false);
-            }
+            if (variant == BossVariant.Boss1) beetle.ConfigureStats(20, true);
+            else beetle.ConfigureStats(30, false);
         }
     }
 
