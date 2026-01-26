@@ -9062,7 +9062,7 @@ MonoBehaviour:
   boss1Prefab: {fileID: 8805086708134250954, guid: ab5916c3e91cd3f4c87324c4c95e95b5, type: 3}
   boss2Prefab: {fileID: 0}
   waves:
-  - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
+  - {fileID: 11400000, guid: f65769a4929249440bc23ed520fbff2e, type: 2}
   - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
   - {fileID: 11400000, guid: 15014e47284d79b488bea380d4de2c58, type: 2}
   - {fileID: 11400000, guid: 37bff173ed8d4c2448249e29d3a2ca60, type: 2}
@@ -12715,13 +12715,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skillMenuUI: {fileID: 1245619703}
-  buttonOption1: {fileID: 0}
-  textOption1: {fileID: 0}
-  buttonOption2: {fileID: 0}
-  textOption2: {fileID: 0}
-  gameStateManager: {fileID: 0}
-  playerShooting: {fileID: 0}
-  availableSkills: []
+  buttonOption1: {fileID: 1383637197}
+  textOption1: {fileID: 1358147499}
+  buttonOption2: {fileID: 1630424419}
+  textOption2: {fileID: 1986960610}
+  gameStateManager: {fileID: 607735579}
+  playerShooting: {fileID: 1978811931}
+  playerHealth: {fileID: 1978811932}
+  availableSkills:
+  - skillName: Rapid Fire
+    description: +10% Fire Rate
+    type: 0
+  - skillName: Heal
+    description: Restore 1 HP
+    type: 1
 --- !u!1 &1582737506
 GameObject:
   m_ObjectHideFlags: 0

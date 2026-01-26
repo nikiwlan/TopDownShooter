@@ -16,6 +16,6 @@ MonoBehaviour:
   spawnInterval: 2
   intro: []
   segments: []
-  spawnBoss: 1
+  spawnBoss: 0
   bossVariant: 0
   bossGateIndex: 0

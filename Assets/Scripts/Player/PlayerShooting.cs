@@ -28,13 +28,6 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
-        // 2. Manuell mit Taste 'T'
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            UpgradeFireRate();
-        }
-        // --- TEST BEREICH ENDE ---
-
         // 1. Wenn Spiel pausiert ist -> Nix machen
         if (isFrozen) return;
 
