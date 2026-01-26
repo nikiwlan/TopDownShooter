@@ -11,7 +11,8 @@ public class BossBeetle : EnemyBase
     public int maxHealth = 30;
     // HIER WURDE currentHealth ENTFERNT (wir nutzen 'health' aus EnemyBase)
 
-    public PowerUpSpawner powerUpSpawner; 
+    public PowerUpSpawner powerUpSpawner;
+    public BossHealthUI bossHealthUI;
 
     [Header("Movement Settings")]
     public float walkSpeed = 2f;
@@ -208,6 +209,17 @@ public class BossBeetle : EnemyBase
         animator.SetInteger(PARAM_PHASE, startPhase);
         SwitchToPhase(startPhase, triggerRage: false);
         Ctx.ApplyAnimatorRunFlag();
+
+        if (bossHealthUI != null)
+        {
+            bossHealthUI.Initialize(health, maxHealth);
+        }
+        else
+        {
+            // Versuch es im Child zu finden, falls vergessen zu verlinken
+            bossHealthUI = GetComponentInChildren<BossHealthUI>();
+            if (bossHealthUI) bossHealthUI.Initialize(health, maxHealth);
+        }
     }
 
     /// <summary>
@@ -233,6 +245,10 @@ public class BossBeetle : EnemyBase
 
             // Lauf-Animation Status updaten
             Ctx.ApplyAnimatorRunFlag();
+        }
+        if (bossHealthUI != null)
+        {
+            bossHealthUI.Initialize(health, maxHealth);
         }
     }
 
@@ -427,6 +443,11 @@ public class BossBeetle : EnemyBase
         // 1. Schaden verrechnen
         health -= amount;
 
+        if (bossHealthUI != null)
+        {
+            bossHealthUI.UpdateHealth(health, maxHealth);
+        }
+
         // Headshot Sound
         Vector3 soundPos = (hitPoint == Vector3.zero) ? transform.position : hitPoint;
         PlayRandomHeadHitSound(soundPos);
@@ -507,6 +528,8 @@ public class BossBeetle : EnemyBase
 
         Ctx.ForceStopAll();
         StopWalkLoop();
+
+        if (bossHealthUI != null) bossHealthUI.gameObject.SetActive(false);
 
         if (beetleDeathVFX)
         {
