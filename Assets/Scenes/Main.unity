@@ -12715,7 +12715,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skillMenuUI: {fileID: 1245619703}
+  buttonOption1: {fileID: 0}
+  textOption1: {fileID: 0}
+  buttonOption2: {fileID: 0}
+  textOption2: {fileID: 0}
   gameStateManager: {fileID: 0}
+  playerShooting: {fileID: 0}
+  availableSkills: []
 --- !u!1 &1582737506
 GameObject:
   m_ObjectHideFlags: 0
@@ -16634,10 +16640,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 3985808594338225265, guid: 35265329dcd8e7940b97fcd0e2a2d029, type: 3}
   firePoint: {fileID: 1156986019}
-  fireRate: 0.5
+  baseFireRate: 0.6
   bulletSpeed: 40
   bulletLifetime: 0.3
   animator: {fileID: 1875319476}
+  baseAnimSpeed: 1.5
   shootSound: {fileID: 8300000, guid: c5096addfd715814da4c0825801ae2ca, type: 3}
   shootVolume: 0.25
   isFrozen: 0
