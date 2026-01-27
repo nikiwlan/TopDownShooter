@@ -128,17 +128,20 @@ public class WaveSpawner : MonoBehaviour
 
     IEnumerator HandleWaveScore(int index)
     {
+        // --- STANDARD SCORE BERECHNUNG (Jede Wave) ---
         int baseReward = (index + 1) * 100;
         int finalReward = baseReward;
 
         float timeDiff = Time.time - lastSpawnTime;
         bool isFastKill = timeDiff <= fastKillTimeLimit;
 
+        // 1. Basis Text anzeigen
         centerText.gameObject.SetActive(true);
         centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>";
 
         yield return new WaitForSeconds(1.5f);
 
+        // 2. Fast Kill Check
         if (isFastKill)
         {
             centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>\n<size=60><color=red>FAST KILL! x2</color></size>";
@@ -151,10 +154,49 @@ public class WaveSpawner : MonoBehaviour
             centerText.text = $"<size=60><color=white>+{finalReward}</color></size>";
         }
 
+        yield return new WaitForSeconds(1.0f);
+
+        // ---------------------------------------------------------
+        // 3. SPEZIAL-LOGIK: NUR BEI WAVE 4, 5 und 9
+        // (Index 3, 4, 8)
+        // ---------------------------------------------------------
+
+        bool isSpecialWave = (index == 3 || index == 4 || index == 8);
+
+        if (isSpecialWave && playerHealth != null)
+        {
+            // CASE A: Full Life Bonus
+            if (playerHealth.currentHealth >= playerHealth.maxHealth)
+            {
+                int hpBonus = 500;
+                finalReward += hpBonus;
+
+                centerText.text += $"\n<size=50><color=cyan>PERFECT CONDITION! +{hpBonus}</color></size>";
+                yield return new WaitForSeconds(1.5f);
+
+                // Endsumme zeigen
+                centerText.text = $"<size=70><color=green>Total: +{finalReward}</color></size>";
+            }
+            // CASE B: Health Refill (Vorbereitung auf Boss oder Erholung danach)
+            else
+            {
+                while (playerHealth.currentHealth < playerHealth.maxHealth)
+                {
+                    centerText.text = $"<size=50><color=white>Restoring Health...</color></size>";
+                    playerHealth.Heal(1);
+                    // Warten auf Herz-Animation
+                    yield return new WaitForSeconds(1.6f);
+                }
+                centerText.text = $"<size=60><color=white>+{finalReward}</color></size>";
+            }
+        }
+
+        // 4. Punkte gutschreiben
         if (scoreManager != null) scoreManager.AddScore(finalReward);
 
         yield return new WaitForSeconds(1.5f);
         centerText.text = "";
+        centerText.gameObject.SetActive(false);
     }
 
     IEnumerator StartCountdown(int seconds)

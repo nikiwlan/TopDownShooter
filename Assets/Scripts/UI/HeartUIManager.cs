@@ -85,6 +85,8 @@ public class HeartUIManager : MonoBehaviour
     {
         if (centerHeartEffect == null) return;
 
+        LeanTween.cancel(centerHeartEffect);
+
         centerHeartEffect.SetActive(true);
 
         RectTransform rect = centerHeartEffect.GetComponent<RectTransform>();

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   waveName: Wave 1
   spawnInterval: 2
-  intro: []
+  intro:
+  - type: 2
+    gateIndex: 0
   segments: []
   spawnBoss: 0
   bossVariant: 0
