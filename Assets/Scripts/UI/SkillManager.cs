@@ -65,7 +65,6 @@ public class SkillManager : MonoBehaviour
 
         // 1. Pause
         if (gameStateManager != null) gameStateManager.SetGameState(true, false);
-
         // 2. Texte setzen & Buttons vorbereiten
         PrepareSkillOptions();
 

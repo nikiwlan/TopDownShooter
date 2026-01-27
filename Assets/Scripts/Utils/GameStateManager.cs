@@ -7,7 +7,7 @@ public class GameStateManager : MonoBehaviour
 
     [Header("References")]
     public GameObject crosshair;
-    [HideInInspector] public PauseMenu pauseMenuScript; // Referenz zum Skript, um ESC zu blockieren
+    public PauseMenu pauseMenuScript; // Referenz zum Skript, um ESC zu blockieren
 
     // Wir suchen uns PlayerMovement und Shooting automatisch oder ziehen sie rein
     [HideInInspector] public PlayerMovement playerMovement;
@@ -41,17 +41,14 @@ public class GameStateManager : MonoBehaviour
 
         // 3. Crosshair steuern
         if (crosshair != null)
-            crosshair.SetActive(!isFrozen); // Wenn gefroren -> Crosshair AUS
+            crosshair.SetActive(!isFrozen);
 
-        // 4. Spieler Inputs steuern (über isFrozen Variable oder enabled)
+        // 4. Spieler Inputs steuern
         if (playerMovement != null) playerMovement.isFrozen = isFrozen;
         if (playerShooting != null) playerShooting.isFrozen = isFrozen;
 
-        // 5. Pause Menü Zugriff steuern
-        // Wenn wir im SkillMenu oder GameOver sind, wollen wir nicht, dass ESC das PauseMenu öffnet
-        if (pauseMenuScript != null)
-        {
-            pauseMenuScript.enabled = allowPauseMenu;
-        }
+        // 5. PAUSE BLOCKIEREN (Der neue Weg)
+        // Wenn allowPauseMenu FALSE ist, dann ist IsLocked TRUE.
+        PauseMenu.IsLocked = !allowPauseMenu;
     }
 }

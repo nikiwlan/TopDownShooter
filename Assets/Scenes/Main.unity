@@ -2416,7 +2416,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   crosshair: {fileID: 38405821}
-  pauseMenuScript: {fileID: 0}
+  pauseMenuScript: {fileID: 1469500745}
   playerMovement: {fileID: 0}
   playerShooting: {fileID: 0}
 --- !u!4 &607735580

@@ -12,6 +12,8 @@ public class PauseMenu : MonoBehaviour
     private bool isPaused = false;
     private GameStateManager gameStateManager;
 
+    public static bool IsLocked = false;
+
     void Start()
     {
         pauseMenuUI.SetActive(false);
@@ -20,6 +22,7 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        if (IsLocked) return;
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (isPaused)
