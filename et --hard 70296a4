@@ -1,0 +1,107 @@
+[33m8790499[m[33m ([m[1;36mHEAD -> [m[1;32mskyfall-survivor-extension[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m70296a4[m HEAD@{1}: commit: nach Wave 4/5/9 hp restore wenn kein restore nötig 500 bonus Points
+[33m8790499[m[33m ([m[1;36mHEAD -> [m[1;32mskyfall-survivor-extension[m[33m)[m HEAD@{2}: commit: Fire Rate und Heal im skill Menu funktionieren
+[33mfc48d1a[m HEAD@{3}: commit: Fire Rate Animation + fire Rate Skill Menu
+[33m2cd5fc2[m[33m ([m[1;31morigin/skyfall-survivor-extension[m[33m)[m HEAD@{4}: commit: Health Bar Boss
+[33mb862a74[m HEAD@{5}: commit: Boos Beetle and Enemy Power UPs fair
+[33m81a42f3[m HEAD@{6}: commit: PlayerDeath animation
+[33m7c8d12e[m HEAD@{7}: commit: boss spwam, achitecture improvments
+[33m96bdeae[m HEAD@{8}: commit: Boos Beetle weak and strong
+[33mf2c1381[m HEAD@{9}: commit: cursor skill geht
+[33me97fecf[m HEAD@{10}: commit: refactored
+[33m57348bd[m HEAD@{11}: commit: zwischenstand refactor
+[33m2f187aa[m HEAD@{12}: commit: before refactor ui
+[33mcd23c4b[m HEAD@{13}: commit: positions for collisonsf fixed
+[33m31d234e[m HEAD@{14}: commit: sounds Beetle Body while raging
+[33m1873b91[m HEAD@{15}: commit: added stun icon
+[33m63fa8d8[m HEAD@{16}: commit: Beetle completed
+[33m065f9a7[m HEAD@{17}: commit: hitbox beetle fix
+[33mb8dcfa5[m HEAD@{18}: commit: sounds added bossbeetle
+[33mb1ad058[m HEAD@{19}: commit: bloodBeetle
+[33m6d3e535[m HEAD@{20}: commit: getHit fix
+[33m01436f2[m HEAD@{21}: commit: death animation beetle
+[33m12d8635[m HEAD@{22}: commit: 2 waves added
+[33m246cf5e[m HEAD@{23}: commit: śhiield visuals
+[33md48a406[m HEAD@{24}: commit: śhiield break better
+[33m86e04d9[m HEAD@{25}: commit: attacks animation fixes phase 0 und in run
+[33m6709435[m HEAD@{26}: commit: attacks range fix phase 1/2
+[33m37df2cf[m HEAD@{27}: commit: attacks range first fixes
+[33m6767b4a[m HEAD@{28}: commit: speed beetle phase 2
+[33mc9685f7[m HEAD@{29}: commit: speed boost fix
+[33m5ac54da[m HEAD@{30}: reset: moving to HEAD
+[33m5ac54da[m HEAD@{31}: commit: Attacks fixed, is running fixed dass er nicht in mitte rennt
+[33m79f439d[m HEAD@{32}: commit: Umbau BossBeetle
+[33m7427aa7[m HEAD@{33}: commit: zwischenstand angriffe fixen nach run
+[33m8b32370[m HEAD@{34}: reset: moving to HEAD
+[33m8b32370[m HEAD@{35}: commit: Rage funktioniert
+[33m4c2427d[m HEAD@{36}: commit: fast
+[33m9c07491[m HEAD@{37}: reset: moving to HEAD
+[33m9c07491[m HEAD@{38}: commit: nichts
+[33m93e08e0[m HEAD@{39}: commit: die ersten 2 Phasen funktionieren
+[33m5c545b6[m HEAD@{40}: commit: Phase 2 vom BeetleBoss bis auf kleinigkeiten fetig
+[33mf7ebe7e[m HEAD@{41}: commit: Tank Enemy läuft wieder richtig
+[33m3162611[m HEAD@{42}: commit: Colissionen alle gefixt
+[33m81a05a6[m HEAD@{43}: commit: fast enemy colission mit Bullet klappt
+[33mfdb97a2[m HEAD@{44}: reset: moving to HEAD
+[33mfdb97a2[m HEAD@{45}: commit: physik klaptt sop erst mal
+[33mbb64417[m HEAD@{46}: commit: rolle klappt, beetle erste Animationen, und Colissions verbessert entkompliziert
+[33m4bb5bff[m HEAD@{47}: commit: größere arena 4 gates und endboss prefab
+[33m466e1bc[m HEAD@{48}: commit: shield added - noch kleine Fehler
+[33m30df95a[m[33m ([m[1;31morigin/golden-stable-alpha[m[33m, [m[1;32mgolden-stable-alpha[m[33m)[m HEAD@{49}: commit: fix: stabilize project, track meta files, ignore only ExternalPackages
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{50}: checkout: moving from rescue-alpha-20251212-2040 to skyfall-survivor-extension
+[33m305bda0[m[33m ([m[1;32mrescue-alpha-20251212-2040[m[33m)[m HEAD@{51}: reset: moving to HEAD
+[33m305bda0[m[33m ([m[1;32mrescue-alpha-20251212-2040[m[33m)[m HEAD@{52}: commit: rescue: snapshot before switching branches
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{53}: checkout: moving from skyfall-survivor-alpha to rescue-alpha-20251212-2040
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{54}: checkout: moving from skyfall-survivor-extension to skyfall-survivor-alpha
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{55}: reset: moving to HEAD
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{56}: checkout: moving from skyfall-survivor-alpha to skyfall-survivor-extension
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{57}: reset: moving to HEAD
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{58}: checkout: moving from skyfall-survivor-extension to skyfall-survivor-alpha
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{59}: checkout: moving from skyfall-survivor-alpha-backup to skyfall-survivor-extension
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{60}: checkout: moving from skyfall-survivor-extension to skyfall-survivor-alpha-backup
+[33m96c3023[m[33m ([m[1;31morigin/skyfall-survivor-alpha-backup[m[33m, [m[1;32mskyfall-survivor-alpha-backup[m[33m)[m HEAD@{61}: commit: fix: track Unity assets and meta files; ignore only ExternalPackages
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{62}: checkout: moving from main to skyfall-survivor-extension
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{63}: merge skyfall-survivor-alpha: Fast-forward
+[33m35606cc[m HEAD@{64}: checkout: moving from skyfall-survivor-alpha to main
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{65}: Branch: renamed refs/heads/arena-story-version to refs/heads/skyfall-survivor-alpha
+[33md139ebd[m[33m ([m[1;33mtag: v1.0-alpha[m[33m, [m[1;31morigin/skyfall-survivor-alpha[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mskyfall-survivor-alpha[m[33m, [m[1;32mmain[m[33m)[m HEAD@{67}: commit: Skyfall Survivor Alpha
+[33m9aca375[m HEAD@{68}: commit: Laser Color while slow red
+[33m5481e7f[m HEAD@{69}: commit: Laser Enenmy works
+[33mb7a5a1e[m HEAD@{70}: commit: collision gegner wände
+[33m469f7fa[m HEAD@{71}: commit: Laser, Crosshair
+[33m56475eb[m HEAD@{72}: commit: PlayerDamage Blood
+[33m3feeceb[m HEAD@{73}: commit: PlayerDamage screen red
+[33m4cb1d6e[m HEAD@{74}: commit: Enemy Blood
+[33m07398f4[m HEAD@{75}: reset: moving to HEAD
+[33m07398f4[m HEAD@{76}: reset: moving to HEAD
+[33m07398f4[m HEAD@{77}: commit: Sound Sniper keine Überlagerung
+[33m9c5aca8[m HEAD@{78}: commit: Ground new, einige kleine fixes
+[33m413f039[m HEAD@{79}: commit: arena changed
+[33m35606cc[m HEAD@{80}: checkout: moving from main to arena-story-version
+[33m35606cc[m HEAD@{81}: commit: Fertiges game vor ausbesserungen
+[33md8ec054[m HEAD@{82}: commit: Neuie Buttons Background screens
+[33mfc3f3b8[m HEAD@{83}: commit: Bullet mit 3D Material
+[33m9918165[m HEAD@{84}: reset: moving to HEAD
+[33m9918165[m HEAD@{85}: commit: Background pics
+[33m2681654[m HEAD@{86}: commit: alle Screens funktionieren
+[33mac19ae6[m HEAD@{87}: reset: moving to HEAD
+[33mac19ae6[m HEAD@{88}: commit: fix Score popup posi
+[33mb79fc43[m HEAD@{89}: commit: score Text Posi
+[33m515e9a1[m HEAD@{90}: commit: powerUp Spawns works
+[33mefe7ab6[m HEAD@{91}: commit: Gate Sound bei Entfernung wird leiser
+[33md35b80f[m HEAD@{92}: reset: moving to HEAD
+[33md35b80f[m HEAD@{93}: commit: sounds!
+[33m6268bc1[m HEAD@{94}: commit: gate sounds klappen
+[33m51632a8[m HEAD@{95}: commit: Enemies sounds
+[33mbdc7637[m HEAD@{96}: commit: Fast Enemy sound
+[33mf18d4c4[m HEAD@{97}: commit: Remove heavy asset folders from repo
+[33m7e8659e[m HEAD@{98}: commit: Fix: Player shooting works reliably now and TankEnemy fully functional with walk, attack, and death animations
+[33m1acc67d[m HEAD@{99}: commit: fast and range character skins funktionieren
+[33md41ee32[m HEAD@{100}: commit: Fast Enemy mesh run
+[33m567cb87[m HEAD@{101}: commit: Player Animator funktioniert einwandfrei
+[33m0e0fa8c[m HEAD@{102}: commit: Player Mesh funktionieren fast
+[33m382f01b[m HEAD@{103}: commit: Spwans, Wall und Gate funktioniert, Gate collsiion nicht erfekt
+[33m9b26508[m HEAD@{104}: commit: PowerUp UI perfekt
+[33me37ad45[m HEAD@{105}: commit: PowerUps funktionieren, und alle Kollisionen mit richtigem Damage
+[33m6635c8e[m HEAD@{106}: commit: fixes no physics
+[33m46f9895[m HEAD@{107}: commit: boosts

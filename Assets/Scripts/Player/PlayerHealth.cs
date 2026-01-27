@@ -27,7 +27,7 @@ public class PlayerHealth : MonoBehaviour
     public int ShieldCharges => shieldCharges;
 
     [Header("Invincibility Settings")]
-    public float invincibilityDuration = 0.5f;
+    public float invincibilityDuration = 0.7f;
     private bool isInvincible = false;
 
     [Header("UI References")]
@@ -63,6 +63,8 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Optional: wenn du lieber über Layer blocken willst (z.B. EnemyProjectile Layer), trage ihn hier ein. -1 = deaktiviert")]
     public int shieldBlocksOnlyLayer = -1;
 
+    private Renderer[] bodyParts;
+
     private bool isDead = false; // Verhindert Doppeltod
 
     private void UpdateShieldVfx()
@@ -74,6 +76,7 @@ public class PlayerHealth : MonoBehaviour
     void Awake()
     {
         currentHealth = maxHealth;
+        bodyParts = GetComponentsInChildren<Renderer>();
     }
 
     void Start()
@@ -155,7 +158,35 @@ public class PlayerHealth : MonoBehaviour
     private IEnumerator BecomeTemporarilyInvincible()
     {
         isInvincible = true;
-        yield return new WaitForSeconds(invincibilityDuration);
+        float blinkInterval = 0.1f;
+        float timer = 0f;
+
+        while (timer < invincibilityDuration)
+        {
+            // --- HIER IST DIE ÄNDERUNG ---
+            if (bodyParts != null)
+            {
+                // Gehe durch JEDES gefundene Teil (Kopf, Arme, Beine...)
+                foreach (var part in bodyParts)
+                {
+                    // WICHTIG: Das Schild-VFX soll NICHT mitblinken, falls es an ist!
+                    if (part.gameObject != shieldVfx)
+                        part.enabled = !part.enabled; // An/Aus umschalten
+                }
+            }
+            // -----------------------------
+
+            yield return new WaitForSeconds(blinkInterval);
+            timer += blinkInterval;
+        }
+
+        // AM ENDE: Alles wieder sichtbar machen
+        if (bodyParts != null)
+        {
+            foreach (var part in bodyParts)
+                part.enabled = true;
+        }
+
         isInvincible = false;
     }
 
