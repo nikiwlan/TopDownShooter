@@ -15,9 +15,9 @@ MonoBehaviour:
   waveName: Wave 1
   spawnInterval: 2
   intro:
-  - type: 2
+  - type: 0
     gateIndex: 0
   segments: []
-  spawnBoss: 0
-  bossVariant: 0
+  spawnBoss: 1
+  bossVariant: 1
   bossGateIndex: 0

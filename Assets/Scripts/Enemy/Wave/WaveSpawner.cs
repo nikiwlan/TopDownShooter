@@ -21,8 +21,29 @@ public class WaveSpawner : MonoBehaviour
     public GameObject rangedEnemyPrefab;
 
     [Header("Boss Prefabs")]
-    public GameObject boss1Prefab; // Zieh hier dein Boss-Prefab rein
-    public GameObject boss2Prefab; // Hier auch (oder leer lassen, Code regelt das)
+    public GameObject boss1Prefab;
+    public GameObject boss2Prefab;
+
+    // --- HIER WAREN DIE DOPPELTEN VARIABLEN - JETZT BEREINIGT ---
+    [Header("Boss Minion Spawning (Nur für starken Boss)")]
+    [Tooltip("Welcher Gegner soll während des Bosskampfes spawnen?")]
+    public GameObject bossMinionPrefab; // ZIEH HIER DEN GEGNER REIN (z.B. FastEnemy)
+
+    [Tooltip("Wartezeit bevor der erste Minion kommt (z.B. 2 Sekunden)")]
+    public float bossSpawnDelay = 2.0f;
+
+    [Tooltip("Start-Intervall (z.B. 5 Sekunden)")]
+    public float bossStartInterval = 5.0f;
+
+    [Tooltip("Ziel-Intervall (z.B. runter auf 2 Sekunden)")]
+    public float bossTargetInterval = 2.0f;
+
+    [Tooltip("Wie schnell es schneller wird (0.05 = langsam, 0.2 = schnell)")]
+    public float bossDecayRate = 0.05f;
+
+    [Tooltip("Radius um den Boss")]
+    public float bossSpawnRadius = 3.0f;
+    // ------------------------------------------------------------
 
     [Header("Waves")]
     public WaveDefinition[] waves;
@@ -104,7 +125,7 @@ public class WaveSpawner : MonoBehaviour
             yield return StartCoroutine(HandleWaveScore(currentWaveIndex));
 
             // --- SKILL SELECTION TRIGGER ---
-            if (currentWaveIndex == 0 || currentWaveIndex == 1) // Nach Wave 1 (Index 0) und Wave 19
+            if (currentWaveIndex == 0 || currentWaveIndex == 1)
             {
                 if (skillManager != null)
                 {
@@ -126,22 +147,77 @@ public class WaveSpawner : MonoBehaviour
         }
     }
 
+    // ----------------------------------------------------------------------
+    // BOSS MINION SPAWNING LOGIK
+    // ----------------------------------------------------------------------
+    IEnumerator BossMinionSpawnerRoutine(GameObject boss)
+    {
+        // 1. Warten vor dem allerersten Spawn (z.B. 2 Sekunden)
+        yield return new WaitForSeconds(bossSpawnDelay);
+
+        Debug.Log("Boss Minion Spawner gestartet!");
+
+        // Zeit merken, wann der Algorithmus beginnt
+        float startTime = Time.time;
+
+        // Schleife läuft, solange der Boss existiert (boss != null)
+        while (boss != null)
+        {
+            if (bossMinionPrefab == null)
+            {
+                Debug.LogWarning("Kein Minion Prefab zugewiesen!");
+                break;
+            }
+
+            // 2. SOFORT Spawnen
+            SpawnMinionAroundBoss(boss);
+
+            // 3. Berechnen, wie lange wir bis zum NÄCHSTEN Spawn warten
+            float timeRunning = Time.time - startTime;
+
+            // Formel: StartInterval nähert sich TargetInterval an
+            float currentInterval = bossTargetInterval + (bossStartInterval - bossTargetInterval) * Mathf.Exp(-bossDecayRate * timeRunning);
+
+            // Optional: Debugging
+            // Debug.Log($"Nächster Gegner in {currentInterval:F2} Sekunden");
+
+            // 4. Warten basierend auf der Berechnung
+            yield return new WaitForSeconds(currentInterval);
+        }
+    }
+
+    void SpawnMinionAroundBoss(GameObject boss)
+    {
+        if (boss == null) return;
+
+        // Zufällige Position im Kreis um den Boss
+        Vector2 randomCircle = Random.insideUnitCircle.normalized * bossSpawnRadius;
+
+        // Position berechnen relative zum Boss
+        Vector3 spawnPos = boss.transform.position + new Vector3(randomCircle.x, 0, randomCircle.y);
+
+        // WICHTIG: Die Y-Höhe (Bodenhöhe) vom Boss übernehmen
+        spawnPos.y = boss.transform.position.y;
+
+        Instantiate(bossMinionPrefab, spawnPos, Quaternion.identity);
+    }
+    // ----------------------------------------------------------------------
+
     IEnumerator HandleWaveScore(int index)
     {
-        // --- STANDARD SCORE BERECHNUNG (Jede Wave) ---
+        // --- STANDARD SCORE ---
         int baseReward = (index + 1) * 100;
         int finalReward = baseReward;
 
         float timeDiff = Time.time - lastSpawnTime;
         bool isFastKill = timeDiff <= fastKillTimeLimit;
 
-        // 1. Basis Text anzeigen
         centerText.gameObject.SetActive(true);
         centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>";
 
         yield return new WaitForSeconds(1.5f);
 
-        // 2. Fast Kill Check
+        // Fast Kill
         if (isFastKill)
         {
             centerText.text = $"Wave Cleared!\n<size=80><color=yellow>+{baseReward}</color></size>\n<size=60><color=red>FAST KILL! x2</color></size>";
@@ -156,42 +232,33 @@ public class WaveSpawner : MonoBehaviour
 
         yield return new WaitForSeconds(1.0f);
 
-        // ---------------------------------------------------------
-        // 3. SPEZIAL-LOGIK: NUR BEI WAVE 4, 5 und 9
-        // (Index 3, 4, 8)
-        // ---------------------------------------------------------
-
+        // --- SPEZIAL-LOGIK (WAVE 4, 5, 9) ---
         bool isSpecialWave = (index == 3 || index == 4 || index == 8);
 
         if (isSpecialWave && playerHealth != null)
         {
-            // CASE A: Full Life Bonus
+            // Full Life Bonus
             if (playerHealth.currentHealth >= playerHealth.maxHealth)
             {
                 int hpBonus = 500;
                 finalReward += hpBonus;
-
                 centerText.text += $"\n<size=50><color=cyan>PERFECT CONDITION! +{hpBonus}</color></size>";
                 yield return new WaitForSeconds(1.5f);
-
-                // Endsumme zeigen
                 centerText.text = $"<size=70><color=green>Total: +{finalReward}</color></size>";
             }
-            // CASE B: Health Refill (Vorbereitung auf Boss oder Erholung danach)
+            // Health Refill
             else
             {
                 while (playerHealth.currentHealth < playerHealth.maxHealth)
                 {
                     centerText.text = $"<size=50><color=white>Restoring Health...</color></size>";
                     playerHealth.Heal(1);
-                    // Warten auf Herz-Animation
                     yield return new WaitForSeconds(1.6f);
                 }
                 centerText.text = $"<size=60><color=white>+{finalReward}</color></size>";
             }
         }
 
-        // 4. Punkte gutschreiben
         if (scoreManager != null) scoreManager.AddScore(finalReward);
 
         yield return new WaitForSeconds(1.5f);
@@ -230,29 +297,23 @@ public class WaveSpawner : MonoBehaviour
         GameObject prefab = (variant == BossVariant.Boss2 && boss2Prefab != null) ? boss2Prefab : boss1Prefab;
         if (!prefab) return;
 
-        // Wir definieren die Grenzen fest (basierend auf deinem Bild)
-        float minX = 1f;
-        float maxX = 24f;
-        float minZ = -10f;
-        float maxZ = 12f;
-        float padding = 2.0f; // Abstand zur Wand
+        float minX = 1f; float maxX = 24f;
+        float minZ = -10f; float maxZ = 12f;
+        float padding = 2.0f;
 
         Vector3 spawnPos;
 
         if (playerHealth != null)
         {
             Vector3 playerPos = playerHealth.transform.position;
-
-            // Wir prüfen die 4 extremen Ecken der Arena
             Vector3[] corners = new Vector3[]
             {
-                new Vector3(minX + padding, 0.3f, minZ + padding), // Unten Links
-                new Vector3(maxX - padding, 0.3f, minZ + padding), // Unten Rechts
-                new Vector3(minX + padding, 0.3f, maxZ - padding), // Oben Links
-                new Vector3(maxX - padding, 0.3f, maxZ - padding)  // Oben Rechts
+                new Vector3(minX + padding, 0.3f, minZ + padding),
+                new Vector3(maxX - padding, 0.3f, minZ + padding),
+                new Vector3(minX + padding, 0.3f, maxZ - padding),
+                new Vector3(maxX - padding, 0.3f, maxZ - padding)
             };
 
-            // Finde die Ecke, die am weitesten vom Spieler weg ist
             spawnPos = corners[0];
             float maxDistance = Vector3.Distance(playerPos, corners[0]);
 
@@ -268,20 +329,29 @@ public class WaveSpawner : MonoBehaviour
         }
         else
         {
-            // Fallback, falls Spieler nicht existiert: Eine feste Ecke
             spawnPos = new Vector3(maxX - padding, 0.3f, maxZ - padding);
         }
 
-        // Finales Instanziieren
+        // BOSS SPAWNEN
         GameObject bossObj = Instantiate(prefab, spawnPos, Quaternion.identity);
         lastSpawnTime = Time.time;
 
-        // Boss Konfiguration
         BossBeetle beetle = bossObj.GetComponent<BossBeetle>();
         if (beetle != null)
         {
-            if (variant == BossVariant.Boss1) beetle.ConfigureStats(20, true);
-            else beetle.ConfigureStats(30, false);
+            if (variant == BossVariant.Boss1)
+            {
+                // SCHWACHER BOSS: Nur Stats
+                beetle.ConfigureStats(20, true);
+            }
+            else
+            {
+                // STARKER BOSS: Stats + Minions
+                beetle.ConfigureStats(30, false);
+
+                // Wir übergeben den Boss direkt an die Coroutine
+                StartCoroutine(BossMinionSpawnerRoutine(bossObj));
+            }
         }
     }
 

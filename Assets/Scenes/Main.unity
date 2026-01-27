@@ -9061,6 +9061,12 @@ MonoBehaviour:
   rangedEnemyPrefab: {fileID: 6910753321948634838, guid: 1d81bd24008cff84ebe2f0fcd6ad6ece, type: 3}
   boss1Prefab: {fileID: 8805086708134250954, guid: ab5916c3e91cd3f4c87324c4c95e95b5, type: 3}
   boss2Prefab: {fileID: 0}
+  bossMinionPrefab: {fileID: 2177642443341610193, guid: d3bfe820b31e4eb40a9e5c93368570c5, type: 3}
+  bossSpawnDelay: 3
+  bossStartInterval: 5
+  bossTargetInterval: 2
+  bossDecayRate: 0.05
+  bossSpawnRadius: 3
   waves:
   - {fileID: 11400000, guid: f65769a4929249440bc23ed520fbff2e, type: 2}
   - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
