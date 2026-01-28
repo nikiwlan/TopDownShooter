@@ -9,7 +9,10 @@ public class MiniBeetle : EnemyBase, ITimeSlowable
 
     [Header("Audio")]
     public AudioClip attackSound;
+    [Range(0f, 1f)] public float attackVolume = 1f;
+
     public AudioClip dieSound;
+    [Range(0f, 1f)] public float dieVolume = 1f;
 
     private Transform playerTransform;
     private Animator animator;
@@ -101,7 +104,7 @@ public class MiniBeetle : EnemyBase, ITimeSlowable
         // Schaden prüfen (ist Spieler noch in Reichweite?)
         if (player != null && Vector3.Distance(transform.position, player.transform.position) <= attackRange + 0.5f)
         {
-            if (attackSound) AudioManager.Instance.PlaySound3D(attackSound, transform.position);
+            if (attackSound) AudioManager.Instance.PlaySound3D(attackSound, transform.position, attackVolume);
             player.TakeDamage(1);
         }
 
@@ -122,7 +125,7 @@ public class MiniBeetle : EnemyBase, ITimeSlowable
         isDead = true;
 
         if (animator) animator.SetTrigger(ANIM_DIE);
-        if (dieSound) AudioManager.Instance.PlaySound3D(dieSound, transform.position);
+        if (dieSound) AudioManager.Instance.PlaySound3D(dieSound, transform.position, dieVolume);
 
         DisableAllColliders();
         DisablePhysics();

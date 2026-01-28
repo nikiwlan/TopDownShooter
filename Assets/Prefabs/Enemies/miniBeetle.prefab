@@ -322,7 +322,7 @@ MonoBehaviour:
   pointsOnKill: 10
   spawnPowerUpCredits: 1
   debug: 1
-  bloodHitVFX: {fileID: 0}
+  bloodHitVFX: {fileID: 9071036190686454750, guid: da8d7663570bf6d478f51711720173d5, type: 3}
   blockWalls: 1
   wallTag: Wall
   runAwayFromSpawnOnWallHit: 0
@@ -335,8 +335,10 @@ MonoBehaviour:
   moveSpeed: 6
   attackRange: 1
   attackDamageDelay: 0.5
-  attackSound: {fileID: 0}
-  dieSound: {fileID: 0}
+  attackSound: {fileID: 8300000, guid: af4b7040c81584a44ad5e1aac66e6cd7, type: 3}
+  attackVolume: 0.335
+  dieSound: {fileID: 8300000, guid: d04e6004a3b12f94db5f4bc8eed850f7, type: 3}
+  dieVolume: 0.349
 --- !u!1 &2177772732029588915
 GameObject:
   m_ObjectHideFlags: 0
