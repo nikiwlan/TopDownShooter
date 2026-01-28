@@ -2216,6 +2216,10 @@ MonoBehaviour:
   height: 10
   distance: 0
   smoothSpeed: 10
+  damageShakeDuration: 0.1
+  damageShakeMagnitude: 0.2
+  shakeTimer: 0
+  shakeMagnitude: 0
 --- !u!1 &525187610
 GameObject:
   m_ObjectHideFlags: 0

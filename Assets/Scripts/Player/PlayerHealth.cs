@@ -63,6 +63,9 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Optional: wenn du lieber über Layer blocken willst (z.B. EnemyProjectile Layer), trage ihn hier ein. -1 = deaktiviert")]
     public int shieldBlocksOnlyLayer = -1;
 
+    [Header("Camera Reference")]
+    private CameraFollow cameraScript;
+
     private Renderer[] bodyParts;
 
     private bool isDead = false; // Verhindert Doppeltod
@@ -91,6 +94,10 @@ public class PlayerHealth : MonoBehaviour
         else
         {
             Debug.LogWarning("[PlayerHealth] Kein HeartUIManager zugewiesen!");
+        }
+        if (Camera.main != null)
+        {
+            cameraScript = Camera.main.GetComponent<CameraFollow>();
         }
     }
 
@@ -134,6 +141,11 @@ public class PlayerHealth : MonoBehaviour
                 UpdateShieldVfx();
                 return;
             }
+        }
+
+        if (cameraScript != null)
+        {
+            cameraScript.TriggerDamageShake();
         }
 
         StartCoroutine(BecomeTemporarilyInvincible());
