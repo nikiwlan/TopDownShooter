@@ -172,7 +172,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 5
   duration: 5
-  pickupSound: {fileID: 0}
+  pickupSound: {fileID: 8300000, guid: 37b252fdcd857be4c8dd798e6b8e7264, type: 3}
   pickupEffect: {fileID: 0}
   healthAmount: 1
   scoreBonus: 50
