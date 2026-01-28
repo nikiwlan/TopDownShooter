@@ -44,9 +44,9 @@ public class SkillManager : MonoBehaviour
 
     [Header("Game State & Player")]
     public GameStateManager gameStateManager;
-    public PlayerShooting playerShooting; // Waffen-Logik
-    public PlayerHealth playerHealth;     // Lebens-Logik
-    // public PlayerMovement playerMovement; // Falls du SpeedUp nutzen willst
+    public PlayerShooting playerShooting;
+    public PlayerHealth playerHealth;
+    public PlayerMovement playerMovement;
 
     [Header("Config")]
     public List<SkillData> availableSkills;
@@ -125,8 +125,7 @@ public class SkillManager : MonoBehaviour
                 break;
 
             case SkillType.SpeedUp:
-                // if (playerMovement != null) playerMovement.UpgradeSpeed(1.1f);
-                Debug.Log("Speed Up gewählt (Platzhalter)");
+                if (playerMovement != null) playerMovement.UpgradeSpeed(0.15f);
                 break;
 
             // --- OFFENSIVE (PlayerShooting) ---

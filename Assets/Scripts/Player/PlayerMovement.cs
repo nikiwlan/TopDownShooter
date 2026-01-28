@@ -295,6 +295,15 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    public void UpgradeSpeed(float percent)
+    {
+        // Erhöht den Basis-Speed (z.B. um 0.15 für 15%)
+        baseMoveSpeed *= (1f + percent);
+
+        // Aktualisiere auch die Inspector-Variable, damit du es sehen kannst
+        moveSpeed = baseMoveSpeed;
+    }
+
     public void ApplySpeedBoost(float duration, float multiplier)
     {
         if (speedBoostRoutine != null)

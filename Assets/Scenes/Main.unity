@@ -9072,7 +9072,7 @@ MonoBehaviour:
   bossDecayRate: 0.05
   bossSpawnRadius: 3
   waves:
-  - {fileID: 11400000, guid: 37bff173ed8d4c2448249e29d3a2ca60, type: 2}
+  - {fileID: 11400000, guid: f65769a4929249440bc23ed520fbff2e, type: 2}
   - {fileID: 11400000, guid: 4242bbbfed00724448805767cedf4350, type: 2}
   - {fileID: 11400000, guid: 15014e47284d79b488bea380d4de2c58, type: 2}
   - {fileID: 11400000, guid: 37bff173ed8d4c2448249e29d3a2ca60, type: 2}
@@ -12732,6 +12732,7 @@ MonoBehaviour:
   gameStateManager: {fileID: 607735579}
   playerShooting: {fileID: 1978811931}
   playerHealth: {fileID: 1978811932}
+  playerMovement: {fileID: 1978811927}
   availableSkills:
   - skillName: Rapid Fire
     description: +10% Fire Rate
@@ -12739,6 +12740,9 @@ MonoBehaviour:
   - skillName: Heal
     description: Restore 1 HP
     type: 1
+  - skillName: SpeedUp
+    description: + 15% Movement Speed
+    type: 2
 --- !u!1 &1582737506
 GameObject:
   m_ObjectHideFlags: 0
@@ -12965,63 +12969,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1604114532}
   m_CullTransparentMesh: 1
---- !u!1001 &1621961538
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 8475833574052523601, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_Name
-      value: PowerUp_Shield
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_RootOrder
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9145655351327765739, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 607e3eae665ad6c419d78abccc927fd5, type: 3}
 --- !u!1 &1626684175
 GameObject:
   m_ObjectHideFlags: 0
